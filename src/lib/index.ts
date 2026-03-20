@@ -2,7 +2,9 @@ export const ROUTE_PATHS = {
   HOME: '/',
   SEARCH: '/search',
   COMMUNITY: '/community',
+  COMMUNITY_WRITE: '/community/write', // 글쓰기 페이지 추가 - 주환
   MYPAGE: '/mypage',
+  NOTMYPAGE: '/notmypage' // notmypage 추가 엄태훈
 } as const;
 
 export interface Festival {
@@ -178,6 +180,34 @@ export const recentFestivals: Festival[] = [
     category: '자연생태',
     status: 'upcoming',
   },
+  {
+    id: '17',
+    title: '군포 철쭉축제',
+    location: '경기도 군포시',
+    date: '2026.04.20 - 2026.04.28',
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    category: '자연생태',
+    status: 'upcoming',
+  },
+  {
+    id: '18',
+    title: '수원 화성문화제',
+    location: '경기도 수원시',
+    date: '2026.10.05 - 2026.10.07',
+    image: 'https://images.unsplash.com/photo-1599930113854-d6d7fd521f10?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    category: '역사문화',
+    status: 'upcoming',
+  },
+  {
+    id: '19',
+    title: '강릉 커피축제',
+    location: '강원도 강릉시',
+    date: '2026.10.02 - 2026.10.06',
+    image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    category: '음식축제',
+    status: 'upcoming',
+  },
+  
 ];
 
 export const formatDate = (dateString: string): string => {

@@ -9,7 +9,9 @@ import { Layout } from "@/components/Layout";
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
 import Community from "@/pages/Community";
-import MyPage from "@/pages/MyPage";
+import CommunityWrite from "./pages/CommunityWrite"; // 주환
+import NotMyPage from "@/pages/NotMyPage";
+import MyPage from "./pages/MyPage"; // 최
 
 const queryClient = new QueryClient();
 
@@ -25,6 +27,8 @@ const App = () => (
               <Route path={ROUTE_PATHS.HOME} element={<Home />} />
               <Route path={ROUTE_PATHS.SEARCH} element={<Search />} />
               <Route path={ROUTE_PATHS.COMMUNITY} element={<Community />} />
+              <Route path={ROUTE_PATHS.COMMUNITY_WRITE} element={<CommunityWrite />} /> {/* 생성한 페이지 컴포넌트가 화면에 렌더링 될 수 있도록 라우터 경로 - 주환 */}
+              <Route path={ROUTE_PATHS.NOTMYPAGE} element={<NotMyPage />} />
               <Route path={ROUTE_PATHS.MYPAGE} element={<MyPage />} />
             </Routes>
           </Layout>

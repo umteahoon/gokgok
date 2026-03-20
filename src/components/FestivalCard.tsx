@@ -33,14 +33,17 @@ export function FestivalCard({ festival, variant = "default" }: FestivalCardProp
             </span>
           </div>
         </div>
+
         <div className="p-4">
           <h3 className="font-semibold text-base text-foreground mb-2 line-clamp-1">
             {festival.title}
           </h3>
+
           <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
             <MapPin className="w-3 h-3" />
             <span className="line-clamp-1">{festival.location}</span>
           </div>
+
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Calendar className="w-3 h-3" />
             <span className="line-clamp-1">{festival.date}</span>
@@ -63,38 +66,38 @@ export function FestivalCard({ festival, variant = "default" }: FestivalCardProp
           alt={festival.title}
           className="w-full h-full object-cover"
         />
+
+        {/* 상태 뱃지 (예정 / 진행중 / 종료 등) */}
         <div className="absolute top-4 right-4 flex gap-2">
           <span className={`px-3 py-1.5 rounded-lg text-sm font-medium ${statusBadge.className} backdrop-blur-sm`}>
             {statusBadge.label}
           </span>
         </div>
-        {festival.rank && (
-          <div className="absolute top-4 left-4">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">{festival.rank}</span>
-            </div>
-          </div>
-        )}
       </div>
+
       <div className="p-6">
         <div className="flex items-center gap-2 mb-3">
           <span className={`px-3 py-1 rounded-lg text-xs font-medium ${categoryColor}`}>
             {festival.category}
           </span>
         </div>
+
         <h3 className="font-semibold text-xl text-foreground mb-3 line-clamp-2">
           {festival.title}
         </h3>
+
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="w-4 h-4 flex-shrink-0" />
             <span className="line-clamp-1">{festival.location}</span>
           </div>
+
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="w-4 h-4 flex-shrink-0" />
             <span className="line-clamp-1">{festival.date}</span>
           </div>
         </div>
+
         {festival.description && (
           <p className="mt-4 text-sm text-muted-foreground line-clamp-2">
             {festival.description}

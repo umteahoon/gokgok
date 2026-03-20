@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { User, Heart, Calendar, Settings, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,14 +8,31 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { mockFestivals, getCategoryColor, getStatusBadge, type Festival } from "@/lib/index";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/motion";
 import { FestivalCard } from "@/components/FestivalCard";
+import { getCurrentUser, logout, type User as AuthUser } from "@/lib/login";
+import { AuthDialog } from "@/components/Login";
+
 
 export default function MyPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
+
+  useEffect(() => {
+    setCurrentUser(getCurrentUser());
+  }, []);
+
+  const handleAuthSuccess = () => {
+    setCurrentUser(getCurrentUser());
+  };
+
+  const handleLogout = () => {
+    logout();
+    setCurrentUser(null);
+  };
 
   const savedFestivals = mockFestivals.slice(0, 4);
   const attendedFestivals = mockFestivals.slice(4, 7);
 
-  if (!isLoggedIn) {
+  if (!currentUser) {
     return (
       <div className="min-h-screen bg-background">
         <motion.div
@@ -38,20 +55,22 @@ export default function MyPage() {
               <Button
                 size="lg"
                 className="w-full"
-                onClick={() => setIsLoggedIn(true)}
+                onClick={() => setAuthDialogOpen(true)}
               >
                 <LogIn className="w-5 h-5 mr-2" />
                 로그인하기
               </Button>
               <p className="text-sm text-muted-foreground">
-                아직 회원이 아니신가요?{" "}
-                <button className="text-primary hover:underline font-medium">
-                  회원가입
-                </button>
+                로그인하고 곡곡의 모든 기능을 이용해보세요
               </p>
             </CardContent>
           </Card>
         </motion.div>
+        <AuthDialog
+          isOpen={authDialogOpen}
+          onClose={() => setAuthDialogOpen(false)}
+          onSuccess={handleAuthSuccess}
+        />
       </div>
     );
   }
@@ -70,8 +89,8 @@ export default function MyPage() {
               <User className="w-12 h-12 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold mb-2">김태훈님</h1>
-              <p className="text-muted-foreground">taehun@gokgok.com</p>
+              <h1 className="text-3xl font-bold mb-2">{currentUser.name}님</h1>
+              <p className="text-muted-foreground">{currentUser.email}</p>
               <div className="flex gap-2 mt-3">
                 <Badge variant="secondary">축제 마니아</Badge>
                 <Badge variant="secondary">리뷰 작성자</Badge>
@@ -215,7 +234,7 @@ export default function MyPage() {
                       <label className="text-sm font-medium mb-2 block">이름</label>
                       <input
                         type="text"
-                        defaultValue="김태훈"
+                        defaultValue={currentUser.name}
                         className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
@@ -223,7 +242,7 @@ export default function MyPage() {
                       <label className="text-sm font-medium mb-2 block">이메일</label>
                       <input
                         type="email"
-                        defaultValue="taehun@gokgok.com"
+                        defaultValue={currentUser.email}
                         className="w-full px-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
@@ -273,7 +292,7 @@ export default function MyPage() {
                     <Button
                       variant="outline"
                       className="w-full justify-start"
-                      onClick={() => setIsLoggedIn(false)}
+                      onClick={handleLogout}
                     >
                       로그아웃
                     </Button>

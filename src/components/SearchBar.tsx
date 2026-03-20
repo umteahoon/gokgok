@@ -1,14 +1,6 @@
 import { useState } from 'react';
-import { Search, MapPin, Calendar } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 interface SearchBarProps {
@@ -18,8 +10,6 @@ interface SearchBarProps {
 
 export function SearchBar({ onSearch, className }: SearchBarProps) {
   const [query, setQuery] = useState('');
-  const [region, setRegion] = useState<string>('all');
-  const [month, setMonth] = useState<string>('all');
 
   const handleSearch = () => {
     if (onSearch) {
@@ -34,85 +24,28 @@ export function SearchBar({ onSearch, className }: SearchBarProps) {
   };
 
   return (
-    <div className={cn('w-full max-w-4xl mx-auto', className)}>
-      <div className="bg-card rounded-2xl shadow-lg border border-border p-6">
+    <div className={cn('w-full max-w-4xl mx-auto px-4', className)}>
+      {/* 1. index.css에 정의한 .search-glass-bar 클래스를 적용합니다. 엄태훈 
+        2. 내부 여백을 p-2 정도로 줄여서 더 날렵한 느낌을 줍니다.
+      */}
+      <div className="search-glass-bar p-2 group">
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            {/* 돋보기 아이콘: 호버 시 색상이 진해지도록 transition 추가 */}
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+            
             <Input
               type="text"
               placeholder="축제 이름, 지역, 키워드로 검색하세요"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="h-14 pl-12 pr-4 text-base border-2 focus-visible:ring-2 focus-visible:ring-primary rounded-xl"
+              onKeyDown={handleKeyPress}
+              /* - bg-transparent: 입력창 배경을 투명하게 해서 뒤의 유리 효과가 보이게 함
+                - border-none: 입력창 자체 테두리를 제거
+                - focus-visible:ring-0: 클릭 시 생기는 파란색 테두리 제거 (부모 컨테이너 효과 강조)
+              */
+              className="h-14 pl-14 pr-6 text-lg bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground/60 rounded-full"
             />
-          </div>
-          <Button
-            onClick={handleSearch}
-            size="lg"
-            className="h-14 px-8 text-base font-semibold rounded-xl shadow-md hover:shadow-lg transition-all"
-          >
-            검색
-          </Button>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 mt-4">
-          <div className="flex-1">
-            <Select value={region} onValueChange={setRegion}>
-              <SelectTrigger className="h-12 rounded-xl border-2">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="지역 선택" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체 지역</SelectItem>
-                <SelectItem value="seoul">서울특별시</SelectItem>
-                <SelectItem value="busan">부산광역시</SelectItem>
-                <SelectItem value="daegu">대구광역시</SelectItem>
-                <SelectItem value="incheon">인천광역시</SelectItem>
-                <SelectItem value="gwangju">광주광역시</SelectItem>
-                <SelectItem value="daejeon">대전광역시</SelectItem>
-                <SelectItem value="ulsan">울산광역시</SelectItem>
-                <SelectItem value="sejong">세종특별자치시</SelectItem>
-                <SelectItem value="gyeonggi">경기도</SelectItem>
-                <SelectItem value="gangwon">강원도</SelectItem>
-                <SelectItem value="chungbuk">충청북도</SelectItem>
-                <SelectItem value="chungnam">충청남도</SelectItem>
-                <SelectItem value="jeonbuk">전라북도</SelectItem>
-                <SelectItem value="jeonnam">전라남도</SelectItem>
-                <SelectItem value="gyeongbuk">경상북도</SelectItem>
-                <SelectItem value="gyeongnam">경상남도</SelectItem>
-                <SelectItem value="jeju">제주특별자치도</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex-1">
-            <Select value={month} onValueChange={setMonth}>
-              <SelectTrigger className="h-12 rounded-xl border-2">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="기간 선택" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">전체 기간</SelectItem>
-                <SelectItem value="1">1월</SelectItem>
-                <SelectItem value="2">2월</SelectItem>
-                <SelectItem value="3">3월</SelectItem>
-                <SelectItem value="4">4월</SelectItem>
-                <SelectItem value="5">5월</SelectItem>
-                <SelectItem value="6">6월</SelectItem>
-                <SelectItem value="7">7월</SelectItem>
-                <SelectItem value="8">8월</SelectItem>
-                <SelectItem value="9">9월</SelectItem>
-                <SelectItem value="10">10월</SelectItem>
-                <SelectItem value="11">11월</SelectItem>
-                <SelectItem value="12">12월</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
       </div>
