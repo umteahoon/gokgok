@@ -1,0 +1,211 @@
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+==========================================================================
+【AI HANDOVER NOTE】
+1. DESIGN PHILOSOPHY:
+   - 주요 설계 이념: Institutional Trust & Accessibility-First (공공기관 신뢰성과 접근성 우선)
+   - 시각 스타일: Clean Modernism with Korean Sensibility - 한국관광공사의 깔끔한 화이트 톤과 신뢰감 있는 블루 컬러 시스템을 계승하되, 축제라는 주제에 맞게 약간의 활기를 더한 디자인
+   - 카드 기반 레이아웃과 명확한 정보 계층 구조로 사용자가 직관적으로 축제 정보를 탐색할 수 있도록 설계
+   - 프로젝트 연관성: 지역 축제 탐색이라는 공공성 강한 서비스 특성상, 한국관광공사의 신뢰감 있는 디자인 언어를 차용하여 사용자 친화성과 정보 전달력을 극대화
+
+2. TYPOGRAPHY:
+   - Sans 폰트: Noto Sans KR을 주 폰트로 선택 - 한글 가독성이 뛰어나고 공공기관 웹사이트에서 널리 사용되는 신뢰감 있는 서체. Inter를 보조 폰트로 배치하여 영문/숫자 표현 시 현대적 느낌 유지
+   - 폰트 선택 이유: 한국 사용자 대상 서비스이므로 한글 최적화가 필수. Noto Sans KR은 다양한 굵기(400-700)를 지원하여 타이포그래피 계층 구조 표현에 유리
+   - Mono 폰트: JetBrains Mono - API 연동 시 데이터 표시, 날짜/시간 정보, 순위 숫자 등에 활용. 가독성 높은 모노스페이스 폰트로 정보의 정확성 강조
+
+3. COLOR SYSTEM:
+   - 브랜드 주색: 신뢰감 있는 블루 (Hue 230-240도) - 한국관광공사의 #0066CC를 OKLCH로 변환하여 현대적으로 재해석. 공공기관 특유의 안정감과 신뢰성 전달
+   - --brand는 --primary로 직접 매핑되어 주요 CTA 버튼, 링크, 선택 상태에 사용. --accent는 약간 밝은 블루로 호버 효과와 보조 강조에 활용
+   - --ring은 포커스 상태 표시를 위해 primary와 동일한 색상 사용 (접근성 준수)
+   - 시맨틱 컬러: success(축제 진행 중), warning(마감 임박), destructive(취소/종료)는 직관적 색상 선택으로 정보 전달력 극대화
+   - 그레이 스케일: muted 계열은 한국관광공사의 #F5F5F5, #E0E0E0를 참고하여 카드 배경과 구분선에 활용
+
+4. USAGE GUIDE:
+   - 레이아웃 타입: Dashboard full-width - 메인 페이지 3컬럼 그리드(오늘의 축제/TOP 10/최근 뜨는 행사)를 위해 전체 너비 활용. 모바일에서는 1컬럼으로 자동 전환
+   - 카드 디자인: border + subtle shadow 조합으로 한국관광공사 스타일 재현. hover 시 shadow 강화 및 scale(1.02) 효과로 인터랙션 표현
+   - 검색바: 중앙 정렬, 대형 사이즈(h-14 이상), ring-2 포커스 효과로 시각적 강조
+   - 탭 전환: border-b-2 + primary 컬러로 활성 탭 표시. 명확한 상태 구분
+   - 지도 인터랙션: SVG 지역 클릭 시 fill 색상 변경(primary), 우측 리스트 자동 업데이트
+   - 반응형 브레이크포인트: sm(640px), md(768px), lg(1024px), xl(1280px) - 3컬럼은 lg 이상에서만 표시
+   - 접근성: 모든 인터랙티브 요소에 focus-visible:ring-2 적용, 색상 대비 WCAG AA 준수, 키보드 네비게이션 지원
+==========================================================================
+*/
+
+:root {
+  /* Typography */
+  --font-sans: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+  
+  /* Radius */
+  --radius: 0.5rem;
+
+  /* Core UI Tokens */
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.2 0 0);
+  --card: oklch(0.98 0 0);
+  --card-foreground: oklch(0.2 0 0);
+  --popover: oklch(0.99 0 0);
+  --popover-foreground: oklch(0.2 0 0);
+  --primary: oklch(0.48 0.18 240);
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.96 0.005 240);
+  --secondary-foreground: oklch(0.25 0 0);
+  --muted: oklch(0.97 0.003 240);
+  --muted-foreground: oklch(0.48 0.01 240);
+  --accent: oklch(0.92 0.04 240);
+  --accent-foreground: oklch(0.25 0 0);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.92 0.005 240);
+  --input: oklch(0.92 0.005 240);
+  --ring: oklch(0.48 0.18 240);
+  
+  /* Chart Tokens */
+  --chart-1: oklch(0.52 0.18 240);
+  --chart-2: oklch(0.58 0.16 200);
+  --chart-3: oklch(0.62 0.14 280);
+  --chart-4: oklch(0.55 0.12 150);
+  --chart-5: oklch(0.60 0.15 320);
+  
+  /* Sidebar Tokens */
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.25 0 0);
+  --sidebar-primary: oklch(0.48 0.18 240);
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.92 0.04 240);
+  --sidebar-accent-foreground: oklch(0.25 0 0);
+  --sidebar-border: oklch(0.92 0.005 240);
+  --sidebar-ring: oklch(0.48 0.18 240);
+}
+
+.dark {
+  --background: oklch(0.15 0.01 240);
+  --foreground: oklch(0.95 0.01 240);
+  --card: oklch(0.17 0.01 240);
+  --card-foreground: oklch(0.95 0.01 240);
+  --popover: oklch(0.15 0.01 240);
+  --popover-foreground: oklch(0.95 0.01 240);
+  --primary: oklch(0.62 0.22 240);
+  --primary-foreground: oklch(0.15 0.01 240);
+  --secondary: oklch(0.25 0.02 240);
+  --secondary-foreground: oklch(0.92 0.01 240);
+  --muted: oklch(0.23 0.02 240);
+  --muted-foreground: oklch(0.68 0.02 240);
+  --accent: oklch(0.35 0.08 240);
+  --accent-foreground: oklch(0.95 0.01 240);
+  --destructive: oklch(0.58 0.24 25);
+  --destructive-foreground: oklch(0.95 0.01 240);
+  --border: oklch(0.28 0.02 240);
+  --input: oklch(0.28 0.02 240);
+  --ring: oklch(0.62 0.22 240);
+  
+  /* Chart Tokens */
+  --chart-1: oklch(0.65 0.22 240);
+  --chart-2: oklch(0.68 0.20 200);
+  --chart-3: oklch(0.70 0.18 280);
+  --chart-4: oklch(0.62 0.16 150);
+  --chart-5: oklch(0.68 0.19 320);
+  
+  /* Sidebar Tokens */
+  --sidebar: oklch(0.17 0.01 240);
+  --sidebar-foreground: oklch(0.92 0.01 240);
+  --sidebar-primary: oklch(0.62 0.22 240);
+  --sidebar-primary-foreground: oklch(0.15 0.01 240);
+  --sidebar-accent: oklch(0.35 0.08 240);
+  --sidebar-accent-foreground: oklch(0.95 0.01 240);
+  --sidebar-border: oklch(0.28 0.02 240);
+  --sidebar-ring: oklch(0.62 0.22 240);
+}
+
+@theme inline {
+  /* Shadcn Core Mapping */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Charts Mapping */
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Sidebar Mapping */
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Typography */
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  /* Radius */
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply scroll-smooth antialiased;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans min-h-screen;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  code, pre {
+    @apply font-mono;
+  }
+
+  ::selection {
+    @apply bg-primary/20 text-primary;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40;
+  }
+}
