@@ -4,7 +4,9 @@ export const ROUTE_PATHS = {
   COMMUNITY: '/community',
   COMMUNITY_WRITE: '/community/write', // 글쓰기 페이지 추가 - 주환
   MYPAGE: '/mypage',
-  NOTMYPAGE: '/notmypage' // notmypage 추가 엄태훈
+  NOTMYPAGE: '/notmypage' ,// notmypage 추가 엄태훈
+  TERMS: '/terms', //  이용약관 추가 엄태훈
+  PRIVACY: '/privacy', // 개인정보 처리 방침 추가 엄태훈
 } as const;
 
 export interface Festival {
@@ -77,12 +79,67 @@ export const mockFestivals: Festival[] = [
 ];
 
 export const topFestivals: Festival[] = [
-  { ...mockFestivals[0], rank: 1 },
-  { ...mockFestivals[1], rank: 2 },
-  { ...mockFestivals[2], rank: 3 },
-  { ...mockFestivals[3], rank: 4 },
-  { ...mockFestivals[4], rank: 5 },
-  { ...mockFestivals[5], rank: 6 },
+  // 🌟 기존에 mockFestivals를 복사하던 부분을 완전히 새로운 축제 데이터로 교체하여 중복 제거!
+  {
+    id: 'top-1',
+    title: '진해 군항제',
+    location: '경상남도 창원시',
+    date: '2026.03.25 - 2026.04.05',
+    image: 'https://images.unsplash.com/photo-1715578271997-dfa19e38705f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTk0NTh8MHwxfHNlYXJjaHwxfHxrb3JlYW4lMjB0cmFkaXRpb25hbCUyMGZlc3RpdmFsfGVufDB8MHx8fDE3NzM5NzI4MTl8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: '자연생태',
+    rank: 1,
+    status: 'upcoming',
+  },
+  {
+    id: 'top-2',
+    title: '무주 반딧불축제',
+    location: '전라북도 무주군',
+    date: '2026.08.31 - 2026.09.08',
+    image: 'https://images.unsplash.com/photo-1751445535640-9acbf06eac44?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTk0NTh8MHwxfHNlYXJjaHwyfHxrb3JlYW4lMjB0cmFkaXRpb25hbCUyMGZlc3RpdmFsfGVufDB8MHx8fDE3NzM5NzI4MTl8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: '자연생태',
+    rank: 2,
+    status: 'upcoming',
+  },
+  {
+    id: 'top-3',
+    title: '금산 인삼축제',
+    location: '충청남도 금산군',
+    date: '2026.10.03 - 2026.10.13',
+    image: 'https://images.unsplash.com/photo-1758644648482-d2d31e875f11?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTk0NTh8MHwxfHNlYXJjaHwzfHxrb3JlYW4lMjB0cmFkaXRpb25hbCUyMGZlc3RpdmFsfGVufDB8MHx8fDE3NzM5NzI4MTl8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: '체험',
+    rank: 3,
+    status: 'upcoming',
+  },
+  {
+    id: 'top-4',
+    title: '순천만 갈대축제',
+    location: '전라남도 순천시',
+    date: '2026.11.01 - 2026.11.03',
+    image: 'https://images.unsplash.com/photo-1759838914432-ae1f48477bf1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTk0NTh8MHwxfHNlYXJjaHw0fHxrb3JlYW4lMjB0cmFkaXRpb25hbCUyMGZlc3RpdmFsfGVufDB8MHx8fDE3NzM5NzI4MTl8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: '자연생태',
+    rank: 4,
+    status: 'upcoming',
+  },
+  {
+    id: 'top-5',
+    title: '서귀포 칠십리축제',
+    location: '제주특별자치도 서귀포시',
+    date: '2026.10.18 - 2026.10.20',
+    image: 'https://images.unsplash.com/photo-1652584534877-9757ba002177?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTk0NTh8MHwxfHNlYXJjaHw1fHxrb3JlYW4lMjB0cmFkaXRpb25hbCUyMGZlc3RpdmFsfGVufDB8MHx8fDE3NzM5NzI4MTl8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: '전통문화',
+    rank: 5,
+    status: 'upcoming',
+  },
+  { 
+    id: 'top-6', // 최
+    title: '평창 송어축제',
+    location: '강원도 평창군',
+    date: '2026.12.20 - 2027.01.24',
+    image: 'https://images.unsplash.com/photo-1601900245655-7719650f5b7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4MTk0NTh8MHwxfHNlYXJjaHw2fHxrb3JlYW4lMjB0cmFkaXRpb25hbCUyMGZlc3RpdmFsfGVufDB8MHx8fDE3NzM5NzI4MTl8MA&ixlib=rb-4.1.0&q=80&w=1080',
+    category: '겨울축제',
+    rank: 6,
+    status: 'upcoming',
+  }, 
   {
     id: '7',
     title: '제주 들불축제',

@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { login, signup } from '@/lib/login';
 import { springPresets } from '@/lib/motion';
-import { useNavigate  } from "react-router-dom"; // 최
+import { useNavigate } from "react-router-dom";
 
 interface AuthDialogProps {
   isOpen: boolean;
@@ -17,7 +17,7 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
-  const navigate = useNavigate(); // 최
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<string>("login");
   
   const [loginEmail, setLoginEmail] = useState('');
@@ -36,10 +36,14 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
     const result = login(loginEmail, loginPassword);
     if (result.success) {
       setSuccess(result.message);
+      
+      // [핵심 추가] 로그인 성공 신호를 Layout에 보냄
+      window.dispatchEvent(new Event('auth-change'));
+
       setTimeout(() => {
         onSuccess();
         onClose();
-        navigate("/mypage"); // 로그인 성공 후 홈으로 이동
+        navigate("/mypage"); // 로그인 성공 후 마이페이지로 이동
       }, 500);
     } else {
       setError(result.message);
@@ -54,7 +58,6 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
     const result = signup(signupEmail, signupPassword, signupName);
 
     if (result.success) {
-      // \n을 사용하여 문단을 나눕니다. 엄태훈
       setSuccess("회원가입이 완료되었습니다!\n5초 후에 로그인창으로 이동합니다.");
       
       setTimeout(() => {
@@ -125,7 +128,6 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                   <motion.div
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    // whitespace-pre-line으로 \n을 줄바꿈으로 렌더링하고, text-center로 정렬합니다. 엄태훈
                     className={`mb-4 p-3 rounded-lg text-sm whitespace-pre-line text-center ${
                       error
                         ? 'bg-destructive/10 text-destructive border border-destructive/20'

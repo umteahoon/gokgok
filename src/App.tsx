@@ -12,6 +12,9 @@ import Community from "@/pages/Community";
 import CommunityWrite from "./pages/CommunityWrite"; // 주환
 import NotMyPage from "@/pages/NotMyPage";
 import MyPage from "./pages/MyPage"; // 최
+import TermsOfService from "@/pages/TermsOfService";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
+
 
 const queryClient = new QueryClient();
 
@@ -30,6 +33,8 @@ const App = () => (
               <Route path={ROUTE_PATHS.COMMUNITY_WRITE} element={<CommunityWrite />} /> {/* 생성한 페이지 컴포넌트가 화면에 렌더링 될 수 있도록 라우터 경로 - 주환 */}
               <Route path={ROUTE_PATHS.NOTMYPAGE} element={<NotMyPage />} />
               <Route path={ROUTE_PATHS.MYPAGE} element={<MyPage />} />
+              <Route path={ROUTE_PATHS.TERMS} element={<TermsOfService />} />
+              <Route path={ROUTE_PATHS.PRIVACY} element={<PrivacyPolicy />} />
             </Routes>
           </Layout>
         </HashRouter>

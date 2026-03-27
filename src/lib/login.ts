@@ -1,10 +1,11 @@
-// 로컬 스토리지 기반 간단한 인증 시스템 엄태훈 
+// 로컬 스토리지 기반 간단한 인증 시스템 - lib/login.ts
 
 export interface User {
   id: string;
   email: string;
   name: string;
   createdAt: string;
+  password?: string;
 }
 
 const USERS_KEY = 'gokgok_users';
@@ -27,7 +28,7 @@ export const getCurrentUser = (): User | null => {
   return userJson ? JSON.parse(userJson) : null;
 };
 
-// 현재 사용자 저장
+// 현재 사용자 저장/삭제 내부 함수
 const setCurrentUser = (user: User | null) => {
   if (user) {
     localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
@@ -40,28 +41,23 @@ const setCurrentUser = (user: User | null) => {
 export const signup = (email: string, password: string, name: string): { success: boolean; message: string; user?: User } => {
   const users = getUsers();
   
-  // 이메일 중복 체크
   if (users.some(u => u.email === email)) {
     return { success: false, message: '이미 사용 중인 이메일입니다.' };
   }
 
-  // 이메일 형식 검증
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     return { success: false, message: '올바른 이메일 형식이 아닙니다.' };
   }
 
-  // 비밀번호 길이 검증
   if (password.length < 6) {
     return { success: false, message: '비밀번호는 최소 6자 이상이어야 합니다.' };
   }
 
-  // 이름 검증
   if (name.trim().length < 2) {
     return { success: false, message: '이름은 최소 2자 이상이어야 합니다.' };
   }
 
-  // 새 사용자 생성
   const newUser: User = {
     id: Date.now().toString(),
     email,
@@ -69,8 +65,6 @@ export const signup = (email: string, password: string, name: string): { success
     createdAt: new Date().toISOString(),
   };
 
-  // 비밀번호는 실제로는 해시화해야 하지만, 데모용으로 간단히 저장
-  // 실제 프로덕션에서는 절대 이렇게 하면 안됩니다!
   const userWithPassword = { ...newUser, password };
   users.push(userWithPassword);
   saveUsers(users);
@@ -87,16 +81,20 @@ export const login = (email: string, password: string): { success: boolean; mess
     return { success: false, message: '이메일 또는 비밀번호가 올바르지 않습니다.' };
   }
 
-  // 비밀번호 제외하고 사용자 정보만 저장
   const { password: _, ...userWithoutPassword } = user as any;
   setCurrentUser(userWithoutPassword);
 
   return { success: true, message: '로그인되었습니다.', user: userWithoutPassword };
 };
 
-// 로그아웃
+/**
+ * 로그아웃 (수정됨)
+ * UI 관련 로직(confirm, alert)을 제거하여 Layout에서 제어할 수 있도록 함
+ */
 export const logout = () => {
   setCurrentUser(null);
+  // 상태 변경을 전역에 알림
+  window.dispatchEvent(new Event('auth-change'));
 };
 
 // 로그인 상태 확인
@@ -104,3 +102,40 @@ export const isLoggedIn = (): boolean => {
   return getCurrentUser() !== null;
 };
 
+// 비밀번호 변경
+export const changePassword = (email: string, currentPassword: string, newPassword: string): { success: boolean; message: string } => {
+  const users = getUsers();
+  const userIndex = users.findIndex(u => u.email === email && u.password === currentPassword);
+
+  if (userIndex === -1) {
+    return { success: false, message: '현재 비밀번호가 일치하지 않습니다.' };
+  }
+
+  if (newPassword.length < 6) {
+    return { success: false, message: '새 비밀번호는 최소 6자 이상이어야 합니다.' };
+  }
+
+  users[userIndex].password = newPassword;
+  saveUsers(users);
+
+  return { success: true, message: '비밀번호가 성공적으로 변경되었습니다.' };
+};
+
+// 회원 탈퇴
+export const deleteAccount = (email: string, password: string): { success: boolean; message: string } => {
+  const users = getUsers();
+  const userExists = users.some(u => u.email === email && u.password === password);
+
+  if (!userExists) {
+    return { success: false, message: '비밀번호가 일치하지 않아 탈퇴할 수 없습니다.' };
+  }
+
+  const updatedUsers = users.filter(u => !(u.email === email && u.password === password));
+  saveUsers(updatedUsers);
+
+  // 현재 로그인된 정보 삭제 (단순 데이터 삭제만 수행)
+  setCurrentUser(null);
+  window.dispatchEvent(new Event('auth-change'));
+
+  return { success: true, message: '회원 탈퇴가 완료되었습니다.' };
+};

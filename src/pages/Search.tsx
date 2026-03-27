@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Search as SearchIcon } from "lucide-react"; // lucide-react에서 돋보기 아이콘 가져오기
 import { mockFestivals, topFestivals } from "@/lib/index";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/motion";
 import { FestivalCard } from "@/components/FestivalCard";
-// (박현준 : 코드 변경) - img 태그 대신 다시 인터랙티브한 KoreaMap 컴포넌트를 불러옵니다.
+// (박현준 : 코드 변경) - 인터랙티브한 KoreaMap 컴포넌트를 불러옵니다.
 import { KoreaMap } from "@/components/KoreaMap"; 
-import { SearchBar } from "@/components/SearchBar";
 
 export default function Search() {
+  
   const [activeTab, setActiveTab] = useState<"list" | "map">("list");
   const [selectedRegion, setSelectedRegion] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  // 🌟 Community.tsx와 동일하게 검색어 상태 관리
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const regionMap: Record<string, string[]> = {
     서울: ["서울특별시"],
@@ -32,28 +34,59 @@ export default function Search() {
     제주: ["제주특별자치도"],
   };
 
-  // 🔥 모든 축제 합치기 (mockFestivals + topFestivals)
-  const allFestivals = [...topFestivals, ...mockFestivals];
+  const englishToKoreanMap: Record<string, string> = {
+    Seoul: "서울",
+    Gyeonggi: "경기",
+    Incheon: "인천",
+    Gangwon: "강원",
+    Chungbuk: "충북",
+    Chungnam: "충남",
+    Daejeon: "대전",
+    Sejong: "세종",
+    Jeonbuk: "전북",
+    Jeonnam: "전남",
+    Gwangju: "광주",
+    Gyeongbuk: "경북",
+    Gyeongnam: "경남",
+    Daegu: "대구",
+    Ulsan: "울산",
+    Busan: "부산",
+    Jeju: "제주",
+  };
 
-  const filteredFestivals = allFestivals.filter((festival) => {
-    const matchesSearch = searchQuery
-      ? festival.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        festival.location.toLowerCase().includes(searchQuery.toLowerCase())
+  const currentKoreanRegion = englishToKoreanMap[selectedRegion] || "";
+
+  // 🌟 Community.tsx 처럼 실시간으로 필터링하는 로직!
+  const filteredFestivals = [...topFestivals, ...mockFestivals].filter((festival) => {
+    // 검색어를 소문자로 변환 (대소문자 무시)
+    const keyword = searchTerm.trim().toLowerCase();
+
+    // 1. 키워드 검색 (제목, 지역, 키워드, 설명 포함)
+    const matchesSearch = keyword
+      ? (
+          (festival.title || "").toLowerCase().includes(keyword) ||
+          (festival.location || "").toLowerCase().includes(keyword) ||
+          (festival as any).keywords?.some((kw: string) => (kw || "").toLowerCase().includes(keyword)) ||
+          (festival as any).description?.toLowerCase().includes(keyword)
+        )
       : true;
 
-    const matchesRegion = selectedRegion
-      ? regionMap[selectedRegion]?.some((loc) => festival.location.includes(loc))
+    // 2. 지도 지역 클릭 검색
+    const matchesRegion = currentKoreanRegion
+      ? regionMap[currentKoreanRegion]?.some((loc) => (festival.location || "").includes(loc))
       : true;
 
+    // 둘 다 만족해야 화면에 보임
     return matchesSearch && matchesRegion;
   });
 
-  const handleRegionSelect = (region: string) => {
-    setSelectedRegion(region === selectedRegion ? "" : region);
+  const handleRegionSelect = (regionId: string) => {
+    setSelectedRegion(regionId === selectedRegion ? "" : regionId);
   };
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
+  // 🌟 Community.tsx와 동일한 실시간 onChange 핸들러
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   return (
@@ -65,18 +98,31 @@ export default function Search() {
     >
       <div className="container mx-auto px-4">
         
-        {/* 상단 검색 영역 (기존 유지) */}
+        {/* 상단 검색 영역 */}
         <div className="mb-16 flex flex-col items-center">
           <h1 className="text-4xl md:text-5xl font-bold text-[#4A342E] mb-8 text-center" 
-              style={{ fontFamily: 'GmarketSansBold' }}> {/* 직접 폰트 지정 */}
+              style={{ fontFamily: 'GmarketSansBold' }}>
             전국 방방곡곡 축제 찾기
           </h1>
-          <div className="w-full max-w-3xl rounded-2xl backdrop-blur-lg bg-white/10 border border-white/20 shadow-lg">
-            <SearchBar onSearch={handleSearch} />
+          
+          {/* 🌟 Community.tsx 스타일의 실시간 검색창을 직접 내장합니다! */}
+          <div className="w-full max-w-3xl relative">
+            <div className="flex items-center w-full bg-white p-2 rounded-full border border-[#EAE5E1] shadow-lg focus-within:ring-2 focus-within:ring-[#8B4513]">
+              <div className="pl-4 pr-2 text-gray-400">
+                <SearchIcon size={20} />
+              </div>
+              <input
+                type="text"
+                placeholder="축제 이름, 지역, 키워드 검색..."
+                value={searchTerm} // 상태 연결
+                onChange={handleSearchChange} // 글자 칠 때마다 실시간 업데이트!
+                className="flex-1 py-3 px-2 text-gray-700 bg-transparent outline-none text-lg"
+              />
+            </div>
           </div>
         </div>
 
-        {/* 뷰 모드 토글 스위치 (기존 우측 정렬 유지) */}
+        {/* 뷰 모드 토글 스위치 */}
         <div className="mb-8 flex justify-end">
           <div className="relative flex items-center bg-[#F5F1EE] rounded-full p-1 shadow-inner border border-[#EAE5E1]">
             <motion.div
@@ -104,32 +150,44 @@ export default function Search() {
           </div>
         </div>
 
+        
         {/* 콘텐츠 영역 */}
         <AnimatePresence mode="wait">
           {activeTab === "list" ? (
-            /* 이동교(코드추가) 스크롤 기능 */
+            /* 🌟 key 값에 searchTerm을 추가하여 검색어가 바뀔 때마다 리스트를 완전히 새로 그림! */
             <motion.div
-              key="list"
+              key={`list-${searchTerm}`} 
               variants={staggerContainer}
               initial="hidden"
               animate="visible"
               exit={{ opacity: 0, y: 20 }}
-              className="h-[750px] overflow-y-auto pr-4 custom-scrollbar"
+              className="bg-white border border-[#EAE5E1] rounded-3xl p-6 md:p-8 shadow-sm"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10">
-                {filteredFestivals.length > 0 ? (
-                  filteredFestivals.map((festival) => (
-                    <motion.div key={festival.id} variants={staggerItem}>
-                      <FestivalCard festival={festival} />
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="col-span-full text-center py-24 bg-white rounded-3xl border border-dashed border-[#D1D5DB]">
-                    <p className="text-[#9CA3AF] text-xl font-medium">
-                      찾으시는 축제 결과가 없습니다. 다시 검색해 보세요!
-                    </p>
-                  </div>
-                )}
+              {/* 이동교(코드추가) 스크롤 기능 - 스크롤 영역을 박스 안으로 넣었습니다 */}
+              <div className="h-[700px] overflow-y-auto pr-4 custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10">
+                  {filteredFestivals.length > 0 ? (
+                    filteredFestivals.map((festival) => (
+                      <motion.div 
+                        // 🌟 key 값을 더 확실하게 고유하게 만듦
+                        key={`festival-${festival.id}-${searchTerm}`} 
+                        variants={staggerItem}
+                        // 카드가 추가되는 듯한 어색함을 줄이기 위해 layout 속성 부여
+                        layout 
+                      >
+                        <FestivalCard festival={festival} />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-24 bg-[#FDFBF7] rounded-2xl border border-dashed border-[#D1D5DB]">
+                      <p className="text-[#9CA3AF] text-xl font-medium">
+                        {searchTerm 
+                          ? `"${searchTerm}"에 대한 검색 결과가 없습니다.` 
+                          : "찾으시는 축제 결과가 없습니다. 다시 검색해 보세요!"}
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </motion.div>
           ) : (
@@ -150,7 +208,7 @@ export default function Search() {
                   </span>
                 </div>
                 
-                {/* (박현준 : 코드 변경) - img 태그를 빼고, 선택 기능이 담긴 KoreaMap 컴포넌트를 배치했습니다. */}
+                {/* (박현준 : 코드 변경) - 선택 기능이 담긴 KoreaMap 컴포넌트를 배치 */}
                 <div className="flex-1 flex justify-center items-center w-full bg-[#FDFBF7] rounded-2xl p-4 overflow-hidden relative">
                   <KoreaMap 
                     selectedRegion={selectedRegion} 
@@ -163,14 +221,14 @@ export default function Search() {
               <div className="lg:col-span-5 bg-white rounded-3xl border border-[#F5F1EE] p-8 shadow-sm h-[750px] flex flex-col">
                 <h2 className="text-2xl font-bold text-[#4A342E] mb-6 flex items-center gap-2 shrink-0">
                   <span className="w-2 h-6 bg-[#8B4513] rounded-full inline-block"></span>
-                  {selectedRegion ? `${selectedRegion} 지역 축제` : "전체 축제"}
+                  {/* (박현준 : 코드 변경) - 우측 텍스트는 한국어로 번역된 값을 띄워줌 */}
+                  {currentKoreanRegion ? `${currentKoreanRegion} 지역 축제` : "전체 축제"}
                 </h2>
                 
                 <div className="flex-1 overflow-y-auto pr-3 custom-scrollbar relative">
-                  {/* (박현준 : 코드 변경) - 지도에서 지역을 클릭하면 이 영역이 스르륵 교체되도록 AnimatePresence 적용 */}
                   <AnimatePresence mode="wait">
                     <motion.div
-                      key={selectedRegion || "all"} // key가 바뀌어야 애니메이션이 발동됨
+                      key={selectedRegion || "all"} 
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -15 }}
@@ -184,8 +242,8 @@ export default function Search() {
                       ) : (
                         <div className="text-center py-20">
                           <p className="text-[#9CA3AF]">
-                            {selectedRegion
-                              ? `${selectedRegion} 지역에 등록된 축제가 없습니다.`
+                            {currentKoreanRegion
+                              ? `${currentKoreanRegion} 지역에 등록된 축제가 없습니다.`
                               : "표시할 축제 정보가 없습니다."}
                           </p>
                         </div>
