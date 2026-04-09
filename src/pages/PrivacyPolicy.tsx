@@ -1,3 +1,4 @@
+// 개인정보 처리 방침 엄태훈 
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Shield, Eye, Mail, Lock, CheckCircle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';

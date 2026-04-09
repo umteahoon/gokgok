@@ -7,6 +7,7 @@ export const ROUTE_PATHS = {
   NOTMYPAGE: '/notmypage' ,// notmypage 추가 엄태훈
   TERMS: '/terms', //  이용약관 추가 엄태훈
   PRIVACY: '/privacy', // 개인정보 처리 방침 추가 엄태훈
+  
 } as const;
 
 export interface Festival {
@@ -273,10 +274,10 @@ export const formatDate = (dateString: string): string => {
 
 export const getCategoryColor = (category: string): string => {
   const colorMap: Record<string, string> = {
-    '전통문화': 'bg-primary/10 text-primary',
-    '체험': 'bg-accent/10 text-accent-foreground',
+    '전통문화': 'bg-[#F5E8D3] text-[#8C6239] dark:bg-[#4A3623] dark:text-[#E3C8A8]',
+    '체험': 'bg-[#FFFBEB] text-[#B45309] dark:bg-[#451A03] dark:text-[#FCD34D]',
     '겨울축제': 'bg-blue-500/10 text-blue-600',
-    '불꽃축제': 'bg-destructive/10 text-destructive',
+    '불꽃축제': 'bg-gradient-to-r from-[#FFE5E5] via-[#FFF0E0] to-[#FFF8E0] text-[#CC4444] border-none shadow-none font-medium',
     '자연생태': 'bg-green-500/10 text-green-600',
     '빛축제': 'bg-yellow-500/10 text-yellow-600',
     '음식축제': 'bg-orange-500/10 text-orange-600',
@@ -290,12 +291,12 @@ export const getCategoryColor = (category: string): string => {
 export const getStatusBadge = (status?: Festival['status']): { label: string; className: string } => {
   switch (status) {
     case 'ongoing':
-      return { label: '진행중', className: 'bg-green-500/10 text-green-600' };
+      return { label: '진행중', className: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-500' };
     case 'upcoming':
-      return { label: '예정', className: 'bg-blue-500/10 text-blue-600' };
+      return { label: '예정', className: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-500' };
     case 'ended':
-      return { label: '종료', className: 'bg-muted text-muted-foreground' };
+      return { label: '종료', className: 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-500' };
     default:
-      return { label: '예정', className: 'bg-blue-500/10 text-blue-600' };
+      return { label: '예정', className: 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-500' };
   }
 };

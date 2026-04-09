@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "Node16",           // "CommonJS"에서 "Node16"으로 수정
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "Node16"  // 위쪽 module과 짝을 맞춰줍니다.
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"]
+}

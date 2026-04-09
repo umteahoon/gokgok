@@ -6,6 +6,8 @@ export interface User {
   name: string;
   createdAt: string;
   password?: string;
+  profilePhoto?: string; // 프로필 사진 저장용 (Base64 형식)
+  role: 'USER' | 'ADMIN'; // 일반 유저 관리자 페이지 생성 예정 엄태훈 
 }
 
 const USERS_KEY = 'gokgok_users';
@@ -63,6 +65,8 @@ export const signup = (email: string, password: string, name: string): { success
     email,
     name: name.trim(),
     createdAt: new Date().toISOString(),
+    // 관리자 이메일 설정 본인 이메일이면 'ADMIN', 아니면 'USER'가 할당됩니다. 엄태훈 
+    role: email === 'am2869@naver.com' ? 'ADMIN' : 'USER',
   };
 
   const userWithPassword = { ...newUser, password };
@@ -138,4 +142,39 @@ export const deleteAccount = (email: string, password: string): { success: boole
   window.dispatchEvent(new Event('auth-change'));
 
   return { success: true, message: '회원 탈퇴가 완료되었습니다.' };
+};
+
+// 관리자가 맞는지 확인 하는 로직 엄태훈
+export const isAdmin = (): boolean => {
+  const user = getCurrentUser();
+  return user?.role === 'ADMIN';
+};
+
+/**
+ * 프로필 사진 업데이트 로직 추가
+ * 사용자의 사진 데이터를 Base64로 저장하고 현재 세션 정보를 업데이트함
+ */
+export const updateProfilePhoto = (email: string, photoBase64: string): User | null => {
+  const users = getUsers();
+  const userIndex = users.findIndex((u) => u.email === email);
+
+  if (userIndex !== -1) {
+    // 1. 전체 사용자 목록 업데이트
+    users[userIndex].profilePhoto = photoBase64;
+    saveUsers(users);
+
+    // 2. 현재 로그인된 사용자 정보 업데이트 (세션 유지)
+    const currentUser = getCurrentUser();
+    if (currentUser && currentUser.email === email) {
+      const updatedUser = { ...currentUser, profilePhoto: photoBase64 };
+      setCurrentUser(updatedUser);
+      // 상태 변경을 전역에 알림 (UI 반영용)
+      window.dispatchEvent(new Event('auth-change'));
+      return updatedUser;
+    }
+    
+    return users[userIndex];
+  }
+
+  return null;
 };
