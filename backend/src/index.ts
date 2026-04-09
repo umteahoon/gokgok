@@ -26,7 +26,7 @@ const supabase = createClient(
  */
 app.use(cors({
   origin: [
-    'https://capstone-gokgok.netlify.app', // 태훈님의 Netlify 주소
+    'https://capstone-gokgok.netlify.app', // Netlify 주소
     'http://localhost:5173',               // 로컬 테스트용 (Vite)
     'http://localhost:3000'
   ],
