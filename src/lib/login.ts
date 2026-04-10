@@ -160,5 +160,5 @@ export const updateProfilePhoto = async (photoBase64: string): Promise<User | nu
   const updatedUser = { ...user, profilePhoto: photoBase64 };
   localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
   emitAuthChange();
-  return updatedUser;
+  return updatedUser; 
 };

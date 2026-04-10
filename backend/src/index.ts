@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { createClient } from '@supabase/supabase-js';
+import authRouter from './routes/auth'; // auth 라우터
+import communityRouter from './routes/community'; // 커뮤니티 라우터 - 주환
 
 // .env 환경변수 로드
 dotenv.config();
@@ -21,7 +23,7 @@ const supabase = createClient(
 
 /**
  * [중요] CORS 설정
- * 모든 테스트 환경과 배포 환경을 허용합니다.
+ * 로컬 8080 포트와 Netlify 배포 주소를 모두 허용합니다.
  */
 app.use(cors({
   origin: [
@@ -57,13 +59,11 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
           email, 
           password: hashedPassword, 
           name, 
-          // 특정 이메일은 관리자로 설정
           role: email === 'am2869@naver.com' ? 'ADMIN' : 'USER' 
         }
       ]);
 
     if (error) {
-      // 중복 이메일 에러 처리 (Duplicate key error)
       if (error.code === '23505') {
         return res.status(400).json({ success: false, message: '이미 가입된 이메일입니다.' });
       }
@@ -85,7 +85,6 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    // 유저 정보 조회
     const { data: user, error } = await supabase
       .from('profiles')
       .select('*')
@@ -96,13 +95,11 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: '등록되지 않은 이메일입니다.' });
     }
 
-    // 비밀번호 검증
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) {
       return res.status(400).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
     }
 
-    // JWT 토큰 생성
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET || 'secret',
@@ -144,10 +141,17 @@ app.delete('/api/auth/delete', async (req: Request, res: Response) => {
 
     if (error) throw error;
 
-    res.json({ success: true, message: '회원 탈퇴가 정상적으로 처리되었습니다.' }); 
+    // [중요 수정] 프론트엔드 undefined 방지를 위해 success: true를 확실히 포함합니다.
+    res.status(200).json({ 
+      success: true, 
+      message: '회원 탈퇴가 정상적으로 처리되었습니다.' 
+    }); 
   } catch (err: any) {
     console.error('Delete Error:', err.message);
-    res.status(500).json({ success: false, message: '탈퇴 처리 중 오류가 발생했습니다.' });
+    res.status(500).json({ 
+      success: false, 
+      message: '탈퇴 처리 중 오류가 발생했습니다.' 
+    });
   }
 });
 
@@ -159,4 +163,44 @@ app.get('/', (req, res) => {
 // 서버 실행
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다!`);
+});
+
+
+
+
+/**
+ * [게시판] 모든 게시글 가져오기
+ * @path GET /api/auth/posts
+ */
+app.get('/api/auth/posts', async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('community_posts')
+      .select('*')
+      .order('created_at', { ascending: false }); // 최신글이 위로 오게
+
+    if (error) throw error;
+    res.json({ success: true, posts: data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: '게시글을 불러오지 못했습니다.' });
+  }
+});
+
+/**
+ * [게시판] 새로운 게시글 작성
+ * @path POST /api/auth/posts
+ */
+app.post('/api/auth/posts', async (req: Request, res: Response) => {
+  try {
+    const { author, title, content, category, images } = req.body;
+
+    const { data, error } = await supabase
+      .from('community_posts')
+      .insert([{ author, title, content, category, images }]);
+
+    if (error) throw error;
+    res.status(201).json({ success: true, message: '게시글이 등록되었습니다.' });
+  } catch (err: any) {
+    res.status(400).json({ success: false, message: '글 등록에 실패했습니다.' });
+  }
 });
