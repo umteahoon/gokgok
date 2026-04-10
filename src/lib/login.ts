@@ -8,32 +8,29 @@ export interface User {
   profilePhoto?: string;
 }
 
-// Render에서 발급받은 실제 백엔드 주소
+// Render에서 발급받은 실제 백엔드 주소 (주소 끝에 /가 없는지 확인하세요)
 const API_URL = 'https://gokgok-8ztf.onrender.com';
 const TOKEN_KEY = 'accessToken';
 const CURRENT_USER_KEY = 'gokgok_current_user';
 
 // --- 내부 유틸리티 함수 ---
 
-// 현재 로그인한 사용자 정보 가져오기 (로컬스토리지)
 export const getCurrentUser = (): User | null => {
   const userJson = localStorage.getItem(CURRENT_USER_KEY);
   return userJson ? JSON.parse(userJson) : null;
 };
 
-// 토큰 가져오기
 export const getToken = (): string | null => {
   return localStorage.getItem(TOKEN_KEY);
 };
 
-// 인증 변경 이벤트 발생 (UI 업데이트용)
 const emitAuthChange = () => {
   window.dispatchEvent(new Event('auth-change'));
 };
 
 // --- 핵심 인증 로직 ---
 
-// 1. 회원가입 (백엔드 /api/signup 호출)
+// 1. 회원가입
 export const signup = async (email: string, password: string, name: string): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await fetch(`${API_URL}/api/signup`, {
@@ -41,7 +38,6 @@ export const signup = async (email: string, password: string, name: string): Pro
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password, name }),
     });
-
     const data = await response.json();
     return { success: data.success, message: data.message };
   } catch (error) {
@@ -49,7 +45,7 @@ export const signup = async (email: string, password: string, name: string): Pro
   }
 };
 
-// 2. 로그인 (백엔드 /api/login 호출 및 30분 토큰 저장)
+// 2. 로그인
 export const login = async (email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> => {
   try {
     const response = await fetch(`${API_URL}/api/login`, {
@@ -61,9 +57,7 @@ export const login = async (email: string, password: string): Promise<{ success:
     const data = await response.json();
 
     if (data.success) {
-      // 30분 유효한 JWT 토큰 저장
       localStorage.setItem(TOKEN_KEY, data.token);
-      // 유저 정보 저장
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(data.user));
       emitAuthChange();
       return { success: true, message: '로그인되었습니다.', user: data.user };
@@ -82,7 +76,7 @@ export const logout = () => {
   emitAuthChange();
 };
 
-// 4. 상태 확인 함수들
+// 4. 상태 확인
 export const isLoggedIn = (): boolean => {
   return getToken() !== null;
 };
@@ -92,35 +86,28 @@ export const isAdmin = (): boolean => {
   return user?.role === 'ADMIN';
 };
 
-/**
- * [주의] 비밀번호 변경 및 프로필 사진 업데이트는 
- * 백엔드(index.ts)에 해당 API 엔드포인트가 먼저 구현되어야 합니다.
- * 아래는 구조적 예시입니다.
- */
+// --- MyPage.tsx 에러 해결을 위한 추가 함수들 ---
 
+// 비밀번호 변경 (현재는 알림만 띄우고 실제 서버 연동은 추후 백엔드 작업 필요)
+export const changePassword = async (email: string, currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+  // 백엔드에 해당 API가 아직 없으므로 임시 메시지를 리턴합니다.
+  return { success: false, message: '비밀번호 변경 기능은 현재 준비 중입니다.' };
+};
+
+// 회원 탈퇴 (현재는 알림만 띄우고 실제 서버 연동은 추후 백엔드 작업 필요)
+export const deleteAccount = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
+  // 백엔드에 해당 API가 아직 없으므로 임시 메시지를 리턴합니다.
+  return { success: false, message: '회원 탈퇴 기능은 현재 준비 중입니다.' };
+};
+
+// 프로필 사진 업데이트
 export const updateProfilePhoto = async (photoBase64: string): Promise<User | null> => {
-  const token = getToken();
-  if (!token) return null;
-
-  try {
-    // 실제 구현 시 백엔드에 /api/user/photo 엔드포인트 필요
-    const response = await fetch(`${API_URL}/api/user/photo`, {
-      method: 'PUT',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` 
-      },
-      body: JSON.stringify({ photo: photoBase64 }),
-    });
-
-    const data = await response.json();
-    if (data.success) {
-      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(data.user));
-      emitAuthChange();
-      return data.user;
-    }
-  } catch (error) {
-    console.error('프로필 업데이트 실패:', error);
-  }
-  return null;
+  const user = getCurrentUser();
+  if (!user) return null;
+  
+  // 임시로 로컬스토리지 정보만 업데이트 (완벽한 구현은 백엔드 API 필요)
+  const updatedUser = { ...user, profilePhoto: photoBase64 };
+  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
+  emitAuthChange();
+  return updatedUser;
 };
