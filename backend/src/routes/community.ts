@@ -1,4 +1,4 @@
-// 2026.04.10 주환
+// 2026.04.10 주환 
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
@@ -6,7 +6,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 const router = Router();
 
-// Supabase 연결 설정 (환경변수 사용)
+// Supabase 연결 설정
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -15,7 +15,6 @@ const supabase = createClient(
 // 1. [게시글 목록 불러오기] GET /api/community
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // 게시글과 해당 게시글의 댓글들(comments)을 한 번에 가져옵니다.
     const { data, error } = await supabase
       .from('community_posts')
       .select(`
@@ -36,11 +35,20 @@ router.get('/', async (req: Request, res: Response) => {
 // 2. [새 게시글 작성] POST /api/community
 router.post('/', async (req: Request, res: Response) => {
   try {
+    // [수정] 프론트에서 community_images 버킷에 올린 후 받은 URL 배열(images)을 받습니다.
     const { author, title, content, category, images } = req.body;
 
     const { data, error } = await supabase
       .from('community_posts')
-      .insert([{ author, title, content, category, images }])
+      .insert([
+        { 
+          author, 
+          title, 
+          content, 
+          category, 
+          images: images || [] // 이미지 URL 배열 저장 (없으면 빈 배열)
+        }
+      ])
       .select()
       .single();
 
@@ -102,12 +110,16 @@ router.delete('/:postId/comments/:commentId', async (req: Request, res: Response
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { title, content } = req.body;
+    // [수정] 수정 시에도 이미지 목록을 업데이트할 수 있도록 images 추가
+    const { title, content, images } = req.body;
 
-    // Supabase 데이터베이스 업데이트
     const { data, error } = await supabase
       .from('community_posts')
-      .update({ title, content })
+      .update({ 
+        title, 
+        content,
+        images: images // 수정된 이미지 배열 반영
+      })
       .eq('id', id)
       .select()
       .single();
@@ -115,6 +127,7 @@ router.put('/:id', async (req: Request, res: Response) => {
     if (error) throw error;
     res.json({ success: true, post: data });
   } catch (error: any) {
+    console.error('글 수정 에러:', error);
     res.status(500).json({ success: false, message: '글 수정 실패' });
   }
 });

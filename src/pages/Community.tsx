@@ -324,7 +324,7 @@ export default function Community() {
           {/* 검색창 영역 */}
           <div className="mb-8 relative max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-5 w-5 text-muted-foreground" /></div>
-            <input type="text" placeholder="축제 이름, 내용, 작성자 검색..." value={searchTerm} onChange={handleSearchChange} className="w-full pl-10 pr-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-shadow" />
+            <input type="text" placeholder="축제 이름, 내용, 작성자 검색..." value={searchTerm} onChange={handleSearchChange} className="w-full pl-10 pr-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-shadow placeholder:text-gray-800 placeholder:opacity-100" />
           </div>
 
           {/* 게시물 목록 렌더링 */}

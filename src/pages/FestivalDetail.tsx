@@ -1,169 +1,217 @@
-// (이동교 : 페이지 추가 => 특정 축제의 상세 정보를 보여주는 독립 페이지)
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, Calendar, MapPin, Tag, Share2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Minus, Plus, Calendar, MapPin, Share2, X } from "lucide-react";
 import { mockFestivals, topFestivals } from "@/lib/index";
 import { fadeInUp, staggerContainer } from "@/lib/motion";
 
+// 1. 티켓 타입 정의
+type TicketType = 'adult' | 'youth' | 'night';
+
 export default function FestivalDetail() {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // 모든 축제 데이터 합치기
-  const allFestivals = [...topFestivals, ...mockFestivals];
-  
-  // 현재 id와 일치하는 축제 정보 찾기
-  const festival = allFestivals.find((f) => f.id === id);
+  // 2. 상태 관리
+  const [isBookingMode, setIsBookingMode] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<TicketType>("adult");
+  const [counts, setCounts] = useState<Record<TicketType, number>>({ 
+    adult: 0, youth: 0, night: 0 
+  });
 
-  // 축제 정보가 없을 경우의 처리
-  if (!festival) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FDFBF7] dark:bg-[#121212]">
-        <p className="text-xl font-bold mb-4">축제 정보를 찾을 수 없습니다.</p>
-        <button 
-          onClick={() => navigate(-1)}
-          className="px-6 py-2 bg-[#8B4513] text-white rounded-full font-bold shadow-lg hover:scale-105 transition-transform"
-        >
-          뒤로가기
-        </button>
-      </div>
-    );
-  }
+  const allFestivals = [...topFestivals, ...mockFestivals];
+  const festival = allFestivals.find((f) => String(f.id) === String(id));
+
+  if (!festival) return <div className="p-20 text-center">정보를 찾을 수 없습니다.</div>;
+
+  // 가격 데이터
+  const prices: Record<TicketType, number> = { adult: 25000, youth: 15000, night: 10000 };
+
+  // 3. 총액 계산 로직
+  const totalPrice = (Object.keys(counts) as TicketType[]).reduce((acc, type) => 
+    acc + (counts[type] * prices[type]), 0
+  );
+
+  const handleCount = (type: TicketType, delta: number) => {
+    // 선택된 티켓일 때만 수량 조절 가능하게 방어 로직 추가
+    if (selectedTicket !== type) return;
+    setCounts(prev => ({ ...prev, [type]: Math.max(0, prev[type] + delta) }));
+  };
 
   return (
-    <motion.div 
-      initial="hidden"
-      animate="visible"
-      variants={staggerContainer}
-      className="min-h-screen bg-[#FDFBF7] dark:bg-[#121212] transition-colors duration-300 pb-20"
-    >
-      {/* 1. 히어로 섹션: 이미지와 타이틀 */}
-      <section className="relative h-[60vh] w-full overflow-hidden">
-        {/* 배경 이미지 */}
-        <motion.img 
-          initial={{ scale: 1.1, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.5 }}
-          src={festival.image} 
-          alt={festival.title} 
-          className="w-full h-full object-cover" 
-        />
+    <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#121212] transition-colors duration-300">
+      <AnimatePresence mode="wait">
         
-        {/* 이미지 위 어두운 그라데이션 */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-        {/* 상단 네비게이션 버튼들 */}
-        <div className="absolute top-8 left-4 md:left-12 right-4 md:right-12 flex justify-between items-center z-10">
-          <button 
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white font-bold hover:bg-white/20 transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" /> 목록으로
-          </button>
-          <button className="p-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full text-white hover:bg-white/20 transition-all">
-            <Share2 className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* 타이틀 영역 */}
-        <div className="absolute bottom-12 left-4 md:left-12 right-4 md:right-12">
-          <motion.div variants={fadeInUp}>
-            <span className="inline-block px-3 py-1 bg-[#D4AF37] text-white text-xs font-bold rounded-md mb-4 uppercase tracking-widest">
-              {festival.category}
-            </span>
-            <h1 className="text-4xl md:text-6xl font-black text-white leading-tight" style={{ fontFamily: 'GmarketSansBold' }}>
-              {festival.title}
-            </h1>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* 2. 콘텐츠 영역 */}
-      <section className="container mx-auto px-4 md:px-12 -mt-10 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* 왼쪽: 주요 정보 카드 (Glassmorphism 적용) */}
+        {!isBookingMode ? (
+          /* ======================================================= */
+          /* VIEW 1: 축제 상세 정보 모드 */
+          /* ======================================================= */
           <motion.div 
-            variants={fadeInUp}
-            className="lg:col-span-8 bg-white/80 dark:bg-[#1A1A1A]/80 backdrop-blur-xl p-8 md:p-12 rounded-[2.5rem] border border-black/5 dark:border-white/5 shadow-xl"
+            key="detail"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="pb-20"
           >
-            <div className="space-y-8">
-              <div>
-                <h3 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                  <span className="w-1.5 h-6 bg-[#8B4513] rounded-full inline-block"></span>
-                  상세 설명
+            <section className="relative h-[60vh] w-full overflow-hidden">
+              <img src={festival.image} alt={festival.title} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              
+              <div className="absolute top-8 left-4 md:left-12 right-4 md:right-12 flex justify-between items-center z-10">
+                <button onClick={() => navigate(-1)} className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all">
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
+                <button className="p-2 bg-white/10 backdrop-blur-md rounded-full text-white hover:bg-white/20 transition-all">
+                  <Share2 className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="absolute bottom-12 left-4 md:left-12">
+                <span className="px-3 py-1 bg-[#D4AF37] text-white text-xs font-bold rounded mb-4 inline-block uppercase tracking-widest">
+                  {festival.category}
+                </span>
+                <h1 className="text-4xl md:text-6xl font-black text-white" style={{ fontFamily: 'GmarketSansBold' }}>
+                  {festival.title}
+                </h1>
+              </div>
+            </section>
+
+            <section className="container mx-auto px-4 md:px-12 -mt-10 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="lg:col-span-8 bg-white/80 dark:bg-[#1A1A1A]/80 backdrop-blur-xl p-8 md:p-12 rounded-[2.5rem] border border-black/5 shadow-xl">
+                <h3 className="text-2xl font-bold mb-6 flex items-center gap-2 text-foreground">
+                  <span className="w-1.5 h-6 bg-[#8B4513] rounded-full"></span>상세 설명
                 </h3>
-                <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed break-keep">
-                  {festival.description || "해당 축제의 상세 설명이 곧 업데이트될 예정입니다. 잠시만 기다려 주세요!"}
+                <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-8 break-keep">
+                  {festival.description || "상세 설명이 곧 업데이트될 예정입니다."}
                 </p>
-              </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <img src={festival.image} className="h-48 w-full object-cover rounded-2xl opacity-60" alt="gallery1" />
+                  <img src={festival.image} className="h-48 w-full object-cover rounded-2xl opacity-60" alt="gallery2" />
+                </div>
+              </motion.div>
 
-              {/* 추가 이미지나 갤러리가 있다면 여기에 배치 */}
-              <div className="grid grid-cols-2 gap-4">
-                 <div className="h-48 bg-black/5 rounded-2xl overflow-hidden">
-                    <img src={festival.image} className="w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-500" />
-                 </div>
-                 <div className="h-48 bg-black/5 rounded-2xl overflow-hidden">
-                    <img src={festival.image} className="w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-500" />
-                 </div>
+              <div className="lg:col-span-4 space-y-6">
+                <div className="bg-[#F8F6F4] dark:bg-[#1A1A1A] p-8 rounded-[2.5rem] border border-black/5 shadow-md">
+                  <h4 className="text-sm font-bold text-[#8B4513] mb-6 uppercase tracking-wider">Information</h4>
+                  <ul className="space-y-6 mb-10">
+                    <li className="flex gap-4 items-center">
+                      <MapPin className="text-[#8B4513]" /> 
+                      <div><p className="text-xs text-gray-400">장소</p><p className="font-bold text-foreground">{festival.location}</p></div>
+                    </li>
+                    <li className="flex gap-4 items-center">
+                      <Calendar className="text-[#8B4513]" /> 
+                      <div><p className="text-xs text-gray-400">기간</p><p className="font-bold text-foreground">{festival.date}</p></div>
+                    </li>
+                  </ul>
+                  <button 
+                    onClick={() => setIsBookingMode(true)}
+                    className="w-full py-4 bg-[#2A2A2A] dark:bg-white text-white dark:text-black font-bold rounded-2xl hover:scale-105 transition-all shadow-lg"
+                  >
+                    티켓 예매하기
+                  </button>
+                </div>
               </div>
-            </div>
+            </section>
           </motion.div>
-
-          {/* 오른쪽: 요약 정보 바 */}
+        ) : (
+          /* ======================================================= */
+          /* VIEW 2: 티켓 예매 전용 모드 */
+          /* ======================================================= */
           <motion.div 
-            variants={fadeInUp}
-            className="lg:col-span-4 space-y-6"
+            key="booking"
+            initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
+            className="container mx-auto px-4 py-12 max-w-6xl"
           >
-            {/* 핵심 정보 박스 */}
-            <div className="bg-[#F8F6F4] dark:bg-[#1A1A1A] p-8 rounded-[2rem] border border-black/5 dark:border-white/5">
-              <h4 className="text-sm font-bold text-[#8B4513] mb-6 uppercase tracking-wider">Information</h4>
-              <ul className="space-y-6">
-                <li className="flex items-start gap-4">
-                  <div className="p-3 bg-white dark:bg-[#2A2A2A] rounded-xl shadow-sm">
-                    <MapPin className="w-5 h-5 text-[#8B4513]" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">장소</p>
-                    <p className="font-bold text-gray-800 dark:text-gray-200">{festival.location}</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="p-3 bg-white dark:bg-[#2A2A2A] rounded-xl shadow-sm">
-                    <Calendar className="w-5 h-5 text-[#8B4513]" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">기간</p>
-                    <p className="font-bold text-gray-800 dark:text-gray-200">{festival.date}</p>
-                  </div>
-                </li>
-                <li className="flex items-start gap-4">
-                  <div className="p-3 bg-white dark:bg-[#2A2A2A] rounded-xl shadow-sm">
-                    <Tag className="w-5 h-5 text-[#8B4513]" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-400 mb-1">카테고리</p>
-                    <p className="font-bold text-gray-800 dark:text-gray-200">{festival.category}</p>
-                  </div>
-                </li>
-              </ul>
-
-              {/* 예매하기 버튼 (곡곡 서비스의 핵심 기능 느낌) */}
-              <button className="w-full mt-10 py-4 bg-[#2A2A2A] dark:bg-[#EAEAEA] text-white dark:text-black font-bold rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg">
-                티켓 예매하기
-              </button>
+            <div className="flex justify-between items-center mb-10">
+              <div className="flex items-center gap-4">
+                <button onClick={() => setIsBookingMode(false)} className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors">
+                  <X className="w-8 h-8 text-foreground" />
+                </button>
+                <h2 className="text-3xl font-black text-foreground" style={{ fontFamily: 'GmarketSansBold' }}>티켓 예매</h2>
+              </div>
+              <p className="text-gray-400 font-medium">{festival.title}</p>
             </div>
 
-            {/* 안내 문구 */}
-            <div className="p-6 border border-dashed border-gray-300 dark:border-gray-700 rounded-2xl">
-              <p className="text-xs text-gray-500 leading-relaxed">
-                * 축제 일정은 주최측 사정에 따라 변경될 수 있습니다. 방문 전 반드시 공식 홈페이지를 확인해 주세요.
-              </p>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+              <div className="lg:col-span-8 space-y-4">
+                {(['adult', 'youth', 'night'] as const).map((type) => {
+                  const labels = { adult: "성인 종일권", youth: "청소년 종일권", night: "야간권" };
+                  const isSelected = selectedTicket === type; // 현재 선택된 티켓인지 확인
+
+                  return (
+                    <div 
+                      key={type}
+                      onClick={() => setSelectedTicket(type)}
+                      className={`flex items-center justify-between p-6 rounded-3xl border-2 transition-all cursor-pointer ${
+                        isSelected 
+                          ? "border-[#1A1A1A] dark:border-white bg-white dark:bg-[#2A2A2A] shadow-xl scale-[1.02]" 
+                          : "border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-white/5 opacity-50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${isSelected ? "border-[#1A1A1A] dark:border-white" : "border-gray-300"}`}>
+                          {isSelected && <div className="w-3 h-3 bg-[#1A1A1A] dark:bg-white rounded-full" />}
+                        </div>
+                        <div>
+                          <p className={`font-bold text-xl ${isSelected ? "text-foreground" : "text-gray-400"}`}>{labels[type]}</p>
+                          <p className="text-gray-500">{prices[type].toLocaleString()}원</p>
+                        </div>
+                      </div>
+
+                      {/* 수량 조절 버튼 영역 */}
+                      <div 
+                        className={`flex items-center gap-4 border rounded-xl p-2 transition-colors ${
+                          isSelected 
+                            ? "bg-white dark:bg-[#1A1A1A] border-gray-100 dark:border-white/10" 
+                            : "bg-gray-100/50 dark:bg-black/20 border-transparent opacity-30 cursor-not-allowed"
+                        }`}
+                        onClick={e => e.stopPropagation()} // 수량 버튼 클릭 시 부모 클릭(선택) 방지
+                      >
+                        <button 
+                          onClick={() => handleCount(type, -1)} 
+                          disabled={!isSelected}
+                          className={`p-1 rounded transition-colors ${isSelected ? "hover:bg-gray-100 dark:hover:bg-white/10 text-foreground" : "text-gray-300"}`}
+                        >
+                          <Minus className="w-5 h-5" />
+                        </button>
+                        <span className={`w-8 text-center font-bold text-xl ${isSelected ? "text-foreground" : "text-gray-300"}`}>
+                          {counts[type]}
+                        </span>
+                        <button 
+                          onClick={() => handleCount(type, 1)} 
+                          disabled={!isSelected}
+                          className={`p-1 rounded transition-colors ${isSelected ? "hover:bg-gray-100 dark:hover:bg-white/10 text-foreground" : "text-foreground/20"}`}
+                        >
+                          <Plus className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="lg:col-span-4">
+                <div className="bg-white dark:bg-[#1A1A1A] p-8 rounded-[2.5rem] border border-black/5 shadow-2xl sticky top-10 transition-colors">
+                  <h3 className="text-xl font-bold mb-6 text-foreground">결제 요약</h3>
+                  <div className="space-y-4 mb-10">
+                    {(Object.keys(counts) as TicketType[]).map((type) => counts[type] > 0 && (
+                      <div key={type} className="flex justify-between text-gray-500">
+                        <span>{type === 'adult' ? '성인' : type === 'youth' ? '청소년' : '야간'} x {counts[type]}</span>
+                        <span className="font-bold text-foreground">{(counts[type] * prices[type]).toLocaleString()}원</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-gray-100 dark:border-white/10 pt-6 mb-10 flex justify-between items-end">
+                    <span className="text-gray-400 font-bold">최종 결제 금액</span>
+                    <span className="text-3xl font-black text-foreground">{totalPrice.toLocaleString()}원</span>
+                  </div>
+                  <button className="w-full py-5 bg-[#1A1A1A] dark:bg-white text-white dark:text-black font-bold rounded-2xl text-xl hover:scale-105 active:scale-95 transition-all shadow-lg">
+                    예매 확정하기
+                  </button>
+                </div>
+              </div>
             </div>
           </motion.div>
-
-        </div>
-      </section>
-    </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
