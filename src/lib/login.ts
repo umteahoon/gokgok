@@ -1,180 +1,126 @@
-// 로컬 스토리지 기반 간단한 인증 시스템 - lib/login.ts
+// Render 백엔드 서버와 통신하는 인증 시스템 - lib/login.ts
 
 export interface User {
   id: string;
   email: string;
   name: string;
-  createdAt: string;
-  password?: string;
-  profilePhoto?: string; // 프로필 사진 저장용 (Base64 형식)
-  role: 'USER' | 'ADMIN'; // 일반 유저 관리자 페이지 생성 예정 엄태훈 
+  role: 'USER' | 'ADMIN'; // 엄태훈 관리자 권한
+  profilePhoto?: string;
 }
 
-const USERS_KEY = 'gokgok_users';
+// Render에서 발급받은 실제 백엔드 주소
+const API_URL = 'https://gokgok-8ztf.onrender.com';
+const TOKEN_KEY = 'accessToken';
 const CURRENT_USER_KEY = 'gokgok_current_user';
 
-// 로컬 스토리지에서 모든 사용자 가져오기
-const getUsers = (): User[] => {
-  const usersJson = localStorage.getItem(USERS_KEY);
-  return usersJson ? JSON.parse(usersJson) : [];
-};
+// --- 내부 유틸리티 함수 ---
 
-// 로컬 스토리지에 사용자 저장
-const saveUsers = (users: User[]) => {
-  localStorage.setItem(USERS_KEY, JSON.stringify(users));
-};
-
-// 현재 로그인한 사용자 가져오기
+// 현재 로그인한 사용자 정보 가져오기 (로컬스토리지)
 export const getCurrentUser = (): User | null => {
   const userJson = localStorage.getItem(CURRENT_USER_KEY);
   return userJson ? JSON.parse(userJson) : null;
 };
 
-// 현재 사용자 저장/삭제 내부 함수
-const setCurrentUser = (user: User | null) => {
-  if (user) {
-    localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
-  } else {
-    localStorage.removeItem(CURRENT_USER_KEY);
+// 토큰 가져오기
+export const getToken = (): string | null => {
+  return localStorage.getItem(TOKEN_KEY);
+};
+
+// 인증 변경 이벤트 발생 (UI 업데이트용)
+const emitAuthChange = () => {
+  window.dispatchEvent(new Event('auth-change'));
+};
+
+// --- 핵심 인증 로직 ---
+
+// 1. 회원가입 (백엔드 /api/signup 호출)
+export const signup = async (email: string, password: string, name: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await fetch(`${API_URL}/api/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name }),
+    });
+
+    const data = await response.json();
+    return { success: data.success, message: data.message };
+  } catch (error) {
+    return { success: false, message: '서버와 통신 중 오류가 발생했습니다.' };
   }
 };
 
-// 회원가입
-export const signup = (email: string, password: string, name: string): { success: boolean; message: string; user?: User } => {
-  const users = getUsers();
-  
-  if (users.some(u => u.email === email)) {
-    return { success: false, message: '이미 사용 중인 이메일입니다.' };
+// 2. 로그인 (백엔드 /api/login 호출 및 30분 토큰 저장)
+export const login = async (email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> => {
+  try {
+    const response = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      // 30분 유효한 JWT 토큰 저장
+      localStorage.setItem(TOKEN_KEY, data.token);
+      // 유저 정보 저장
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(data.user));
+      emitAuthChange();
+      return { success: true, message: '로그인되었습니다.', user: data.user };
+    } else {
+      return { success: false, message: data.message };
+    }
+  } catch (error) {
+    return { success: false, message: '서버 오류가 발생했습니다.' };
   }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return { success: false, message: '올바른 이메일 형식이 아닙니다.' };
-  }
-
-  if (password.length < 6) {
-    return { success: false, message: '비밀번호는 최소 6자 이상이어야 합니다.' };
-  }
-
-  if (name.trim().length < 2) {
-    return { success: false, message: '이름은 최소 2자 이상이어야 합니다.' };
-  }
-
-  const newUser: User = {
-    id: Date.now().toString(),
-    email,
-    name: name.trim(),
-    createdAt: new Date().toISOString(),
-    // 관리자 이메일 설정 본인 이메일이면 'ADMIN', 아니면 'USER'가 할당됩니다. 엄태훈 
-    role: email === 'am2869@naver.com' ? 'ADMIN' : 'USER',
-  };
-
-  const userWithPassword = { ...newUser, password };
-  users.push(userWithPassword);
-  saveUsers(users);
-
-  return { success: true, message: '회원가입이 완료되었습니다.', user: newUser };
 };
 
-// 로그인
-export const login = (email: string, password: string): { success: boolean; message: string; user?: User } => {
-  const users = getUsers();
-  const user = users.find(u => u.email === email && (u as any).password === password);
-
-  if (!user) {
-    return { success: false, message: '이메일 또는 비밀번호가 올바르지 않습니다.' };
-  }
-
-  const { password: _, ...userWithoutPassword } = user as any;
-  setCurrentUser(userWithoutPassword);
-
-  return { success: true, message: '로그인되었습니다.', user: userWithoutPassword };
-};
-
-/**
- * 로그아웃 (수정됨)
- * UI 관련 로직(confirm, alert)을 제거하여 Layout에서 제어할 수 있도록 함
- */
+// 3. 로그아웃
 export const logout = () => {
-  setCurrentUser(null);
-  // 상태 변경을 전역에 알림
-  window.dispatchEvent(new Event('auth-change'));
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(CURRENT_USER_KEY);
+  emitAuthChange();
 };
 
-// 로그인 상태 확인
+// 4. 상태 확인 함수들
 export const isLoggedIn = (): boolean => {
-  return getCurrentUser() !== null;
+  return getToken() !== null;
 };
 
-// 비밀번호 변경
-export const changePassword = (email: string, currentPassword: string, newPassword: string): { success: boolean; message: string } => {
-  const users = getUsers();
-  const userIndex = users.findIndex(u => u.email === email && u.password === currentPassword);
-
-  if (userIndex === -1) {
-    return { success: false, message: '현재 비밀번호가 일치하지 않습니다.' };
-  }
-
-  if (newPassword.length < 6) {
-    return { success: false, message: '새 비밀번호는 최소 6자 이상이어야 합니다.' };
-  }
-
-  users[userIndex].password = newPassword;
-  saveUsers(users);
-
-  return { success: true, message: '비밀번호가 성공적으로 변경되었습니다.' };
-};
-
-// 회원 탈퇴
-export const deleteAccount = (email: string, password: string): { success: boolean; message: string } => {
-  const users = getUsers();
-  const userExists = users.some(u => u.email === email && u.password === password);
-
-  if (!userExists) {
-    return { success: false, message: '비밀번호가 일치하지 않아 탈퇴할 수 없습니다.' };
-  }
-
-  const updatedUsers = users.filter(u => !(u.email === email && u.password === password));
-  saveUsers(updatedUsers);
-
-  // 현재 로그인된 정보 삭제 (단순 데이터 삭제만 수행)
-  setCurrentUser(null);
-  window.dispatchEvent(new Event('auth-change'));
-
-  return { success: true, message: '회원 탈퇴가 완료되었습니다.' };
-};
-
-// 관리자가 맞는지 확인 하는 로직 엄태훈
 export const isAdmin = (): boolean => {
   const user = getCurrentUser();
   return user?.role === 'ADMIN';
 };
 
 /**
- * 프로필 사진 업데이트 로직 추가
- * 사용자의 사진 데이터를 Base64로 저장하고 현재 세션 정보를 업데이트함
+ * [주의] 비밀번호 변경 및 프로필 사진 업데이트는 
+ * 백엔드(index.ts)에 해당 API 엔드포인트가 먼저 구현되어야 합니다.
+ * 아래는 구조적 예시입니다.
  */
-export const updateProfilePhoto = (email: string, photoBase64: string): User | null => {
-  const users = getUsers();
-  const userIndex = users.findIndex((u) => u.email === email);
 
-  if (userIndex !== -1) {
-    // 1. 전체 사용자 목록 업데이트
-    users[userIndex].profilePhoto = photoBase64;
-    saveUsers(users);
+export const updateProfilePhoto = async (photoBase64: string): Promise<User | null> => {
+  const token = getToken();
+  if (!token) return null;
 
-    // 2. 현재 로그인된 사용자 정보 업데이트 (세션 유지)
-    const currentUser = getCurrentUser();
-    if (currentUser && currentUser.email === email) {
-      const updatedUser = { ...currentUser, profilePhoto: photoBase64 };
-      setCurrentUser(updatedUser);
-      // 상태 변경을 전역에 알림 (UI 반영용)
-      window.dispatchEvent(new Event('auth-change'));
-      return updatedUser;
+  try {
+    // 실제 구현 시 백엔드에 /api/user/photo 엔드포인트 필요
+    const response = await fetch(`${API_URL}/api/user/photo`, {
+      method: 'PUT',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` 
+      },
+      body: JSON.stringify({ photo: photoBase64 }),
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(data.user));
+      emitAuthChange();
+      return data.user;
     }
-    
-    return users[userIndex];
+  } catch (error) {
+    console.error('프로필 업데이트 실패:', error);
   }
-
   return null;
 };
