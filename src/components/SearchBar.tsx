@@ -11,15 +11,12 @@ interface SearchBarProps {
 export function SearchBar({ onSearch, className }: SearchBarProps) {
   const [query, setQuery] = useState('');
 
-  const handleSearch = () => {
+  // 입력이 발생할 때마다 실시간으로 상태를 업데이트하고 부모에게 전달합니다.
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setQuery(newValue); // 내 입력창 글자 업데이트
     if (onSearch) {
-      onSearch(query);
-    }
-  };
-
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      handleSearch();
+      onSearch(newValue); // 부모 컴포넌트(Search.tsx)로 실시간 검색어 전달
     }
   };
 
@@ -34,15 +31,9 @@ export function SearchBar({ onSearch, className }: SearchBarProps) {
           type="text"
           placeholder="축제 이름, 지역, 키워드로 검색하세요"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={handleKeyPress}
+          onChange={handleChange} // 새로 만든 실시간 핸들러로 교체
           
-          /* 
-             - border border-gray-300: 기본 연회색 테두리
-             - focus-visible:border-gray-300: 클릭해도 테두리 색상 유지
-             - focus-visible:ring-0 focus-visible:ring-offset-0: shadcn 기본 포커스 링과 여백 완벽 제거
-             - shadow-sm: 사진처럼 은은하고 부드러운 그림자
-          */
+          
           className="w-full h-14 pl-14 pr-6 text-lg bg-white dark:bg-[#1E1E1E] border border-gray-300 dark:border-gray-600 rounded-full shadow-sm hover:shadow-md transition-shadow focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none focus-visible:border-gray-300 placeholder:text-gray-400"
         />
         
