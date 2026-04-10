@@ -128,12 +128,25 @@ export const changePassword = async (email: string, currentPassword: string, new
   return { success: false, message: '비밀번호 변경 기능은 현재 준비 중입니다.' };
 };
 
-/**
- * 회원 탈퇴
- */
-export const deleteAccount = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
-  // TODO: 백엔드 /api/auth/delete 구현 필요
-  return { success: false, message: '회원 탈퇴 기능은 현재 준비 중입니다.' };
+// 회원 탈퇴 실제 구현
+export const deleteAccount = async (email: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/delete`, {
+      method: 'DELETE', // 삭제는 DELETE 메소드를 사용합니다.
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+    
+    if (data.success) {
+      logout(); // 탈퇴 성공 시 로컬 정보도 지워줍니다.
+    }
+    
+    return { success: data.success, message: data.message };
+  } catch (error) {
+    return { success: false, message: '서버 통신 오류가 발생했습니다.' };
+  }
 };
 
 /**
