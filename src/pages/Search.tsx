@@ -84,6 +84,7 @@ export default function Search() {
     >
       <div className="container mx-auto px-4">
         
+        {/* 상단 타이틀 및 검색바 */}
         <div className="mb-16 flex flex-col items-center">
           <h1 className="text-4xl md:text-5xl font-bold text-[#4A342E] dark:text-[#EAE5E1] mb-8 text-center transition-colors" 
               style={{ fontFamily: 'GmarketSansBold' }}>
@@ -94,6 +95,7 @@ export default function Search() {
           </div>
         </div>
 
+        {/* 리스트/지도 전환 탭 */}
         <div className="mb-8 flex justify-end">
           <div className="relative flex items-center bg-[#F5F1EE] dark:bg-[#1E1E1E] rounded-full p-1 shadow-inner border border-[#EAE5E1] dark:border-[#333333] transition-colors">
             <motion.div
@@ -129,12 +131,12 @@ export default function Search() {
               initial="hidden"
               animate="visible"
               exit={{ opacity: 0, y: 20 }}
-              // 🔥 바깥쪽 배경색을 페이지 배경색(#FDFBF7 / #121212)과 동일하게 맞춰 일체감을 주었습니다.
-              className="bg-[#FDFBF7] dark:bg-[#121212] p-4 rounded-[2.5rem] transition-colors duration-300"
+              className="bg-[#FDFBF7] dark:bg-[#121212] transition-colors duration-300"
             >
-              {/* 실제 테두리가 있는 안쪽 영역 - 배경색을 통일하여 테두리 선만 돋보이게 했습니다. */}
-              <div className="h-[750px] overflow-y-auto p-8 pr-4 custom-scrollbar border-2 border-[#888888] dark:border-[#555555] rounded-[1.5rem]">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pb-10">
+              {/* 테두리를 제거하여 배경과 일체감을 주었습니다. */}
+              <div className="min-h-[750px] py-4">
+                {/* lg:grid-cols-4 설정을 통해 한 줄에 4개씩 배치했습니다. */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 pb-10">
                   {filteredFestivals.length > 0 ? (
                     filteredFestivals.map((festival) => (
                       <motion.div key={festival.id} variants={staggerItem}>
@@ -142,8 +144,7 @@ export default function Search() {
                       </motion.div>
                     ))
                   ) : (
-                    // 결과 없음 메시지 영역도 배경색 일치
-                    <div className="col-span-full text-center py-24 bg-[#FDFBF7] dark:bg-[#121212] rounded-3xl border border-dashed border-[#D1D5DB] dark:border-[#444444] transition-colors">
+                    <div className="col-span-full text-center py-32 border border-dashed border-[#D1D5DB] dark:border-[#444444] rounded-3xl">
                       <p className="text-[#9CA3AF] dark:text-[#888888] text-xl font-medium">
                         찾으시는 축제 결과가 없습니다. 다시 검색해 보세요!
                       </p>
@@ -161,19 +162,19 @@ export default function Search() {
               initial="hidden"
               animate="visible"
               exit={{ opacity: 0, y: 20 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start pb-20"
             >
-              {/* 좌측 지도 섹션 */}
-              <div className="lg:col-span-7 bg-[#FDFBF7] dark:bg-[#121212] rounded-[2.5rem] p-4 h-[750px] flex flex-col transition-colors">
-                <div className="flex-1 flex flex-col border-2 border-[#888888] dark:border-[#555555] rounded-[1.5rem] p-8 overflow-hidden">
+              {/* 좌측 지도 섹션 (테두리 두께 조절로 깔끔하게 변경) */}
+              <div className="lg:col-span-7 h-[750px] flex flex-col">
+                <div className="flex-1 flex flex-col border border-black/10 dark:border-white/10 rounded-[2rem] p-8 overflow-hidden bg-white/50 dark:bg-white/5 backdrop-blur-sm">
                   <div className="flex items-center justify-between mb-4 shrink-0">
-                    <h2 className="text-2xl font-bold text-[#4A342E] dark:text-[#EAE5E1] transition-colors">지역별 탐색</h2>
-                    <span className="text-sm text-[#8B4513] dark:text-[#D4A373] font-semibold bg-[#FDFBF7] dark:bg-[#2A2A2A] px-3 py-1 rounded-full transition-colors">
+                    <h2 className="text-2xl font-bold text-[#4A342E] dark:text-[#EAE5E1]">지역별 탐색</h2>
+                    <span className="text-xs text-[#8B4513] dark:text-[#D4A373] font-bold bg-[#8B4513]/10 dark:bg-[#D4A373]/10 px-4 py-1.5 rounded-full">
                       원하는 지역을 클릭해 보세요
                     </span>
                   </div>
                   
-                  <div className="flex-1 flex justify-center items-center w-full bg-[#FDFBF7] dark:bg-[#121212] rounded-2xl p-4 overflow-hidden relative transition-colors">
+                  <div className="flex-1 flex justify-center items-center relative">
                     <KoreaMap 
                       selectedRegion={selectedRegion} 
                       onRegionSelect={handleRegionSelect} 
@@ -183,10 +184,10 @@ export default function Search() {
               </div>
 
               {/* 우측 리스트 섹션 */}
-              <div className="lg:col-span-5 bg-[#FDFBF7] dark:bg-[#121212] rounded-[2.5rem] p-4 h-[750px] flex flex-col transition-colors">
-                <div className="flex-1 flex flex-col border-2 border-[#888888] dark:border-[#555555] rounded-[1.5rem] p-8 overflow-hidden">
-                  <h2 className="text-2xl font-bold text-[#4A342E] dark:text-[#EAE5E1] mb-6 flex items-center gap-2 shrink-0 transition-colors">
-                    <span className="w-2 h-6 bg-[#8B4513] dark:bg-[#D4A373] rounded-full inline-block"></span>
+              <div className="lg:col-span-5 h-[750px] flex flex-col">
+                <div className="flex-1 flex flex-col border border-black/10 dark:border-white/10 rounded-[2rem] p-8 overflow-hidden bg-white/50 dark:bg-white/5 backdrop-blur-sm">
+                  <h2 className="text-2xl font-bold text-[#4A342E] dark:text-[#EAE5E1] mb-6 flex items-center gap-2 shrink-0">
+                    <span className="w-1.5 h-6 bg-[#8B4513] dark:bg-[#D4A373] rounded-full inline-block"></span>
                     {currentKoreanRegion ? `${currentKoreanRegion} 지역 축제` : "전체 축제"}
                   </h2>
                   
@@ -197,8 +198,8 @@ export default function Search() {
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -15 }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                        className="space-y-5"
+                        transition={{ duration: 0.3 }}
+                        className="space-y-4"
                       >
                         {filteredFestivals.length > 0 ? (
                           filteredFestivals.map((festival) => (

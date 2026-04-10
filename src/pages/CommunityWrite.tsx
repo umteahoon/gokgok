@@ -1,4 +1,4 @@
-// 주환 - 2026.03.20: 커뮤니티 글쓰기 페이지
+// 주환 - 2026.03.20: 커뮤니티 글쓰기 페이지 (백엔드 연동 완료)
 import { useState, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -27,7 +27,6 @@ export default function CommunityWrite() {
     content: "",
   });
 
-  // 💡 단일 string 대신 배열(string[])로 상태 관리
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,7 +40,7 @@ export default function CommunityWrite() {
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []); // 💡 FileList를 배열로 변환
+    const files = Array.from(e.target.files || []); 
     
     if (imagePreviews.length + files.length > 30) {
       alert("사진은 최대 30장까지 업로드할 수 있습니다.");
@@ -52,7 +51,7 @@ export default function CommunityWrite() {
     const newUrls = files.map(file => URL.createObjectURL(file));
     setImagePreviews(prev => [...prev, ...newUrls]);
     
-    if (fileInputRef.current) fileInputRef.current.value = ""; // input 초기화
+    if (fileInputRef.current) fileInputRef.current.value = ""; 
   };
 
   const handleRemoveImage = (e: React.MouseEvent, indexToRemove: number) => {
@@ -60,35 +59,48 @@ export default function CommunityWrite() {
     setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // 💡 [수정됨] 로컬 스토리지 대신 백엔드 API로 데이터 전송
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const today = new Date();
-    const formattedDate = `${today.getFullYear()}.${String(today.getMonth() + 1).padStart(2, '0')}.${String(today.getDate()).padStart(2, '0')}`;
     const DEFAULT_IMAGE = "https://placehold.co/800x400/eeeeee/999999?text=No+Photo";
+    const finalImages = imagePreviews.length > 0 ? imagePreviews : [DEFAULT_IMAGE];
 
-    const newPost = {
-      id: Date.now().toString(),
-      author: currentUser?.name || "나(GokGok)", 
-      Title: formData.festivalTitle,
-      content: formData.content,
-      // 💡 사진이 하나라도 있으면 배열 전체를 저장하고, 없으면 기본 이미지 저장
-      images: imagePreviews.length > 0 ? imagePreviews : [DEFAULT_IMAGE], 
-      likes: 0,
-      comments: 0,
-      date: formattedDate,
-      category: formData.category,
-      commentsList: [] as CommentData[]
+    // 로그인 시 저장해둔 토큰 꺼내기
+    const token = localStorage.getItem('token');
+    const authHeaders: any = {
+      "Content-Type": "application/json",
     };
+    if (token) {
+      authHeaders["Authorization"] = `Bearer ${token}`; // 보안 검문소(미들웨어) 통과용 출입증
+    }
 
-    const savedPosts = localStorage.getItem("community_posts");
-    const currentPosts = savedPosts ? JSON.parse(savedPosts) : [];
+    try {
+      // 💡 백엔드 주소로 POST 요청
+      const response = await fetch("http://localhost:5000/api/community", {
+        method: "POST",
+        headers: authHeaders,
+        body: JSON.stringify({
+          author: currentUser?.name || "나(GokGok)",
+          title: formData.festivalTitle,
+          content: formData.content,
+          category: formData.category,
+          images: finalImages
+        })
+      });
 
-    const updatedPosts = [newPost, ...currentPosts];
-    localStorage.setItem("community_posts", JSON.stringify(updatedPosts));
+      const data = await response.json();
 
-    alert("게시글이 성공적으로 등록되었습니다.");
-    navigate("/community"); 
+      if (data.success) {
+        alert("게시글이 성공적으로 등록되었습니다.");
+        navigate("/community"); 
+      } else {
+        alert(`글 등록에 실패했습니다: ${data.message || '알 수 없는 오류'}`);
+      }
+    } catch (error) {
+      console.error("게시글 작성 에러:", error);
+      alert("서버와 통신할 수 없습니다. 백엔드 서버가 켜져 있는지 확인해 주세요.");
+    }
   };
 
   if (!currentUser) return <Navigate to="/notmypage" replace />;
@@ -122,14 +134,12 @@ export default function CommunityWrite() {
               <textarea id="content" name="content" required value={formData.content} onChange={handleChange} placeholder="축제에 대한 생생한 후기를 남겨주세요!" className="w-full px-4 py-3 h-48 bg-background border border-input rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring" />
             </div>
 
-            {/* 💡 다중 이미지 첨부 영역 (가로 스크롤 레이아웃) */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-foreground">사진 첨부</span>
                 <span className="text-xs text-muted-foreground">{imagePreviews.length} / 30장</span>
               </div>
               
-              {/* multiple 속성 추가로 드래그나 Shift 키로 여러 장 선택 가능 */}
               <input type="file" multiple accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
 
               <div className="flex gap-4 overflow-x-auto py-2">
@@ -163,3 +173,5 @@ export default function CommunityWrite() {
     </div>
   );
 }
+
+// 현재 코드는 내 컴퓨터나 폰에 있는 파일의 '임시 주소(blob:http://...)'를 만들어서 DB에 들어감

@@ -24,20 +24,54 @@ export default function MyPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  
+  // DB 연동을 위한 상태 추가
+  const [dbFavorites, setDbFavorites] = useState<any[]>([]); // 찜 목록 저장
+  const [reviewCount, setReviewCount] = useState(0);         // 리뷰 개수 저장
+  const [isLoading, setIsLoading] = useState(true);          // 로딩 상태
 
   useEffect(() => {
-    const user = getCurrentUser();
-    setCurrentUser(user);
+    const loadUserData = async () => {
+      const user = getCurrentUser();
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      
+      setCurrentUser(user);
+
+      try {
+        // 1. 유저의 찜 목록 불러오기 (우리가 만든 API 경로)
+        const favRes = await fetch(`/api/interactions/favorites/${user.email}`);
+        const favData = await favRes.json();
+        if (favData.success) {
+          setDbFavorites(favData.favorites || []);
+        }
+
+        // 2. 유저가 작성한 리뷰 목록 불러오기 (개수 파악용)
+        const revRes = await fetch(`/api/interactions/reviews/user/${user.email}`);
+        const revData = await revRes.json();
+        if (revData.success) {
+          setReviewCount(revData.data.length || 0);
+        }
+      } catch (err) {
+        console.error("데이터 로딩 중 오류 발생:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUserData();
   }, []);
 
   // 사진 업로드 핸들러
-  const handlePhotoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && currentUser) {
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
         const base64String = reader.result as string;
-        const updatedUser = updateProfilePhoto(currentUser.email, base64String);
+        const updatedUser = await updateProfilePhoto(base64String);
         if (updatedUser) {
           setCurrentUser({ ...updatedUser }); 
         }
@@ -56,22 +90,23 @@ export default function MyPage() {
   };
 
   // 비밀번호 변경 핸들러
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     const currentPw = prompt("현재 비밀번호를 입력하세요.");
     if (!currentPw) return;
     const newPw = prompt("새 비밀번호를 입력하세요. (6자 이상)");
     if (!newPw) return;
 
-    const result = changePassword(currentUser?.email || "", currentPw, newPw);
+    const result = await changePassword(currentUser?.email || "", currentPw, newPw);
     alert(result.message);
   };
 
   // 회원 탈퇴 핸들러
-  const handleDeleteAccount = () => {
-    const confirmPw = prompt("탈퇴를 확인하기 위해 비밀번호를 입력하세요.");
-    if (!confirmPw) return;
+  const handleDeleteAccount = async () => {
+    const confirmCheck = confirm("정말로 탈퇴하시겠습니까? 탈퇴 후 데이터는 복구할 수 없습니다.");
+    if (!confirmCheck) return;
 
-    const result = deleteAccount(currentUser?.email || "", confirmPw);
+    const result = await deleteAccount(currentUser?.email || "");
+    
     if (result.success) {
       alert(result.message);
       setCurrentUser(null);
@@ -81,7 +116,11 @@ export default function MyPage() {
     }
   };
 
-  const savedFestivals = mockFestivals.slice(0, 4);
+  // [중요] 전체 축제 데이터 중 DB에 저장된 찜 목록만 필터링
+  const savedFestivals = mockFestivals.filter(f => 
+    dbFavorites.some(fav => String(fav.festival_id) === String(f.id))
+  );
+
   const attendedFestivals = mockFestivals.slice(4, 7);
 
   if (!currentUser) {
@@ -115,7 +154,6 @@ export default function MyPage() {
           initial="hidden" animate="visible" variants={fadeInUp}
         >
           <div className="flex flex-col md:flex-row items-center gap-8 mb-10">
-            {/* 사진 업로드 영역 - 원형 전체 클릭 가능하도록 수정 */}
             <div 
               className="relative group cursor-pointer"
               onClick={() => fileInputRef.current?.click()}
@@ -126,33 +164,22 @@ export default function MyPage() {
                 <AvatarFallback className="bg-primary text-white text-4xl">
                   {currentUser.name.charAt(0)}
                 </AvatarFallback>
-                
-                {/* 마우스 호버 시 어두운 오버레이와 카메라 아이콘 표시 */}
-                <div className="absolute inset-0 bg-black/30 opacity-0 transition-opacity duration-300 flex">
+                <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                   <Camera className="w-8 h-8 text-white" />
                 </div>
               </Avatar>
-
-              {/* 오른쪽 하단 작은 카메라 아이콘 (안내용) */}
-              <div className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-gray-200 group-hover:bg-primary transition-colors duration-300">
-                <Camera className="w-4 h-4 text-gray-700 group-hover:text-white" />
+              <div className="absolute bottom-1 right-1 bg-white p-2 rounded-full shadow-lg border border-gray-200">
+                <Camera className="w-4 h-4 text-gray-700" />
               </div>
-
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="image/*" 
-                onChange={handlePhotoChange} 
-              />
+              <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handlePhotoChange} />
             </div>
 
             <div className="text-center md:text-left">
               <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
                 <h1 className="text-4xl font-bold">{currentUser.name}님</h1>
                 <div className="flex gap-2">
-                  <Badge variant="secondary" className="bg-primary/20 text-primary hover:bg-primary/20">축제 마니아</Badge>
-                  <Badge variant="outline" className="bg-primary/20 text-primary hover:bg-primary/20">리뷰 작성자</Badge>
+                  <Badge variant="secondary" className="bg-primary/20 text-primary">축제 마니아</Badge>
+                  <Badge variant="outline" className="bg-primary/20 text-primary">리뷰 작성자</Badge>
                 </div>
               </div>
               <p className="text-muted-foreground text-lg">{currentUser.email}</p>
@@ -160,7 +187,7 @@ export default function MyPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
+            <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">찜한 축제</CardTitle>
               </CardHeader>
@@ -168,7 +195,7 @@ export default function MyPage() {
                 <p className="text-4xl font-bold text-primary">{savedFestivals.length}</p>
               </CardContent>
             </Card>
-            <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
+            <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">참여 이력</CardTitle>
               </CardHeader>
@@ -176,12 +203,12 @@ export default function MyPage() {
                 <p className="text-4xl font-bold text-primary">{attendedFestivals.length}</p>
               </CardContent>
             </Card>
-            <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
+            <Card className="border-none shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">작성한 리뷰</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-4xl font-bold text-primary">12</p>
+                <p className="text-4xl font-bold text-primary">{reviewCount}</p>
               </CardContent>
             </Card>
           </div>
@@ -203,18 +230,23 @@ export default function MyPage() {
           </TabsList>
 
           <TabsContent value="saved">
-            <motion.div 
-              variants={staggerContainer} initial="hidden" animate="visible"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-            >
-              {savedFestivals.map((festival) => (
-                <motion.div key={festival.id} variants={staggerItem}>
-                  <FestivalCard festival={festival} />
-                </motion.div>
-              ))}
-            </motion.div>
+            {savedFestivals.length > 0 ? (
+              <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {savedFestivals.map((festival) => (
+                  <motion.div key={festival.id} variants={staggerItem}>
+                    <FestivalCard festival={festival} />
+                  </motion.div>
+                ))}
+              </motion.div>
+            ) : (
+              <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed">
+                <Heart className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">찜한 축제가 없습니다. 축제를 둘러보고 하트를 눌러보세요!</p>
+              </div>
+            )}
           </TabsContent>
 
+          {/* ... 나머지 TabsContent (attended, settings)는 이전과 동일 ... */}
           <TabsContent value="attended">
              <div className="text-center py-20 bg-gray-50 rounded-2xl border-2 border-dashed">
                 <Calendar className="w-12 h-12 mx-auto text-gray-300 mb-4" />
@@ -265,3 +297,24 @@ export default function MyPage() {
     </div>
   );
 }
+// // 통계 카드들
+// <CardContent>
+//   <p className="text-4xl font-bold text-primary">
+//     {isLoading ? '...' : savedFestivals.length}
+//   </p>
+// </CardContent>
+
+// // 찜 탭
+// <TabsContent value="saved">
+//   {isLoading ? (
+//     <div className="text-center py-20">
+//       <p>찜한 축제 불러오는 중...</p>
+//     </div>
+//   ) : (
+//     savedFestivals.length > 0 ? (
+//       // 기존 목록 JSX
+//     ) : (
+//       // 빈 목록 JSX
+//     )
+//   )}
+// </TabsContent>

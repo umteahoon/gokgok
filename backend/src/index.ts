@@ -6,6 +6,8 @@ import bcrypt from 'bcrypt';
 import { createClient } from '@supabase/supabase-js';
 import authRouter from './routes/auth'; // auth 라우터
 import communityRouter from './routes/community'; // 커뮤니티 라우터 - 주환
+import reviewRouter from './routes/reviews ';           // 리뷰 라우터 추가
+import favoritesRouter from "./routes/favorites"; // 즐겨찾기 라우터 추가
 
 // .env 환경변수 로드
 dotenv.config();
@@ -40,6 +42,13 @@ app.use(cors({
 app.use(express.json());
 
 // --- API 경로 설정 ---
+
+/**
+ * [추가] 외부 라우터 연결
+ * 분리된 파일들의 기능을 특정 경로에 할당합니다.
+ */
+app.use('/api/interactions', favoritesRouter); // 찜하기 관련 경로는 /api/interactions 로 시작
+app.use('/api/reviews', reviewRouter);         // 리뷰 관련 경로는 /api/reviews 로 시작
 
 /**
  * 1. 회원가입 API
@@ -164,9 +173,6 @@ app.get('/', (req, res) => {
 app.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다!`);
 });
-
-
-
 
 /**
  * [게시판] 모든 게시글 가져오기

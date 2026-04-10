@@ -98,4 +98,25 @@ router.delete('/:postId/comments/:commentId', async (req: Request, res: Response
   }
 });
 
+// 6. [게시글 수정] PUT /api/community/:id
+router.put('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { title, content } = req.body;
+
+    // Supabase 데이터베이스 업데이트
+    const { data, error } = await supabase
+      .from('community_posts')
+      .update({ title, content })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ success: true, post: data });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: '글 수정 실패' });
+  }
+});
+
 export default router;

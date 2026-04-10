@@ -7,33 +7,23 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* 기존 명조/고딕 자리를 모두 에스코어 드림으로 통일하여 TSX 수정 없이 일괄 적용 */
   --font-serif: 'SCoreDream', -apple-system, sans-serif;
   --font-sans: 'SCoreDream', 'Inter', -apple-system, sans-serif;
-  
   --radius: 0.25rem;
-
   --background: oklch(0.97 0.01 85); 
   --foreground: oklch(0.25 0.01 200); 
-  
   --card: oklch(0.99 0.005 85); 
   --card-foreground: oklch(0.25 0.01 200);
-  
   --popover: oklch(0.99 0.005 85);
   --popover-foreground: oklch(0.25 0.01 200);
-  
   --primary: oklch(0.35 0.06 250);
   --primary-foreground: oklch(0.97 0.01 85);
-  
   --secondary: oklch(0.90 0.01 85);
   --secondary-foreground: oklch(0.25 0.01 200);
-  
   --accent: oklch(0.50 0.15 25);
   --accent-foreground: oklch(0.97 0.01 85);
-  
   --muted: oklch(0.92 0.01 85);
   --muted-foreground: oklch(0.50 0.01 200);
-  
   --border: oklch(0.85 0.01 85); 
   --input: oklch(0.85 0.01 85);
   --ring: oklch(0.35 0.06 250);
@@ -89,9 +79,9 @@
   }
 
   body {
-    /* 폰트를 에스코어 드림으로 맞추고, 명조체 특유의 좁은 자간 설정을 제거함 */
-    @apply bg-background text-foreground font-sans min-h-screen;
-    word-break: keep-all; /* 한글 단어 단위 줄바꿈 방지 (가독성 향상) */
+    /* 🔥 바로 이 부분! 하얀색 도화지를 없애고 딥다크 톤으로 변경했습니다! */
+    @apply bg-[#050505] text-white font-sans min-h-screen;
+    word-break: keep-all; 
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -100,7 +90,6 @@
 }
 
 @layer components {
-  /* 상단 네비게이션 바 전용 스타일 */
   .joseon-nav-bar {
     background-color: oklch(0.97 0.01 85 / 0.85);
     backdrop-filter: blur(8px);
@@ -120,7 +109,6 @@
     color: var(--accent);
   }
 
-  /* 검색 바 */
   .search-glass-bar {
     background-color: oklch(0.99 0.005 85 / 0.85); 
     backdrop-filter: blur(4px);
