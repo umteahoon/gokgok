@@ -4,7 +4,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'USER' | 'ADMIN'; // 엄태훈 관리자 권한
+  role: 'USER' | 'ADMIN'; //  관리자 권한
   profilePhoto?: string;
 }
 

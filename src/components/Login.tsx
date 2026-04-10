@@ -28,44 +28,49 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  // 1. 로그인 핸들러 (async/await 적용)
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    const result = login(loginEmail, loginPassword);
+    // 백엔드 서버에 로그인 요청을 보내고 응답을 기다립니다.
+    const result = await login(loginEmail, loginPassword);
+    
     if (result.success) {
       setSuccess(result.message);
       
-      // [핵심 추가] 로그인 성공 신호를 Layout에 보냄
+      // 로그인 성공 신호를 전역(Layout 등)에 알림
       window.dispatchEvent(new Event('auth-change'));
 
       setTimeout(() => {
         onSuccess();
         onClose();
-        navigate("/mypage"); // 로그인 성공 후 마이페이지로 이동
+        navigate("/mypage"); // 마이페이지로 이동
       }, 500);
     } else {
       setError(result.message);
     }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  // 2. 회원가입 핸들러 (async/await 적용)
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    const result = signup(signupEmail, signupPassword, signupName);
+    // 백엔드 서버에 회원가입 요청을 보내고 응답을 기다립니다.
+    const result = await signup(signupEmail, signupPassword, signupName);
 
     if (result.success) {
-      setSuccess("회원가입이 완료되었습니다!\n5초 후에 로그인창으로 이동합니다.");
+      setSuccess("회원가입이 완료되었습니다!\n잠시 후 로그인창으로 이동합니다.");
       
       setTimeout(() => {
         setSuccess(""); 
-        setActiveTab("login"); 
-        setLoginEmail(signupEmail); 
+        setActiveTab("login"); // 로그인 탭으로 자동 이동
+        setLoginEmail(signupEmail); // 가입한 이메일 미리 입력
         setLoginPassword(""); 
-      }, 5000);
+      }, 3000);
 
     } else {
       setError(result.message);
