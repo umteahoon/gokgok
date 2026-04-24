@@ -77,6 +77,10 @@ export default function AdminDashboard() {
     loadAdminData();
   }, []);
 
+  const filteredUsers = users.filter(user =>
+  user.username.toLowerCase().includes(search.toLowerCase())
+  ); // 검색 4/24 
+
   // 유저 강제 탈퇴 처리
   const handleUserDelete = async (id: string, email: string) => {
     if (!window.confirm(`${email} 사용자를 강제 탈퇴시키겠습니까?`)) return;
@@ -171,6 +175,15 @@ export default function AdminDashboard() {
                 <CardDescription>Supabase Auth 및 Profiles 테이블의 실시간 목록입니다.</CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    placeholder="닉네임으로 검색..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                  />
+                </div> // 검색 4/24
                 <Table>
                   <TableHeader>
                     <TableRow>
