@@ -58,10 +58,13 @@ const App = () => {
       const refreshCount = Number(sessionStorage.getItem("gokgok_refresh_count") || 0);
       const currentUser = JSON.parse(localStorage.getItem("gokgok_current_user") || "{}");
       
-      // 새로고침 횟수가 10회에 도달하는 순간 서버 DB에 위협 로그 전송
-      if (refreshCount >= 10) {
+      // 이미 보고가 완료되었는지 세션 내에서 확인 (중복 보고 방지)
+      const isAlreadyReported = sessionStorage.getItem("gokgok_reported_to_server") === "true";
+
+      // 새로고침 횟수가 10회 이상이고 아직 보고되지 않았을 때만 서버에 전송
+      if (refreshCount >= 10 && !isAlreadyReported) {
         try {
-          await fetch("https://gokgok-8ztf.onrender.com/api/admin/report-threat", {
+          const res = await fetch("https://gokgok-8ztf.onrender.com/api/admin/report-threat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -70,7 +73,12 @@ const App = () => {
               count: refreshCount
             })
           });
-          console.log("🚨 위협 정보가 실시간으로 보안 서버 DB에 기록되었습니다.");
+
+          if (res.ok) {
+            // 보고 성공 시 세션에 기록하여 중복 호출 방지
+            sessionStorage.setItem("gokgok_reported_to_server", "true");
+            console.log("🚨 위협 정보가 실시간으로 보안 서버 DB에 기록되었습니다.");
+          }
         } catch (err) {
           console.error("보안 로그 전송 실패:", err);
         }
