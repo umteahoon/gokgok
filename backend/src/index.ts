@@ -66,7 +66,7 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 관리자 여부 확인 로직
-    const adminEmails = ['am2869@naver.com', 'qwe@qwe.com', 'juhwan@test.com'];
+    const adminEmails = ['am2869@naver.com', 'qwe@qwe.com', 'juhwan@test.com', 'qwer@1234.com'];
     const isAdmin = adminEmails.includes(email);
 
     const { error } = await supabase

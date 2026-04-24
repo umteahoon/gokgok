@@ -167,7 +167,7 @@ export default function CommunityWrite() {
                 {imagePreviews.length < 30 && (
                   <div onClick={handleImageClick} className="w-24 h-24 shrink-0 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors bg-background">
                     <ImagePlus className="w-6 h-6 mb-1" />
-                    <span className="text-[10px] text-center px-1">클릭 또는<br/>드래그 앤 드롭</span>
+                    <span className="text-[10px] text-center px-1">추가</span>
                   </div>
                 )}
                 
