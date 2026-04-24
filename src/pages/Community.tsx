@@ -496,7 +496,7 @@ export default function Community() {
                 {/* 수정 모달용 사진 첨부 UI 추가 (사용자 요청사항 구현) */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">사진 수정</span>
+                    <span className="text-sm font-medium text-foreground">사진</span>
                     <span className="text-xs text-muted-foreground">{editImages.length} / 30장</span>
                   </div>
                   <input type="file" multiple accept="image/*" ref={editFileInputRef} onChange={handleEditImageUpload} className="hidden" />
