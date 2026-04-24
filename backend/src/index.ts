@@ -56,7 +56,7 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 관리자 여부 확인 로직 (이메일 추가 시 여기에 || 로 연결)
-    const isAdmin = email === 'am2869@naver.com' || email === 'qwe@qwe.com'|| email === 'qwe@juhwan@test.com';
+    const isAdmin = email === 'am2869@naver.com' || email === 'qwe@qwe.com'|| email === 'juhwan@test.com';
 
     const { error } = await supabase
       .from('profiles')
