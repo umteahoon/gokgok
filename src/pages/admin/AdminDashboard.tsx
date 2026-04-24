@@ -196,8 +196,10 @@ export default function AdminDashboard() {
                   </TableHeader>
                   <TableBody>
                     {/* [보안 및 안정성 강화] users가 배열일 때만 렌더링 */}
-                    {Array.isArray(users) && users.length > 0 ? (
-                      users.map((user) => (
+                    {/* {Array.isArray(users) && users.length > 0 ? (
+                      users.map((user) => ( */}
+                    {Array.isArray(filteredUsers) && filteredUsers.length > 0 ? (
+                        filteredUsers.map((user) => ( // 검색 4/24
                         <TableRow key={user.id}>
                           <TableCell className="font-medium">{user.username}</TableCell>
                           <TableCell>{user.email}</TableCell>
