@@ -1,25 +1,24 @@
 // index.ts 전체 코드 - 엄태훈
-import dotenv from 'dotenv'; // 1. 최상단으로 이동
-dotenv.config();
+import dotenv from 'dotenv'; 
+dotenv.config(); // 최상단에서 환경변수 로드
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import { createClient } from '@supabase/supabase-js';
-import authRouter from './routes/auth'; 
-import communityRouter from './routes/community'; 
-import reviewRouter from './routes/reviews ';           
 import favoritesRouter from "./routes/favorites"; 
+import reviewRouter from './routes/reviews ';           
 import adminRouter from './routes/admin';
+import communityRouter from './routes/community'; 
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// [중요] 키가 없으면 서버 실행 시점에 바로 알 수 있게 체크
+// [보안] 환경변수 체크 - 서버 시작 시 로그로 바로 확인 가능
 const secretKey = process.env.JWT_SECRET;
 if (!secretKey) {
-  console.error("❌ 서버 에러: JWT_SECRET 환경변수가 설정되지 않았습니다!");
+  console.error("❌ Critical Error: JWT_SECRET 환경변수가 설정되지 않았습니다!");
 }
 
 const supabase = createClient(
@@ -91,11 +90,11 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) return res.status(400).json({ success: false, message: '비번 틀림' });
 
-    // [수정] secretKey가 확실히 적용되도록 함
+    // [중요] Render 환경변수 secretKey를 사용하여 토큰 서명
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       secretKey!, 
-      { expiresIn: '1h' } // 시간 넉넉히 1시간으로 변경
+      { expiresIn: '1h' } 
     );
 
     res.json({ 
@@ -111,7 +110,5 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 app.get('/', (req, res) => res.send('곡곡 서버 작동 중! 🚀'));
 
 app.listen(Number(PORT), () => {
-  console.log(`🚀 포트 ${PORT} 실행 중!`);
+  console.log(`🚀 서버가 포트 ${PORT}에서 실행 중입니다!`);
 });
-
-// 게시판 관련 API (생략 - 기존과 동일하게 유지하세요)
