@@ -1,6 +1,6 @@
 /**
  * 곡곡 백엔드 메인 서버 - 엄태훈 최종 수정본
- * 주요 기능: 회원가입, 로그인, 세션 연장, 보안 위협 로그 기록 및 통합 관리
+ * 주요 기능: 회원가입, 로그인, 세션 연장, 보안 위협 로그 기록 및 관리자 통합 조회
  */
 
 import dotenv from 'dotenv'; 
@@ -47,6 +47,22 @@ app.use(cors({
 }));
 
 app.use(express.json());
+
+/**
+ * 관리자 인증 미들웨어 (내부 API 보안용)
+ */
+const verifyAdminInternal = (req: Request, res: Response, next: any) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: "인증 토큰 없음" });
+
+  try {
+    const decoded: any = jwt.verify(token, secretKey!);
+    if (decoded.role !== 'ADMIN') return res.status(403).json({ message: "권한 부족" });
+    next();
+  } catch (err) {
+    res.status(401).json({ message: "유효하지 않은 토큰" });
+  }
+};
 
 // API 경로 매핑
 app.use('/api/interactions', favoritesRouter); 
@@ -115,8 +131,8 @@ app.post('/api/auth/refresh', async (req: Request, res: Response) => {
 });
 
 /**
- * 4. 보안 위협 로그 기록 API (신규 추가)
- * 클라이언트에서 이상 징후(DDoS 등) 감지 시 서버 DB에 기록
+ * 4. 보안 위협 로그 기록 API
+ * 클라이언트에서 이상 징후 감지 시 서버 DB에 실시간 기록
  */
 app.post('/api/admin/report-threat', async (req: Request, res: Response) => {
   try {
@@ -137,6 +153,25 @@ app.post('/api/admin/report-threat', async (req: Request, res: Response) => {
   } catch (err: any) {
     console.error("Log Error:", err.message);
     res.status(500).json({ message: "Failed to record log" });
+  }
+});
+
+/**
+ * 5. 보안 위협 로그 조회 API (관리자 전용)
+ * DB에 저장된 모든 유저의 위협 로그를 최신순으로 반환
+ */
+app.get('/api/admin/security-logs', verifyAdminInternal, async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('security_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20);
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err: any) {
+    res.status(500).json({ error: "로그 조회 실패" });
   }
 });
 

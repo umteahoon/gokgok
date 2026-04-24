@@ -52,6 +52,32 @@ const App = () => {
       }
     }, 60000); // 1분 간격 체크
 
+    // --- 🚨 [보안 모니터링] 비정상 새로고침 감지 및 서버 보고 로직 ---
+    const checkThreatLevel = async () => {
+      const refreshCount = Number(sessionStorage.getItem("gokgok_refresh_count") || 0);
+      const currentUser = JSON.parse(localStorage.getItem("gokgok_current_user") || "{}");
+      
+      // 새로고침 횟수가 10회에 도달하는 순간 서버에 위협 로그 전송
+      if (refreshCount === 10) {
+        try {
+          await fetch("https://gokgok-8ztf.onrender.com/api/admin/report-threat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: currentUser.email || "Anonymous",
+              violationType: "DDoS / Rapid Refresh Detected",
+              count: refreshCount
+            })
+          });
+          console.log("🚨 위협 정보가 보안 서버로 전송되었습니다.");
+        } catch (err) {
+          console.error("보안 로그 전송 실패:", err);
+        }
+      }
+    };
+
+    checkThreatLevel();
+
     return () => clearInterval(sessionCheckTimer);
   }, []);
 
