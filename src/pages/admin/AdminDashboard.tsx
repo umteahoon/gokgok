@@ -38,6 +38,8 @@ export default function AdminDashboard() {
       const statsRes = await fetch(`${API_BASE_URL}/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      if (!statsRes.ok) throw new Error("통계 데이터를 가져오는데 실패했습니다.");
       const statsData = await statsRes.json();
       setStats(statsData);
 
@@ -45,16 +47,26 @@ export default function AdminDashboard() {
       const usersRes = await fetch(`${API_BASE_URL}/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
+      if (!usersRes.ok) throw new Error("사용자 목록을 가져오는데 실패했습니다.");
       const usersData = await usersRes.json();
-      setUsers(usersData);
+      
+      // [수정 포인트] 데이터가 배열인지 확인 후 저장 (o.map 에러 방지)
+      if (Array.isArray(usersData)) {
+        setUsers(usersData);
+      } else {
+        setUsers([]);
+      }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("데이터 로드 실패:", error);
       toast({
         variant: "destructive",
         title: "데이터 로드 오류",
-        description: "서버로부터 데이터를 가져오지 못했습니다."
+        description: error.message || "서버로부터 데이터를 가져오지 못했습니다."
       });
+      // 에러 발생 시 초기화하여 .map 에러 방지
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -79,9 +91,15 @@ export default function AdminDashboard() {
         setUsers(users.filter(user => user.id !== id));
         toast({ title: "처리 완료", description: "사용자가 성공적으로 삭제되었습니다." });
         loadAdminData(); // 통계 갱신
+      } else {
+        throw new Error("삭제 권한이 없거나 서버 오류입니다.");
       }
-    } catch (error) {
-      toast({ variant: "destructive", title: "삭제 실패", description: "권한이 없거나 서버 오류입니다." });
+    } catch (error: any) {
+      toast({ 
+        variant: "destructive", 
+        title: "삭제 실패", 
+        description: error.message 
+      });
     }
   };
 
@@ -163,28 +181,37 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.username}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
-                            {user.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-right">
-                          {user.role !== "ADMIN" && (
-                            <Button 
-                              variant="ghost" size="sm" className="text-destructive"
-                              onClick={() => handleUserDelete(user.id, user.email)}
-                            >
-                              <Trash2 className="w-4 h-4 mr-1" /> 탈퇴
-                            </Button>
-                          )}
+                    {/* [보안 및 안정성 강화] users가 배열일 때만 렌더링 */}
+                    {Array.isArray(users) && users.length > 0 ? (
+                      users.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.username}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
+                              {user.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell className="text-right">
+                            {user.role !== "ADMIN" && (
+                              <Button 
+                                variant="ghost" size="sm" className="text-destructive"
+                                onClick={() => handleUserDelete(user.id, user.email)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-1" /> 탈퇴
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                          {loading ? "데이터를 불러오는 중입니다..." : "표시할 사용자 데이터가 없습니다."}
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
