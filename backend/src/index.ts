@@ -1,6 +1,6 @@
 /**
  * 곡곡 백엔드 메인 서버 - 엄태훈 최종 수정본
- * 주요 기능: 회원가입(권한 분기), 로그인(JWT 발급), 토큰 연장(Refresh), 라우터 통합 관리
+ * 주요 기능: 회원가입, 로그인, 세션 연장, 보안 위협 로그 기록 및 통합 관리
  */
 
 import dotenv from 'dotenv'; 
@@ -27,13 +27,13 @@ if (!secretKey) {
   console.error("❌ Critical Error: JWT_SECRET 환경변수가 설정되지 않았습니다!");
 }
 
-// Supabase 클라이언트 초기화
+// Supabase 클라이언트 초기화 (Service Role Key 사용으로 RLS 우회 기록 가능)
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// CORS 설정: Netlify 배포 주소 및 로컬 환경 허용
+// CORS 설정
 app.use(cors({
   origin: [
     'https://capstone-gokgok.netlify.app', 
@@ -56,30 +56,21 @@ app.use('/api/community', communityRouter);
 
 /**
  * 1. 회원가입 API
- * 관리자 권한 이메일: am2869@naver.com, qwe@qwe.com, juhwan@test.com, qwer@1234.com
  */
 app.post('/api/auth/signup', async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 관리자 여부 확인 로직
     const adminEmails = ['am2869@naver.com', 'qwe@qwe.com', 'juhwan@test.com', 'qwer@1234.com'];
     const isAdmin = adminEmails.includes(email);
 
     const { error } = await supabase
       .from('profiles')
-      .insert([
-        { 
-          email, 
-          password: hashedPassword, 
-          name, 
-          role: isAdmin ? 'ADMIN' : 'USER' 
-        }
-      ]);
+      .insert([{ email, password: hashedPassword, name, role: isAdmin ? 'ADMIN' : 'USER' }]);
 
     if (error) throw error;
-    res.status(201).json({ success: true, message: '회원가입이 완료되었습니다.' });
+    res.status(201).json({ success: true, message: '회원가입 완료' });
   } catch (err: any) {
     res.status(400).json({ success: false, message: err.message });
   }
@@ -87,80 +78,70 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
 
 /**
  * 2. 로그인 API
- * 유저 인증 후 1시간 유효한 JWT 토큰 발급
  */
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
+    const { data: user, error } = await supabase.from('profiles').select('*').eq('email', email).single();
 
-    const { data: user, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('email', email)
-      .single();
-
-    if (error || !user) return res.status(400).json({ success: false, message: '등록되지 않은 이메일입니다.' });
+    if (error || !user) return res.status(400).json({ success: false, message: '등록되지 않은 유저' });
 
     const isPasswordMatch = await bcrypt.compare(password, user.password);
-    if (!isPasswordMatch) return res.status(400).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
+    if (!isPasswordMatch) return res.status(400).json({ success: false, message: '비밀번호 불일치' });
 
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      secretKey!, 
-      { expiresIn: '1h' } 
-    );
-
-    res.json({ 
-      success: true, 
-      token, 
-      user: { id: user.id, name: user.name, email: user.email, role: user.role } 
-    });
+    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, secretKey!, { expiresIn: '1h' });
+    res.json({ success: true, token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    res.status(500).json({ success: false, message: '서버 오류' });
   }
 });
 
 /**
  * 3. 토큰 연장 API (Refresh)
- * 클라이언트에서 '연장하기' 버튼 클릭 시 호출
  */
 app.post('/api/auth/refresh', async (req: Request, res: Response) => {
   try {
     const authHeader = req.headers.authorization;
     const token = authHeader?.split(' ')[1];
+    if (!token) return res.status(401).json({ success: false });
 
-    if (!token) {
-      return res.status(401).json({ success: false, message: "토큰이 누락되었습니다." });
-    }
-
-    // 기존 토큰 검증 (만료 전이어야 연장이 원활함)
     const decoded: any = jwt.verify(token, secretKey!);
+    const newToken = jwt.sign({ id: decoded.id, email: decoded.email, role: decoded.role }, secretKey!, { expiresIn: '1h' });
 
-    // 새로운 토큰 발급 (동일한 유저 정보로 유효기간만 1시간 초기화)
-    const newToken = jwt.sign(
-      { id: decoded.id, email: decoded.email, role: decoded.role },
-      secretKey!,
-      { expiresIn: '1h' }
-    );
-
-    res.json({ 
-      success: true, 
-      token: newToken,
-      message: "로그인 세션이 1시간 연장되었습니다." 
-    });
+    res.json({ success: true, token: newToken });
   } catch (err: any) {
-    console.error("Token Refresh Error:", err.message);
-    res.status(401).json({ 
-      success: false, 
-      message: "인증이 유효하지 않습니다. 다시 로그인해주세요." 
-    });
+    res.status(401).json({ success: false, message: "인증 만료" });
   }
 });
 
-// 서버 헬스체크용 루트 경로
+/**
+ * 4. 보안 위협 로그 기록 API (신규 추가)
+ * 클라이언트에서 이상 징후(DDoS 등) 감지 시 서버 DB에 기록
+ */
+app.post('/api/admin/report-threat', async (req: Request, res: Response) => {
+  try {
+    const { email, violationType, count } = req.body;
+
+    const { error } = await supabase
+      .from('security_logs')
+      .insert([
+        { 
+          user_email: email || 'Anonymous', 
+          violation_type: violationType, 
+          request_count: count 
+        }
+      ]);
+
+    if (error) throw error;
+    res.json({ success: true, message: "Security log recorded" });
+  } catch (err: any) {
+    console.error("Log Error:", err.message);
+    res.status(500).json({ message: "Failed to record log" });
+  }
+});
+
 app.get('/', (req, res) => res.send('곡곡(GokGok) 서버 가동 중! 🚀'));
 
-// 서버 리스닝
 app.listen(Number(PORT), () => {
   console.log(`🚀 [Server] Port ${PORT} 에서 곡곡 엔진 가동 시작!`);
 });

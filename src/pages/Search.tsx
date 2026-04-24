@@ -1,173 +1,186 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Heart } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { mockFestivals, topFestivals } from "@/lib/index";
-import { fadeInUp, staggerContainer, staggerItem } from "@/lib/motion";
-import { FestivalCard } from "@/components/FestivalCard";
-import { KoreaMap } from "@/components/KoreaMap"; 
-import { SearchBar } from "@/components/SearchBar";
 
-export default function Search() {  
-  
-  const [activeTab, setActiveTab] = useState<"list" | "map">("list");
-  const [selectedRegion, setSelectedRegion] = useState<string>("");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-
-  // 🔥 찜 상태
+export default function SearchPage() {
+  const [query, setQuery] = useState("");
+  const [scrollX, setScrollX] = useState(0);
   const [liked, setLiked] = useState<string[]>([]);
+  const navigate = useNavigate();
+
+  const scroll = (dir: "left" | "right") => {
+    const amount = 300;
+    setScrollX((prev) => (dir === "left" ? prev - amount : prev + amount));
+  };
 
   const toggleLike = (id: string) => {
     setLiked((prev) =>
-      prev.includes(id)
-        ? prev.filter((item) => item !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
-  const regionMap: Record<string, string[]> = {
-    서울: ["서울특별시"],
-    경기: ["경기도"],
-    인천: ["인천광역시"],
-    강원: ["강원도"],
-    충북: ["충청북도"],
-    충남: ["충청남도"],
-    대전: ["대전광역시"],
-    세종: ["세종특별자치시"],
-    전북: ["전라북도"],
-    전남: ["전라남도"],
-    광주: ["광주광역시"],
-    경북: ["경상북도"],
-    경남: ["경상남도"],
-    대구: ["대구광역시"],
-    울산: ["울산광역시"],
-    부산: ["부산광역시"],
-    제주: ["제주특별자치도"],
-  };
-
-  const englishToKoreanMap: Record<string, string> = {
-    Seoul: "서울",
-    Gyeonggi: "경기",
-    Incheon: "인천",
-    Gangwon: "강원",
-    Chungbuk: "충북",
-    Chungnam: "충남",
-    Daejeon: "대전",
-    Sejong: "세종",
-    Jeonbuk: "전북",
-    Jeonnam: "전남",
-    Gwangju: "광주",
-    Gyeongbuk: "경북",
-    Gyeongnam: "경남",
-    Daegu: "대구",
-    Ulsan: "울산",
-    Busan: "부산",
-    Jeju: "제주",
-  };
-
-  const currentKoreanRegion = englishToKoreanMap[selectedRegion] || "";
-
-  const filteredFestivals = [...topFestivals, ...mockFestivals].filter((festival) => {
-    const matchesSearch = searchQuery
-      ? festival.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        festival.location.toLowerCase().includes(searchQuery.toLowerCase())
-      : true;
-
-    const matchesRegion = currentKoreanRegion
-      ? regionMap[currentKoreanRegion]?.some((loc) => festival.location.includes(loc))
-      : true;
-
-    return matchesSearch && matchesRegion;
-  });
-
-  const handleRegionSelect = (regionId: string) => {
-    setSelectedRegion(regionId === selectedRegion ? "" : regionId);
-  };
-
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-  };
+  const filteredFestivals = mockFestivals.filter(
+    (item) =>
+      item.title.includes(query) ||
+      item.location.includes(query) ||
+      item.category.includes(query),
+  );
 
   return (
-    <motion.div
-      variants={fadeInUp}
-      initial="hidden"
-      animate="visible"
-      className="min-h-screen bg-[#FDFBF7] dark:bg-[#121212] py-12"
-    >
-      <div className="container mx-auto px-4">
-        
-        {/* 타이틀 */}
-        <div className="mb-16 flex flex-col items-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-8">
-            전국 방방곡곡 축제 찾기
-          </h1>
-          <div className="w-full max-w-3xl">
-            <SearchBar onSearch={handleSearch} />
+    <div className="bg-background text-foreground min-h-screen">
+      {/* 🔥 상단 슬라이드 */}
+      <section className="px-8 md:px-16 pt-32 pb-10 relative">
+        <div className="relative">
+          {/* 버튼 */}
+          <button
+            onClick={() => scroll("left")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-card border border-border rounded-xl p-2"
+          >
+            <ChevronLeft />
+          </button>
+
+          <button
+            onClick={() => scroll("right")}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-card border border-border rounded-xl p-2"
+          >
+            <ChevronRight />
+          </button>
+
+          {/* 🔥 검색창 */}
+          <section className="px-8 md:px-16 pb-10">
+            <div className="max-w-xl ml-auto">
+              <div className="flex items-center gap-3 bg-card border border-border rounded-full px-5 py-3 shadow-sm">
+                <Search className="w-4 h-4 opacity-40" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="축제 이름, 지역, 키워드로 검색하세요"
+                  className="bg-transparent outline-none w-full text-sm"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* 🔥 슬라이드 */}
+          <div className="overflow-hidden">
+            <div
+              className="flex gap-6 transition-transform duration-500"
+              style={{ transform: `translateX(-${scrollX}px)` }}
+            >
+              {topFestivals.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => navigate(`/search/${item.id}`)}
+                  className="min-w-[220px] cursor-pointer"
+                >
+                  <div className="rounded-2xl overflow-hidden relative">
+                    <img
+                      src={item.image}
+                      className="w-full h-[260px] object-cover"
+                    />
+
+                    {/* ❤️ 하트 (배경 제거) */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleLike(item.id);
+                      }}
+                      className="absolute top-3 right-3"
+                    >
+                      <Heart
+                        className={`w-6 h-6 drop-shadow-md ${
+                          liked.includes(item.id)
+                            ? "fill-red-500 text-red-500"
+                            : "text-white"
+                        }`}
+                      />
+                    </button>
+
+                    {/* 랭킹 */}
+                    {item.rank && (
+                      <span className="absolute bottom-2 left-2 text-[80px] font-black text-black/80 leading-none">
+                        {item.rank}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-sm font-medium line-clamp-2">
+                    {item.title}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* 탭 */}
-        <div className="mb-8 flex justify-end">
-          <div className="flex rounded-full p-1">
-            <button onClick={() => setActiveTab("list")} className="w-[100px] py-2">
-              목록보기
-            </button>
-            <button onClick={() => setActiveTab("map")} className="w-[100px] py-2">
-              지도보기
-            </button>
-          </div>
-        </div>  
+      {/* 🔥 탭 */}
+      <section className="px-8 md:px-16 border-t border-border py-6 flex justify-between items-center">
+        <div className="flex gap-6 text-sm">
+          <button className="border-b border-foreground pb-1">LIST VIEW</button>
+          <button className="opacity-40 hover:opacity-100">
+            MAP DISCOVERY
+          </button>
+        </div>
 
-        <AnimatePresence mode="wait">
-          {activeTab === "list" ? (
-            <motion.div
-              key="list"
-              variants={staggerContainer}
-              initial="hidden"
-              animate="visible"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                
-                {filteredFestivals.map((festival) => (
-                  <motion.div key={festival.id} variants={staggerItem}>
-                    
-                    {/* 🔥 카드 + 하트 */}
-                    <div className="relative">
-                      <FestivalCard festival={festival} />
+        <p className="text-xs opacity-40">
+          Found {filteredFestivals.length} results
+        </p>
+      </section>
 
-                      {/* 🔥 하트 (배경 없음) */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleLike(String(festival.id));
-                        }}
-                        className="absolute top-3 right-3"
-                      >
-                        <Heart
-                          className={`w-6 h-6 ${
-                            liked.includes(String(festival.id))
-                              ? "fill-red-500 text-red-500"
-                              : "text-white"
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                  </motion.div>
-                ))}
-
-              </div>
-            </motion.div>
-          ) : (
-            <motion.div key="map">
-              <KoreaMap 
-                selectedRegion={selectedRegion} 
-                onRegionSelect={handleRegionSelect} 
+      {/* 🔥 카드 리스트 */}
+      <section className="px-8 md:px-16 py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        {filteredFestivals.map((item) => (
+          <div
+            key={item.id}
+            onClick={() => navigate(`/search/${item.id}`)}
+            className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition cursor-pointer"
+          >
+            {/* 이미지 */}
+            <div className="relative">
+              <img
+                src={item.image}
+                alt={item.title}
+                className="w-full h-[220px] object-cover"
               />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-    </motion.div>
+
+              {/* ❤️ 하트 (배경 제거) */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleLike(item.id);
+                }}
+                className="absolute top-3 right-3"
+              >
+                <Heart
+                  className={`w-6 h-6 drop-shadow-md ${
+                    liked.includes(item.id)
+                      ? "fill-red-500 text-red-500"
+                      : "text-gray-300"
+                  }`}
+                />
+              </button>
+
+              {/* 상태 */}
+              <span className="absolute top-3 left-3 text-xs px-3 py-1 rounded-full bg-yellow-400 text-black font-semibold">
+                {item.status === "upcoming"
+                  ? "예정"
+                  : item.status === "ongoing"
+                    ? "진행중"
+                    : "종료"}
+              </span>
+            </div>
+
+            {/* 내용 */}
+            <div className="p-4">
+              <p className="text-xs opacity-40 mb-1">{item.category}</p>
+              <h3 className="font-semibold">{item.title}</h3>
+              <p className="text-xs opacity-50">{item.location}</p>
+            </div>
+          </div>
+        ))}
+      </section>
+    </div>
   );
 }

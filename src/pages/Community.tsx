@@ -390,7 +390,7 @@ export default function Community() {
           
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">커뮤니티</h1>
+              <h1 className="text-4xl font-bold text-foreground mb-2">수다</h1>
               <p className="text-muted-foreground">축제 후기와 사진을 공유하고 다른 사람들의 경험을 확인해보세요</p>
             </div>
             <Button className="gap-2" onClick={handleWriteClick}> 
