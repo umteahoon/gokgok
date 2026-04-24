@@ -11,7 +11,8 @@ import {
   Search, 
   ShieldAlert, 
   Activity,
-  Server
+  Server,
+  MessageSquare
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,11 +31,20 @@ interface UserData {
   created_at: string;
 }
 
+interface PostData {
+  id: string;
+  title: string;
+  author: string;
+  category: string;
+  created_at: string;
+}
+
 export default function AdminDashboard() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalUsers: 0, totalPosts: 0, activeFestivals: 0 });
   const [users, setUsers] = useState<UserData[]>([]);
+  const [posts, setPosts] = useState<PostData[]>([]); // 게시글 상태 추가
   const [search, setSearch] = useState("");
 
   const API_BASE_URL = "https://gokgok-8ztf.onrender.com/api/admin";
@@ -48,7 +58,7 @@ export default function AdminDashboard() {
       const statsRes = await fetch(`${API_BASE_URL}/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!statsRes.ok) throw new Error("통계 로드 실패 (401)");
+      if (!statsRes.ok) throw new Error("통계 로드 실패");
       const statsData = await statsRes.json();
       setStats(statsData);
 
@@ -56,10 +66,18 @@ export default function AdminDashboard() {
       const usersRes = await fetch(`${API_BASE_URL}/users`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!usersRes.ok) throw new Error("유저 목록 로드 실패 (401)");
+      if (!usersRes.ok) throw new Error("유저 로드 실패");
       const usersData = await usersRes.json();
-      
       setUsers(Array.isArray(usersData) ? usersData : []);
+
+      // 3. 게시글 목록 로드 (추가)
+      const postsRes = await fetch(`${API_BASE_URL}/posts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (postsRes.ok) {
+        const postsData = await postsRes.json();
+        setPosts(Array.isArray(postsData) ? postsData : []);
+      }
 
     } catch (error: any) {
       console.error("데이터 로드 실패:", error);
@@ -77,7 +95,7 @@ export default function AdminDashboard() {
     loadAdminData();
   }, []);
 
-  // 닉네임 및 이메일 통합 검색 필터
+  // 유저 필터링
   const filteredUsers = users.filter((user) => {
     const keyword = search.toLowerCase();
     return (
@@ -86,6 +104,7 @@ export default function AdminDashboard() {
     );
   });
 
+  // 유저 삭제 함수
   const handleUserDelete = async (id: string, email: string) => {
     if (!window.confirm(`${email} 사용자를 강제 탈퇴시키겠습니까?`)) return;
     const token = localStorage.getItem("accessToken");
@@ -100,6 +119,24 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       toast({ variant: "destructive", title: "삭제 실패" });
+    }
+  };
+
+  // 게시글 삭제 함수
+  const handlePostDelete = async (id: string, title: string) => {
+    if (!window.confirm(`'${title}' 게시글을 삭제하시겠습니까?`)) return;
+    const token = localStorage.getItem("accessToken");
+    try {
+      const res = await fetch(`${API_BASE_URL}/posts/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        toast({ title: "삭제 완료", description: "게시글이 삭제되었습니다." });
+        loadAdminData();
+      }
+    } catch (error) {
+      toast({ variant: "destructive", title: "게시글 삭제 실패" });
     }
   };
 
@@ -126,26 +163,26 @@ export default function AdminDashboard() {
 
         {/* 대시보드 카드 섹션 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-t-4 border-t-blue-500 shadow-sm">
+          <Card className="border-t-4 border-t-blue-500 shadow-sm transition-transform hover:scale-[1.02]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-500" /> 전체 회원 수
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-500">
+                <Users className="w-4 h-4" /> 전체 회원 수
               </CardTitle>
             </CardHeader>
             <CardContent><div className="text-2xl font-bold">{stats.totalUsers}명</div></CardContent>
           </Card>
-          <Card className="border-t-4 border-t-green-500 shadow-sm">
+          <Card className="border-t-4 border-t-green-500 shadow-sm transition-transform hover:scale-[1.02]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <FileText className="w-4 h-4 text-green-500" /> 전체 게시글
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-green-500">
+                <FileText className="w-4 h-4" /> 전체 게시글
               </CardTitle>
             </CardHeader>
             <CardContent><div className="text-2xl font-bold">{stats.totalPosts}개</div></CardContent>
           </Card>
-          <Card className="border-t-4 border-t-orange-500 shadow-sm">
+          <Card className="border-t-4 border-t-orange-500 shadow-sm transition-transform hover:scale-[1.02]">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-orange-500" /> 운영 축제
+              <CardTitle className="text-sm font-medium flex items-center gap-2 text-orange-500">
+                <BarChart3 className="w-4 h-4" /> 운영 축제
               </CardTitle>
             </CardHeader>
             <CardContent><div className="text-2xl font-bold">{stats.activeFestivals}개</div></CardContent>
@@ -154,7 +191,7 @@ export default function AdminDashboard() {
 
         {/* 탭 섹션 */}
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 shadow-sm">
+          <TabsList className="grid w-full grid-cols-3 mb-8 shadow-sm h-12">
             <TabsTrigger value="users">사용자 관리</TabsTrigger>
             <TabsTrigger value="posts">콘텐츠 관리</TabsTrigger>
             <TabsTrigger value="system">보안 로그</TabsTrigger>
@@ -225,31 +262,69 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          {/* 2. 콘텐츠 관리 탭 (준비 중) */}
+          {/* 2. 콘텐츠 관리 탭 (게시글 관리 통합) */}
           <TabsContent value="posts">
-            <Card className="shadow-md">
+            <Card className="shadow-md border-none">
               <CardHeader>
-                <CardTitle>콘텐츠 통합 관리</CardTitle>
-                <CardDescription>커뮤니티 게시글 및 리뷰를 관리합니다.</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-green-600" /> 커뮤니티 게시글 관리
+                </CardTitle>
+                <CardDescription>사용자가 작성한 게시물을 모니터링하고 부적절한 글을 삭제합니다.</CardDescription>
               </CardHeader>
-              <CardContent className="py-20 text-center text-muted-foreground">
-                <Activity className="w-12 h-12 mx-auto mb-4 opacity-20" />
-                게시글 관리 기능 업데이트 준비 중입니다.
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">카테고리</TableHead>
+                      <TableHead>제목</TableHead>
+                      <TableHead>작성자</TableHead>
+                      <TableHead>작성일</TableHead>
+                      <TableHead className="text-right">삭제</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {posts.length > 0 ? posts.map((post) => (
+                      <TableRow key={post.id} className="hover:bg-muted/50 transition-colors">
+                        <TableCell><Badge variant="outline">{post.category}</Badge></TableCell>
+                        <TableCell className="font-medium truncate max-w-[300px]">{post.title}</TableCell>
+                        <TableCell>{post.author}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {new Date(post.created_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-destructive hover:bg-destructive/10"
+                            onClick={() => handlePostDelete(post.id, post.title)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
+                          {loading ? "데이터 로딩 중..." : "등록된 게시글이 없습니다."}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* 3. 보안 로그 탭 (신규 추가) */}
+          {/* 3. 보안 로그 탭 */}
           <TabsContent value="system">
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5 text-destructive" /> 시스템 보안 및 통신 로그
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <ShieldAlert className="w-5 h-5" /> 시스템 보안 및 통신 로그
                 </CardTitle>
-                <CardDescription>서버 인스턴스와의 통신 상태를 실시간 모니터링합니다.</CardDescription>
+                <CardDescription>서버 인스턴스와의 실시간 통신 상태를 모니터링합니다.</CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
-                {/* 터미널 스타일 로그 */}
                 <div className="bg-slate-950 text-green-400 p-6 rounded-xl font-mono text-xs shadow-2xl border border-slate-800 overflow-hidden relative">
                   <div className="absolute top-3 right-4 flex gap-1.5 opacity-50">
                     <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
@@ -287,18 +362,17 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                {/* 하단 서버 상태 요약 */}
                 <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 rounded-lg border bg-muted/50 flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase font-bold">Server Engine</p>
+                      <p className="text-xs text-muted-foreground uppercase font-bold text-[10px]">Server Engine</p>
                       <p className="text-sm font-medium">Node.js / Express (Render)</p>
                     </div>
                     <Server className="w-5 h-5 text-muted-foreground" />
                   </div>
                   <div className="p-4 rounded-lg border bg-muted/50 flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-muted-foreground uppercase font-bold">System Health</p>
+                      <p className="text-xs text-muted-foreground uppercase font-bold text-[10px]">System Health</p>
                       <p className="text-sm font-medium text-green-600">Operational (100.0%)</p>
                     </div>
                     <Activity className="w-5 h-5 text-green-500 animate-pulse" />

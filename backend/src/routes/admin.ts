@@ -1,4 +1,4 @@
-// routes/admin.ts - 엄태훈
+// routes/admin.ts - 엄태훈 최종 수정본 (게시글 관리 기능 포함)
 import express, { Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
@@ -20,14 +20,12 @@ const verifyAdmin = (req: Request, res: Response, next: any) => {
   }
 
   try {
-    // [보안 강화] 환경변수를 직접 가져오고, 없으면 서버 오류 반환
     const secret = process.env.JWT_SECRET;
     
     if (!secret) {
       return res.status(500).json({ message: "서버 내부 설정 오류" });
     }
 
-    // 토큰 검증 - index.ts와 동일한 secret 사용
     const decoded: any = jwt.verify(token, secret);
     
     if (decoded.role !== 'ADMIN') {
@@ -42,7 +40,8 @@ const verifyAdmin = (req: Request, res: Response, next: any) => {
 };
 
 /**
- * 통계 조회
+ * @route   GET /api/admin/stats
+ * @desc    대시보드 통계 정보 조회
  */
 router.get('/stats', verifyAdmin, async (req: Request, res: Response) => {
   try {
@@ -62,7 +61,8 @@ router.get('/stats', verifyAdmin, async (req: Request, res: Response) => {
 });
 
 /**
- * 유저 목록 조회
+ * @route   GET /api/admin/users
+ * @desc    유저 목록 조회
  */
 router.get('/users', verifyAdmin, async (req: Request, res: Response) => {
   try {
@@ -85,7 +85,8 @@ router.get('/users', verifyAdmin, async (req: Request, res: Response) => {
 });
 
 /**
- * 유저 삭제
+ * @route   DELETE /api/admin/users/:id
+ * @desc    유저 강제 삭제
  */
 router.delete('/users/:id', verifyAdmin, async (req: Request, res: Response) => {
   try {
@@ -95,6 +96,45 @@ router.delete('/users/:id', verifyAdmin, async (req: Request, res: Response) => 
     res.json({ success: true, message: "삭제 완료" });
   } catch (error: any) {
     res.status(500).json({ message: "삭제 실패" });
+  }
+});
+
+/**
+ * @route   GET /api/admin/posts
+ * @desc    전체 게시글 목록 조회 (관리자용)
+ */
+router.get('/posts', verifyAdmin, async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('community_posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json(data || []);
+  } catch (error: any) {
+    console.error("Posts List Error:", error.message);
+    res.status(500).json({ message: "게시글 목록 로드 실패" });
+  }
+});
+
+/**
+ * @route   DELETE /api/admin/posts/:id
+ * @desc    부적절한 게시글 강제 삭제
+ */
+router.delete('/posts/:id', verifyAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { error } = await supabase
+      .from('community_posts')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    res.json({ success: true, message: "게시글이 삭제되었습니다." });
+  } catch (error: any) {
+    console.error("Post Delete Error:", error.message);
+    res.status(500).json({ message: "게시글 삭제 실패" });
   }
 });
 
