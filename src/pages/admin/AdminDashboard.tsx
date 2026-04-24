@@ -24,6 +24,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalUsers: 0, totalPosts: 0, activeFestivals: 0 });
   const [users, setUsers] = useState<UserData[]>([]);
+  const [search, setSearch] = useState(""); // 검색 4/24
 
   // Render 백엔드 주소 설정
   const API_BASE_URL = "https://gokgok-8ztf.onrender.com/api/admin";
@@ -207,7 +208,7 @@ export default function AdminDashboard() {
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground"> 
                           {loading ? "데이터를 불러오는 중입니다..." : "표시할 사용자 데이터가 없습니다."}
                         </TableCell>
                       </TableRow>

@@ -102,7 +102,7 @@ export default function CommunityWrite() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/community", {
+      const response = await fetch("http://127.0.0.1:5000/api/community", {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({

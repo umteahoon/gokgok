@@ -116,7 +116,7 @@ export default function Community() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch("http://http://127.0.0.1:5000/api/community"); // IPv4 주소로 변경
+        const response = await fetch("http://127.0.0.1:5000/api/community"); // IPv4 주소로 변경
         const data = await response.json();
         
         if (data.success) {
@@ -162,7 +162,7 @@ export default function Community() {
     e.stopPropagation(); 
     if (window.confirm("정말로 이 게시물을 삭제하시겠습니까?")) {
       try {
-        const response = await fetch(`http://localhost:5000/api/community/${postId}`, {
+        const response = await fetch(`http://127.0.0.1:5000/api/community/${postId}`, {
           method: "DELETE",
           headers: authHeaders
         });
@@ -187,7 +187,7 @@ export default function Community() {
   const submitEditPost = async () => {
     if (!editingPost) return;
     try {
-      const response = await fetch(`http://localhost:5000/api/community/${editingPost.id}`, {
+      const response = await fetch(`http://127.0.0.1:5000/api/community/${editingPost.id}`, {
         method: "PUT",
         headers: authHeaders,
         body: JSON.stringify({ title: editTitle, content: editContent })
@@ -211,7 +211,7 @@ export default function Community() {
     if (!commentText.trim() || !selectedPost) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/community/${selectedPost.id}/comments`, {
+      const response = await fetch(`http://127.0.0.1:5000/api/community/${selectedPost.id}/comments`, {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({ author: currentUser.name, text: commentText })
@@ -239,7 +239,7 @@ export default function Community() {
   const handleDeleteComment = async (postId: string, commentId: string) => {
     if (window.confirm("댓글을 삭제하시겠습니까?")) {
       try {
-        const response = await fetch(`http://localhost:5000/api/community/${postId}/comments/${commentId}`, {
+        const response = await fetch(`http://127.0.0.1:5000/api/community/${postId}/comments/${commentId}`, {
           method: "DELETE",
           headers: authHeaders
         });

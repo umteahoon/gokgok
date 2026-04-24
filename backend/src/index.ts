@@ -51,7 +51,7 @@ app.use(express.json());
 app.use('/api/interactions', favoritesRouter); // 찜하기 관련 경로는 /api/interactions 로 시작
 app.use('/api/reviews', reviewRouter);         // 리뷰 관련 경로는 /api/reviews 로 시작
 app.use('/api/admin', adminRouter);            // 관리자 관련 경로는 /api/admin 으로 시작
-app.use('/api/community', communityRouter); // 커뮤니티 관련 경로는 /api/community 로 시작 - 주환
+app.use('/api/community', communityRouter);    // 커뮤니티 관련 경로는 /api/community 로 시작 - 주환
 
 /**
  * 1. 회원가입 API
@@ -112,9 +112,15 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
     }
 
+    // [보안 강화] 환경 변수 키를 우선적으로 사용합니다.
+    const secretKey = process.env.JWT_SECRET;
+    if (!secretKey) {
+        console.error("JWT_SECRET 환경변수가 없습니다.");
+    }
+
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'secret',
+      secretKey!, 
       { expiresIn: '30m' }
     );
 
