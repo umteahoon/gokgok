@@ -1,4 +1,4 @@
-// 주환 - 2026.03.20: 커뮤니티 글쓰기 페이지
+// CommunityWrite.tsx (Render 서버 통신용)
 import { useState, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -7,15 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fadeInUp } from "@/lib/motion";
 import { getCurrentUser } from "@/lib/login";
-
-// 댓글 타입 추가
-interface CommentData {
-  id: string;
-  author: string;
-  text: string;
-  date: string;
-  likes?: number;
-}
 
 export default function CommunityWrite() {
   const navigate = useNavigate();
@@ -28,7 +19,6 @@ export default function CommunityWrite() {
   });
 
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
-  // 드래그 중인지 판단하는 상태
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -41,9 +31,7 @@ export default function CommunityWrite() {
     fileInputRef.current?.click();
   };
 
-  // 공통 파일 처리 함수 (클릭 업로드 & 드래그 드롭 모두 사용)
   const processFiles = (files: File[]) => {
-    // 이미지 파일만 걸러내기
     const imageFiles = files.filter(file => file.type.startsWith("image/"));
 
     if (imagePreviews.length + imageFiles.length > 30) {
@@ -65,22 +53,20 @@ export default function CommunityWrite() {
     setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // 드래그 앤 드롭 이벤트 핸들러
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(true); // 마우스가 올라오면 테두리 색상 변경
+    setIsDragging(true); 
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    setIsDragging(false); // 마우스가 나가면 원래대로 복구
+    setIsDragging(false); 
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
     
-    // 드롭된 파일들을 배열로 추출하여 처리 함수로 전달
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       processFiles(Array.from(e.dataTransfer.files));
       e.dataTransfer.clearData();
@@ -102,11 +88,14 @@ export default function CommunityWrite() {
     }
 
     try {
+      // 💡 주소를 다시 Render 서버로 변경했습니다. 
+      // (주의: Render 서버 업데이트 전까지는 이메일이 저장되지 않아 삭제/수정이 불가합니다)
       const response = await fetch("https://gokgok-8ztf.onrender.com/api/community", {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({
           author: currentUser?.name || "나(GokGok)",
+          author_email: currentUser?.email,
           title: formData.festivalTitle,
           content: formData.content,
           category: formData.category,
@@ -167,7 +156,6 @@ export default function CommunityWrite() {
               
               <input type="file" multiple accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
 
-              {/* 드래그 앤 드롭을 지원하는 이미지 컨테이너 */}
               <div 
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -179,7 +167,7 @@ export default function CommunityWrite() {
                 {imagePreviews.length < 30 && (
                   <div onClick={handleImageClick} className="w-24 h-24 shrink-0 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors bg-background">
                     <ImagePlus className="w-6 h-6 mb-1" />
-                    <span className="text-[10px] text-center px-1">사진</span>
+                    <span className="text-[10px] text-center px-1">클릭 또는<br/>드래그 앤 드롭</span>
                   </div>
                 )}
                 
@@ -193,10 +181,6 @@ export default function CommunityWrite() {
                   </div>
                 ))}
               </div>
-              {/* 안내 문구 추가 */}
-              <p className="text-xs text-muted-foreground mt-1">
-                점선 박스 안에 이미지 파일을 끌어다 놓으세요. 여러 장을 한 번에 드래그할 수도 있습니다.
-              </p>
             </div>
 
             <div className="flex justify-end gap-4 pt-4 border-t border-border">
