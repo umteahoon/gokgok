@@ -51,6 +51,7 @@ app.use(express.json());
 app.use('/api/interactions', favoritesRouter); // 찜하기 관련 경로는 /api/interactions 로 시작
 app.use('/api/reviews', reviewRouter);         // 리뷰 관련 경로는 /api/reviews 로 시작
 app.use('/api/admin', adminRouter);            // 관리자 관련 경로는 /api/admin 으로 시작
+app.use('/api/community', communityRouter); // 커뮤니티 관련 경로는 /api/community 로 시작 - 주환
 
 /**
  * 1. 회원가입 API
