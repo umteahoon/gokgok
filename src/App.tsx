@@ -59,9 +59,10 @@ const App = () => {
       const currentUser = JSON.parse(localStorage.getItem("gokgok_current_user") || "{}");
       
       /**
-       * [수정 포인트] 
-       * 테스트 및 실시간 관제를 위해 '이미 보고됨' 플래그를 확인하지 않고,
-       * 10회 이상인 경우 새로고침 시마다 서버 DB에 로그를 전송합니다.
+       * [시연 최적화 수정] 
+       * 중복 보고 방지 플래그를 제거했습니다. 
+       * DB에서 로그를 삭제하더라도, 브라우저 세션의 카운트가 10 이상이라면 
+       * 새로고침 시마다 즉시 서버 DB에 다시 기록합니다.
        */
       if (refreshCount >= 10) {
         try {
@@ -74,7 +75,7 @@ const App = () => {
               count: refreshCount
             })
           });
-          console.log(`🚨 위협 정보가 실시간으로 보안 서버 DB에 기록되었습니다. (Count: ${refreshCount})`);
+          console.log(`🚨 위협 정보 서버 전송 완료 (현재 카운트: ${refreshCount})`);
         } catch (err) {
           console.error("보안 로그 전송 실패:", err);
         }
