@@ -116,7 +116,7 @@ export default function Community() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/community");
+        const response = await fetch("http://http://127.0.0.1:5000/api/community"); // IPv4 주소로 변경
         const data = await response.json();
         
         if (data.success) {

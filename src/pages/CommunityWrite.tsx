@@ -1,4 +1,4 @@
-// 주환 - 2026.03.20: 커뮤니티 글쓰기 페이지 (백엔드 연동 완료)
+// 주환 - 2026.03.20: 커뮤니티 글쓰기 페이지
 import { useState, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { fadeInUp } from "@/lib/motion";
 import { getCurrentUser } from "@/lib/login";
 
-// 💡 여기에 진짜 댓글 타입을 추가
+// 댓글 타입 추가
 interface CommentData {
   id: string;
   author: string;
@@ -28,6 +28,8 @@ export default function CommunityWrite() {
   });
 
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  // 드래그 중인지 판단하는 상태
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -39,18 +41,22 @@ export default function CommunityWrite() {
     fileInputRef.current?.click();
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []); 
-    
-    if (imagePreviews.length + files.length > 30) {
+  // 공통 파일 처리 함수 (클릭 업로드 & 드래그 드롭 모두 사용)
+  const processFiles = (files: File[]) => {
+    // 이미지 파일만 걸러내기
+    const imageFiles = files.filter(file => file.type.startsWith("image/"));
+
+    if (imagePreviews.length + imageFiles.length > 30) {
       alert("사진은 최대 30장까지 업로드할 수 있습니다.");
       return;
     }
 
-    // 선택된 모든 파일의 임시 URL 생성
-    const newUrls = files.map(file => URL.createObjectURL(file));
+    const newUrls = imageFiles.map(file => URL.createObjectURL(file));
     setImagePreviews(prev => [...prev, ...newUrls]);
-    
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    processFiles(Array.from(e.target.files || []));
     if (fileInputRef.current) fileInputRef.current.value = ""; 
   };
 
@@ -59,25 +65,44 @@ export default function CommunityWrite() {
     setImagePreviews(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // 💡 [수정됨] 로컬 스토리지 대신 백엔드 API로 데이터 전송
+  // 드래그 앤 드롭 이벤트 핸들러
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true); // 마우스가 올라오면 테두리 색상 변경
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false); // 마우스가 나가면 원래대로 복구
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    // 드롭된 파일들을 배열로 추출하여 처리 함수로 전달
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(Array.from(e.dataTransfer.files));
+      e.dataTransfer.clearData();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const DEFAULT_IMAGE = "https://placehold.co/800x400/eeeeee/999999?text=No+Photo";
     const finalImages = imagePreviews.length > 0 ? imagePreviews : [DEFAULT_IMAGE];
 
-    // 로그인 시 저장해둔 토큰 꺼내기
     const token = localStorage.getItem('token');
     const authHeaders: any = {
       "Content-Type": "application/json",
     };
     if (token) {
-      authHeaders["Authorization"] = `Bearer ${token}`; // 보안 검문소(미들웨어) 통과용 출입증
+      authHeaders["Authorization"] = `Bearer ${token}`; 
     }
 
     try {
-      // 💡 백엔드 주소로 POST 요청
-      const response = await fetch("http://localhost:5000/api/community", {
+      const response = await fetch("http://http://127.0.0.1:5000/api/community", { // IPv4 주소로 변경
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({
@@ -142,11 +167,19 @@ export default function CommunityWrite() {
               
               <input type="file" multiple accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
 
-              <div className="flex gap-4 overflow-x-auto py-2">
+              {/* 드래그 앤 드롭을 지원하는 이미지 컨테이너 */}
+              <div 
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`flex gap-4 overflow-x-auto p-4 border-2 border-dashed rounded-lg transition-colors min-h-[140px] ${
+                  isDragging ? "border-primary bg-primary/10" : "border-border/50 bg-muted/20"
+                }`}
+              >
                 {imagePreviews.length < 30 && (
-                  <div onClick={handleImageClick} className="w-24 h-24 shrink-0 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors">
+                  <div onClick={handleImageClick} className="w-24 h-24 shrink-0 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors bg-background">
                     <ImagePlus className="w-6 h-6 mb-1" />
-                    <span className="text-xs">추가</span>
+                    <span className="text-[10px] text-center px-1">사진</span>
                   </div>
                 )}
                 
@@ -160,6 +193,10 @@ export default function CommunityWrite() {
                   </div>
                 ))}
               </div>
+              {/* 안내 문구 추가 */}
+              <p className="text-xs text-muted-foreground mt-1">
+                점선 박스 안에 이미지 파일을 끌어다 놓으세요. 여러 장을 한 번에 드래그할 수도 있습니다.
+              </p>
             </div>
 
             <div className="flex justify-end gap-4 pt-4 border-t border-border">

@@ -15,6 +15,8 @@ import MyPage from "@/pages/MyPage"; // @로 통일
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import FestivalDetail from "@/pages/FestivalDetail"; 
+import { AdminRoute } from "@/components/auth/AdminRoute";
+import AdminDashboard from "@/pages/admin/AdminDashboard"; // 관리자 대시보드 추가
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,16 @@ const App = () => (
               <Route path={ROUTE_PATHS.MYPAGE} element={<MyPage />} />
               <Route path={ROUTE_PATHS.TERMS} element={<TermsOfService />} />
               <Route path={ROUTE_PATHS.PRIVACY} element={<PrivacyPolicy />} />
+
+              {/* 관리자 전용 페이지 (AdminRoute로 감싸서 권한 보호) */}
+              <Route 
+                path="/admin" 
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                } 
+              />
             </Routes>
           </Layout>
         </HashRouter>
