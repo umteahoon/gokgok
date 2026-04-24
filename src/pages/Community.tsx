@@ -1,8 +1,8 @@
-// 주환 - 2026.03.20: 커뮤니티 페이지
-import { useState, useEffect } from "react";
+// 주환 - 2026.04.24: 커뮤니티 페이지
+import { useState, useEffect, useRef } from "react"; // useRef 추가
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Heart, MessageCircle, Share2, User, Search, X, ChevronLeft, ChevronRight, Trash2, Pencil } from "lucide-react"; 
+import { Plus, Heart, MessageCircle, Share2, User, Search, X, ChevronLeft, ChevronRight, Trash2, Pencil, ImagePlus } from "lucide-react"; // ImagePlus 아이콘 추가
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -100,6 +100,11 @@ export default function Community() {
   const [editingPost, setEditingPost] = useState<CommunityPost | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
+  
+  // 수정 모달용 사진 상태 및 ref 추가
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [editIsDragging, setEditIsDragging] = useState(false);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [likedCommentIds, setLikedCommentIds] = useState<Set<string>>(new Set());
@@ -187,24 +192,78 @@ export default function Community() {
     setEditingPost(post);
     setEditTitle(post.Title);
     setEditContent(post.content);
+    // 모달 오픈 시 기존 사진으로 초기화
+    setEditImages(post.images || []);
+  };
+
+  // 수정 모달용 사진 처리 함수들 (CommunityWrite.tsx에서 이식)
+  const editProcessFiles = (files: File[]) => {
+    const imageFiles = files.filter(file => file.type.startsWith("image/"));
+    if (editImages.length + imageFiles.length > 30) {
+      alert("사진은 최대 30장까지 업로드할 수 있습니다.");
+      return;
+    }
+    const newUrls = imageFiles.map(file => URL.createObjectURL(file));
+    setEditImages(prev => [...prev, ...newUrls]); 
+  };
+
+  const handleEditImageClick = () => {
+    editFileInputRef.current?.click(); 
+  };
+
+  const handleEditImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    editProcessFiles(Array.from(e.target.files || []));
+    if (editFileInputRef.current) editFileInputRef.current.value = ""; 
+  };
+
+  const handleEditRemoveImage = (e: React.MouseEvent, indexToRemove: number) => {
+    e.stopPropagation(); 
+    setEditImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleEditDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setEditIsDragging(true); 
+  };
+
+  const handleEditDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setEditIsDragging(false); 
+  };
+
+  const handleEditDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setEditIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      editProcessFiles(Array.from(e.dataTransfer.files));
+      e.dataTransfer.clearData();
+    }
   };
 
   const submitEditPost = async () => {
     if (!editingPost) return;
+
+    // 모든 사진 삭제 시 기본 이미지 처리 로직 추가 (사용자 요청사항)
+    const DEFAULT_IMAGE = "https://placehold.co/800x400/eeeeee/999999?text=No+Photo";
+    const finalEditImages = editImages.length > 0 ? editImages : [DEFAULT_IMAGE];
+
     try {
       const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${editingPost.id}`, {
         method: "PUT",
         headers: authHeaders,
+        // images 데이터 추가 전송
         body: JSON.stringify({ 
           author_email: currentUser?.email, 
           title: editTitle, 
-          content: editContent 
+          content: editContent,
+          images: finalEditImages
         })
       });
       const data = await response.json();
 
       if (data.success) {
-        setPosts(posts.map(post => post.id === editingPost.id ? { ...post, Title: editTitle, content: editContent } : post));
+        // 상태 업데이트 시 이미지도 반영
+        setPosts(posts.map(post => post.id === editingPost.id ? { ...post, Title: editTitle, content: editContent, images: finalEditImages } : post));
         setEditingPost(null);
         alert("수정되었습니다.");
       } else {
@@ -361,7 +420,6 @@ export default function Community() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className={`${getCategoryColor(post.category)} pointer-events-none`}>{post.category}</Badge>
-                          {/* 작성자 검증 로직 변경 (이메일 비교) */}
                           {currentUser?.email === post.author_email && (
                             <>
                               <button onClick={(e) => openEditModal(e, post)} className="text-muted-foreground hover:text-primary transition-colors p-1">
@@ -434,6 +492,43 @@ export default function Community() {
                   <label className="block text-sm font-medium mb-1">내용</label>
                   <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className="w-full px-3 py-2 border rounded-md h-32 resize-none focus:outline-none focus:ring-2 focus:ring-primary" />
                 </div>
+                
+                {/* 수정 모달용 사진 첨부 UI 추가 (사용자 요청사항 구현) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-foreground">사진 수정</span>
+                    <span className="text-xs text-muted-foreground">{editImages.length} / 30장</span>
+                  </div>
+                  <input type="file" multiple accept="image/*" ref={editFileInputRef} onChange={handleEditImageUpload} className="hidden" />
+                  <div 
+                    onDragOver={handleEditDragOver}
+                    onDragLeave={handleEditDragLeave}
+                    onDrop={handleEditDrop}
+                    className={`flex gap-4 overflow-x-auto p-4 border-2 border-dashed rounded-lg transition-colors min-h-[140px] ${
+                      editIsDragging ? "border-primary bg-primary/10" : "border-border/50 bg-muted/20"
+                    }`}
+                  >
+                    {/* 사진 추가 버튼 */}
+                    {editImages.length < 30 && (
+                      <div onClick={handleEditImageClick} className="w-24 h-24 shrink-0 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors bg-background">
+                        <ImagePlus className="w-6 h-6 mb-1" />
+                        <span className="text-[10px] text-center px-1">사진</span>
+                      </div>
+                    )}
+                    {/* 미리보기 및 삭제 버튼 */}
+                    {editImages.map((url, idx) => (
+                      <div key={idx} className="relative w-24 h-24 shrink-0 group">
+                        <img src={url} alt={`preview-${idx}`} className="w-full h-full object-cover rounded-lg border border-border" />
+                        {/* 개별 사진 삭제 버튼 */}
+                        <button type="button" onClick={(e) => handleEditRemoveImage(e, idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <X className="w-3 h-3" />
+                        </button>
+                        {idx === 0 && <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] px-1.5 py-0.5 rounded">대표</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-2">
                   <Button variant="outline" onClick={() => setEditingPost(null)}>취소</Button>
                   <Button onClick={submitEditPost}>저장하기</Button>
@@ -483,7 +578,6 @@ export default function Community() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0 pt-1">
-                          {/* 댓글 작성자 검증 로직 변경 (이메일 비교) */}
                           {currentUser?.email === comment.author_email && (
                             <button onClick={() => handleDeleteComment(selectedPost.id, comment.id)} className="text-muted-foreground hover:text-red-500 transition-colors">
                               <Trash2 className="w-4 h-4" />

@@ -1,6 +1,6 @@
 /**
  * 곡곡 백엔드 메인 서버 - 엄태훈 최종 수정본
- * 주요 기능: 회원가입(권한 분기), 로그인(JWT 발급), 라우터 통합 관리
+ * 주요 기능: 회원가입(권한 분기), 로그인(JWT 발급), 토큰 연장(Refresh), 라우터 통합 관리
  */
 
 import dotenv from 'dotenv'; 
@@ -21,7 +21,7 @@ import communityRouter from './routes/community';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// [보안] 필수 환경변수 체크 (서버 시작 시 즉시 확인 가능)
+// [보안] 필수 환경변수 체크
 const secretKey = process.env.JWT_SECRET;
 if (!secretKey) {
   console.error("❌ Critical Error: JWT_SECRET 환경변수가 설정되지 않았습니다!");
@@ -56,13 +56,11 @@ app.use('/api/community', communityRouter);
 
 /**
  * 1. 회원가입 API
- * 관리자 권한 이메일: am2869@naver.com, qwe@qwe.com, juhwan@test.com
+ * 관리자 권한 이메일: am2869@naver.com, qwe@qwe.com, juhwan@test.com, qwer@1234.com
  */
 app.post('/api/auth/signup', async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
-    
-    // 비밀번호 해싱 (보안성 강화)
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // 관리자 여부 확인 로직
@@ -95,7 +93,6 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    // DB에서 유저 조회
     const { data: user, error } = await supabase
       .from('profiles')
       .select('*')
@@ -104,11 +101,9 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
 
     if (error || !user) return res.status(400).json({ success: false, message: '등록되지 않은 이메일입니다.' });
 
-    // 비밀번호 검증
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) return res.status(400).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
 
-    // JWT 토큰 생성 (Payload에 id, email, role 포함)
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       secretKey!, 
@@ -122,6 +117,43 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+});
+
+/**
+ * 3. 토큰 연장 API (Refresh)
+ * 클라이언트에서 '연장하기' 버튼 클릭 시 호출
+ */
+app.post('/api/auth/refresh', async (req: Request, res: Response) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({ success: false, message: "토큰이 누락되었습니다." });
+    }
+
+    // 기존 토큰 검증 (만료 전이어야 연장이 원활함)
+    const decoded: any = jwt.verify(token, secretKey!);
+
+    // 새로운 토큰 발급 (동일한 유저 정보로 유효기간만 1시간 초기화)
+    const newToken = jwt.sign(
+      { id: decoded.id, email: decoded.email, role: decoded.role },
+      secretKey!,
+      { expiresIn: '1h' }
+    );
+
+    res.json({ 
+      success: true, 
+      token: newToken,
+      message: "로그인 세션이 1시간 연장되었습니다." 
+    });
+  } catch (err: any) {
+    console.error("Token Refresh Error:", err.message);
+    res.status(401).json({ 
+      success: false, 
+      message: "인증이 유효하지 않습니다. 다시 로그인해주세요." 
+    });
   }
 });
 
