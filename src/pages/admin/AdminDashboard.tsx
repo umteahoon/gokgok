@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { fadeInUp } from "@/lib/motion";
+import { Input } from "@/components/ui/input";
 
 interface UserData {
   id: string;
@@ -121,12 +122,22 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader><CardTitle>가입 유저 목록</CardTitle></CardHeader>
               <CardContent>
+                <div className="mb-4 relative"> // 4/24 검색기능
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="search"
+                    placeholder="유저 닉네임으로 검색..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
                 <Table>
                   <TableHeader><TableRow>
                     <TableHead>이름</TableHead><TableHead>이메일</TableHead><TableHead>권한</TableHead><TableHead>가입일</TableHead><TableHead className="text-right">액션</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
-                    {users.length > 0 ? users.map((user) => (
+                    {filteredUsers.length > 0 ? filteredUsers.map((user) => (
                       <TableRow key={user.id}>
                         <TableCell className="font-medium">{user.username}</TableCell>
                         <TableCell>{user.email}</TableCell>
@@ -139,7 +150,15 @@ export default function AdminDashboard() {
                         </TableCell>
                       </TableRow>
                     )) : (
-                      <TableRow><TableCell colSpan={5} className="text-center py-10">데이터가 없습니다.</TableCell></TableRow>
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                          {loading
+                            ? "데이터를 불러오는 중입니다."
+                            : search
+                            ? "검색 결과가 없습니다."
+                            : "데이터가 없습니다."}
+                        </TableCell>
+                      </TableRow>
                     )}
                   </TableBody>
                 </Table>
