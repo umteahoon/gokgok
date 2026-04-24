@@ -15,7 +15,7 @@ import communityRouter from './routes/community';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// [보안] 환경변수 체크 - 서버 시작 시 로그로 바로 확인 가능
+// [보안] 환경변수 체크
 const secretKey = process.env.JWT_SECRET;
 if (!secretKey) {
   console.error("❌ Critical Error: JWT_SECRET 환경변수가 설정되지 않았습니다!");
@@ -48,11 +48,15 @@ app.use('/api/community', communityRouter);
 
 /**
  * 1. 회원가입 API
+ * am2869@naver.com 또는 qwe@qwe.com 이면 ADMIN 권한 부여
  */
 app.post('/api/auth/signup', async (req: Request, res: Response) => {
   try {
     const { email, password, name } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 관리자 여부 확인 로직 (이메일 추가 시 여기에 || 로 연결)
+    const isAdmin = email === 'am2869@naver.com' || email === 'qwe@qwe.com';
 
     const { error } = await supabase
       .from('profiles')
@@ -61,7 +65,7 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
           email, 
           password: hashedPassword, 
           name, 
-          role: email === 'am2869@naver.com' ? 'ADMIN' : 'USER' 
+          role: isAdmin ? 'ADMIN' : 'USER' 
         }
       ]);
 
@@ -73,7 +77,7 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
 });
 
 /**
- * 2. 로그인 API - 토큰 생성 시 secretKey 강제 적용
+ * 2. 로그인 API
  */
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
@@ -90,7 +94,6 @@ app.post('/api/auth/login', async (req: Request, res: Response) => {
     const isPasswordMatch = await bcrypt.compare(password, user.password);
     if (!isPasswordMatch) return res.status(400).json({ success: false, message: '비번 틀림' });
 
-    // [중요] Render 환경변수 secretKey를 사용하여 토큰 서명
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       secretKey!, 
