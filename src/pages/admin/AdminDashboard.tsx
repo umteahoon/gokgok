@@ -1,7 +1,7 @@
 // 관리자 페이지 엄태훈 - 최종 수정본
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, FileText, Settings, BarChart3, Trash2, RefreshCw } from "lucide-react";
+import { Users, FileText, Settings, BarChart3, Trash2, RefreshCw, Search} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,6 +23,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totalUsers: 0, totalPosts: 0, activeFestivals: 0 });
   const [users, setUsers] = useState<UserData[]>([]);
+  const [search, setSearch] = useState("") // 4/24 검색기능
 
   const API_BASE_URL = "https://gokgok-8ztf.onrender.com/api/admin";
 
@@ -64,6 +65,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadAdminData();
   }, []);
+  const filteredUsers = users.filter(user =>
+    user.username.toLowerCase().includes(search.toLowerCase()) // 4/24 검색기능
+  );
 
   // 유저 삭제 함수 (생략되지 않도록 유지)
   const handleUserDelete = async (id: string, email: string) => {

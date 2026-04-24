@@ -102,7 +102,7 @@ export default function CommunityWrite() {
     }
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/api/community", {
+      const response = await fetch("https://gokgok-8ztf.onrender.com/api/community", {
         method: "POST",
         headers: authHeaders,
         body: JSON.stringify({
@@ -210,5 +210,3 @@ export default function CommunityWrite() {
     </div>
   );
 }
-
-// 현재 코드는 내 컴퓨터나 폰에 있는 파일의 '임시 주소(blob:http://...)'를 만들어서 DB에 들어감
