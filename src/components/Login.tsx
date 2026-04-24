@@ -148,82 +148,38 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                 <TabsContent value="login">
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">이메일</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="login-email"
-                          type="email"
-                          placeholder="example@gokgok.com"
-                          className="pl-10"
-                          value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
                       <Label htmlFor="login-password">비밀번호</Label>
-                      <div className="relative">
+                      <div className="relative">              {/* ✅ 여기 안에 버튼까지 같이 들어감 */}
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="login-password"
                           type={showLoginPassword ? "text" : "password"}
                           placeholder="••••••••"
-                          className="pl-10"
+                          className="pl-10 pr-10"
                           value={loginPassword}
                           onChange={(e) => setLoginPassword(e.target.value)}
                           required
                         />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
+                          onClick={() => setShowLoginPassword((prev) => !prev)}  // 👉 한 번 누르면 토글되는 방식
+                        >
+                          {showLoginPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
                       </div>
                     </div>
-                    <Button type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
-                      onClick={() => setShowLoginPassword((prev) => !prev)}
-                    >
-                      {showLoginPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
                   </form>
                 </TabsContent>
 
                 <TabsContent value="signup">
                   <form onSubmit={handleSignup} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-name">이름</Label>
-                      <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-name"
-                          type="text"
-                          placeholder="홍길동"
-                          className="pl-10"
-                          value={signupName}
-                          onChange={(e) => setSignupName(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-email">이메일</Label>
-                      <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="signup-email"
-                          type="email"
-                          placeholder="example@gokgok.com"
-                          className="pl-10"
-                          value={signupEmail}
-                          onChange={(e) => setSignupEmail(e.target.value)}
-                          required
-                        />
-                      </div>
-                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">비밀번호</Label>
                       <div className="relative">
@@ -232,28 +188,29 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                           id="signup-password"
                           type={showSignupPassword ? "text" : "password"}
                           placeholder="최소 6자 이상"
-                          className="pl-10"
+                          className="pl-10 pr-10"
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
                           required
                         />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
+                          onClick={() => setShowSignupPassword((prev) => !prev)}
+                        >
+                          {showSignupPassword ? (
+                            <EyeOff className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                          )}
+                        </Button>
                       </div>
                       <p className="text-xs text-muted-foreground">
                         비밀번호는 최소 6자 이상이어야 합니다
                       </p>
                     </div>
-                    <Button type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
-                      onClick={() => setShowSignupPassword((prev) => !prev)}
-                    >
-                      {showSignupPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
                   </form>
                 </TabsContent>
               </Tabs>
