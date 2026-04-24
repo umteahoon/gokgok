@@ -116,7 +116,7 @@ export default function Community() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const response = await fetch("https://gokgok-8ztf.onrender.com/api/community"); // IPv4 주소로 변경
+        const response = await fetch("https://gokgok-8ztf.onrender.com/api/community");
         const data = await response.json();
         
         if (data.success) {
