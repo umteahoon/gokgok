@@ -13,6 +13,7 @@ import { getCurrentUser } from "@/lib/login";
 interface CommentData {
   id: string;
   author: string;
+  author_email: string; 
   text: string;
   date: string;
   likes?: number; 
@@ -21,6 +22,7 @@ interface CommentData {
 interface CommunityPost {
   id: string;
   author: string;
+  author_email: string; 
   avatar?: string;
   Title: string;
   content: string;
@@ -123,6 +125,7 @@ export default function Community() {
           const formattedPosts = data.posts.map((p: any) => ({
             id: p.id,
             author: p.author,
+            author_email: p.author_email, 
             Title: p.title, 
             content: p.content,
             images: p.images || [],
@@ -133,6 +136,7 @@ export default function Community() {
             commentsList: p.commentsList?.map((c: any) => ({
               id: c.id,
               author: c.author,
+              author_email: c.author_email, 
               text: c.text,
               date: c.created_at,
               likes: c.likes || 0
@@ -164,7 +168,8 @@ export default function Community() {
       try {
         const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${postId}`, {
           method: "DELETE",
-          headers: authHeaders
+          headers: authHeaders,
+          body: JSON.stringify({ author_email: currentUser?.email }) 
         });
         if (response.ok) {
           setPosts(posts.filter(post => post.id !== postId));
@@ -190,7 +195,11 @@ export default function Community() {
       const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${editingPost.id}`, {
         method: "PUT",
         headers: authHeaders,
-        body: JSON.stringify({ title: editTitle, content: editContent })
+        body: JSON.stringify({ 
+          author_email: currentUser?.email, 
+          title: editTitle, 
+          content: editContent 
+        })
       });
       const data = await response.json();
 
@@ -214,12 +223,19 @@ export default function Community() {
       const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${selectedPost.id}/comments`, {
         method: "POST",
         headers: authHeaders,
-        body: JSON.stringify({ author: currentUser.name, text: commentText })
+        body: JSON.stringify({ author: currentUser.name, author_email: currentUser.email, text: commentText })
       });
       const data = await response.json();
 
       if (data.success) {
-        const newComment = { id: data.comment.id, author: data.comment.author, text: data.comment.text, date: data.comment.created_at, likes: 0 };
+        const newComment = { 
+          id: data.comment.id, 
+          author: data.comment.author, 
+          author_email: data.comment.author_email,
+          text: data.comment.text, 
+          date: data.comment.created_at, 
+          likes: 0 
+        };
         const updatedPosts = posts.map(post => {
           if (post.id === selectedPost.id) {
             const updatedPost = { ...post, comments: post.comments + 1, commentsList: [...(post.commentsList || []), newComment] };
@@ -241,7 +257,8 @@ export default function Community() {
       try {
         const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${postId}/comments/${commentId}`, {
           method: "DELETE",
-          headers: authHeaders
+          headers: authHeaders,
+          body: JSON.stringify({ author_email: currentUser?.email })
         });
         
         if (response.ok) {
@@ -255,6 +272,8 @@ export default function Community() {
             return post;
           });
           setPosts(updatedPosts);
+        } else {
+          alert("삭제 권한이 없습니다.");
         }
       } catch (error) {
         alert("댓글 삭제에 실패했습니다.");
@@ -310,7 +329,6 @@ export default function Community() {
       <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="w-full py-12 px-4">
         <div className="max-w-7xl mx-auto">
           
-          {/* 타이틀과 상단 글쓰기 버튼 */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
             <div>
               <h1 className="text-4xl font-bold text-foreground mb-2">커뮤니티</h1>
@@ -321,13 +339,11 @@ export default function Community() {
             </Button>
           </div>
 
-          {/* 검색창 영역 */}
           <div className="mb-8 relative max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-5 w-5 text-muted-foreground" /></div>
             <input type="text" placeholder="축제 이름, 내용, 작성자 검색..." value={searchTerm} onChange={handleSearchChange} className="w-full pl-10 pr-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-shadow placeholder:text-gray-800 placeholder:opacity-100" />
           </div>
 
-          {/* 게시물 목록 렌더링 */}
           <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {displayedPosts.length > 0 ? (
               displayedPosts.map((post) => (
@@ -345,7 +361,8 @@ export default function Community() {
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className={`${getCategoryColor(post.category)} pointer-events-none`}>{post.category}</Badge>
-                          {currentUser?.name === post.author && (
+                          {/* 작성자 검증 로직 변경 (이메일 비교) */}
+                          {currentUser?.email === post.author_email && (
                             <>
                               <button onClick={(e) => openEditModal(e, post)} className="text-muted-foreground hover:text-primary transition-colors p-1">
                                 <Pencil className="w-4 h-4" />
@@ -388,7 +405,6 @@ export default function Community() {
                 </motion.div>
               ))
             ) : (
-              // 빈 화면 영역: "첫 게시글 작성하기" 버튼 코드를 삭제했습니다.
               <div className="col-span-full py-40 flex flex-col items-center justify-center text-muted-foreground bg-muted/20 rounded-lg border border-dashed border-border/50">
                 <p className="text-xl font-medium mb-2">
                   {searchTerm ? `"${searchTerm}"에 대한 검색 결과가 없습니다.` : "아직 작성된 게시글이 없습니다."}
@@ -403,7 +419,6 @@ export default function Community() {
         </div>
       </motion.div>
 
-      {/* 게시물 수정 및 상세 모달 (생략 없이 유지) */}
       <AnimatePresence>
         {editingPost && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -468,7 +483,8 @@ export default function Community() {
                           </div>
                         </div>
                         <div className="flex items-center gap-3 shrink-0 pt-1">
-                          {currentUser?.name === comment.author && (
+                          {/* 댓글 작성자 검증 로직 변경 (이메일 비교) */}
+                          {currentUser?.email === comment.author_email && (
                             <button onClick={() => handleDeleteComment(selectedPost.id, comment.id)} className="text-muted-foreground hover:text-red-500 transition-colors">
                               <Trash2 className="w-4 h-4" />
                             </button>

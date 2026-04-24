@@ -103,6 +103,15 @@ export default function AdminDashboard() {
       (user.email?.toLowerCase() || "").includes(keyword)
     );
   });
+  // 게시글 필터링
+  const filteredPosts = posts.filter((post) => {
+    const keyword = search.toLowerCase();
+    return (
+      (post.title?.toLowerCase() || "").includes(keyword) ||
+      (post.author?.toLowerCase() || "").includes(keyword) ||
+      (post.category?.toLowerCase() || "").includes(keyword)
+    );
+  });
 
   // 유저 삭제 함수
   const handleUserDelete = async (id: string, email: string) => {
@@ -272,6 +281,16 @@ export default function AdminDashboard() {
                 <CardDescription>사용자가 작성한 게시물을 모니터링하고 부적절한 글을 삭제합니다.</CardDescription>
               </CardHeader>
               <CardContent>
+                  <div className="mb-4 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input
+                      type="search"
+                      placeholder="제목, 작성자, 카테고리로 검색..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-9 max-w-md"
+                    />
+                  </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -283,7 +302,7 @@ export default function AdminDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {posts.length > 0 ? posts.map((post) => (
+                    {filteredPosts.length > 0 ? filteredPosts.map((post) => (
                       <TableRow key={post.id} className="hover:bg-muted/50 transition-colors">
                         <TableCell><Badge variant="outline">{post.category}</Badge></TableCell>
                         <TableCell className="font-medium truncate max-w-[300px]">{post.title}</TableCell>
