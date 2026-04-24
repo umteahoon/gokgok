@@ -66,9 +66,14 @@ export default function AdminDashboard() {
   useEffect(() => {
     loadAdminData();
   }, []);
-  const filteredUsers = users.filter(user =>
-    user.username.toLowerCase().includes(search.toLowerCase()) // 4/24 검색기능
-  );
+  const filteredUsers = users.filter((user) => {
+    const keyword = search.toLowerCase();
+
+    return (
+      user.username.toLowerCase().includes(keyword) ||
+      user.email.toLowerCase().includes(keyword)
+    );
+  });
 
   // 유저 삭제 함수 (생략되지 않도록 유지)
   const handleUserDelete = async (id: string, email: string) => {
@@ -122,11 +127,11 @@ export default function AdminDashboard() {
             <Card>
               <CardHeader><CardTitle>가입 유저 목록</CardTitle></CardHeader>
               <CardContent>
-                <div className="mb-4 relative"> // 4/24 검색기능
+                <div className="mb-4 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     type="search"
-                    placeholder="유저 닉네임으로 검색..."
+                    placeholder="닉네임 or 이메일"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     className="pl-9"
