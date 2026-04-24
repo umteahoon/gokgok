@@ -27,6 +27,8 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
   const [signupName, setSignupName] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
 
   // 1. 로그인 핸들러 (async/await 적용)
   const handleLogin = async (e: React.FormEvent) => {
@@ -166,7 +168,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="login-password"
-                          type="password"
+                          type={showLoginPassword ? "text" : "password"}
                           placeholder="••••••••"
                           className="pl-10"
                           value={loginPassword}
@@ -175,9 +177,17 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                         />
                       </div>
                     </div>
-                    <Button type="submit" className="w-full" size="lg">
-                      <LogIn className="w-4 h-4 mr-2" />
-                      로그인
+                    <Button type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
+                      onClick={() => setShowLoginPassword((prev) => !prev)}
+                    >
+                      {showLoginPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
                     </Button>
                   </form>
                 </TabsContent>
@@ -220,7 +230,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="signup-password"
-                          type="password"
+                          type={showSignupPassword ? "text" : "password"}
                           placeholder="최소 6자 이상"
                           className="pl-10"
                           value={signupPassword}
@@ -232,9 +242,17 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                         비밀번호는 최소 6자 이상이어야 합니다
                       </p>
                     </div>
-                    <Button type="submit" className="w-full" size="lg">
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      회원가입
+                    <Button type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0 hover:bg-transparent"
+                      onClick={() => setShowSignupPassword((prev) => !prev)}
+                    >
+                      {showSignupPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
                     </Button>
                   </form>
                 </TabsContent>
