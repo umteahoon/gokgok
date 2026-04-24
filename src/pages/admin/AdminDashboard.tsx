@@ -314,7 +314,7 @@ export default function AdminDashboard() {
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            className="text-destructive hover:bg-destructive/10"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => handlePostDelete(post.id, post.title)}
                           >
                             <Trash2 className="w-4 h-4" />
