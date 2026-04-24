@@ -1,9 +1,7 @@
-import { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { Menu, X, Sun, Moon } from 'lucide-react';
-import { SiFacebook, SiInstagram, SiYoutube } from 'react-icons/si';
-import { ROUTE_PATHS } from '@/lib/index';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Menu, X, Sun, Moon } from "lucide-react";
+import { ROUTE_PATHS } from "@/lib/index";
 import { getCurrentUser, logout } from "@/lib/login";
 
 interface LayoutProps {
@@ -14,7 +12,28 @@ export function Layout({ children }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // ✅ 메인 페이지 여부
+  const isHome = location.pathname === (ROUTE_PATHS?.HOME || "/");
+
+  // ✅ 스크롤 상태
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+
+    if (document.documentElement.classList.contains("dark")) {
+      setIsDarkMode(true);
+    }
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const updateUserStatus = () => {
     const user = getCurrentUser();
@@ -23,221 +42,135 @@ export function Layout({ children }: LayoutProps) {
 
   useEffect(() => {
     updateUserStatus();
-    window.addEventListener('hashchange', updateUserStatus);
-    window.addEventListener('auth-change', updateUserStatus);
-    
-    if (document.documentElement.classList.contains('dark')) {
-      setIsDarkMode(true);
-    }
+    window.addEventListener("auth-change", updateUserStatus);
 
     return () => {
-      window.removeEventListener('hashchange', updateUserStatus);
-      window.removeEventListener('auth-change', updateUserStatus);
+      window.removeEventListener("auth-change", updateUserStatus);
     };
   }, []);
 
   const baseNavItems = [
-    { label: '마당', path: ROUTE_PATHS?.HOME || '/' },
-    { label: '축제', path: ROUTE_PATHS?.SEARCH || '/search' },
-    { label: '수다', path: ROUTE_PATHS?.COMMUNITY || '/community' },
-    { label: '내 정보', path: ROUTE_PATHS?.MYPAGE || '/mypage' },
+    { label: "마당", path: ROUTE_PATHS?.HOME || "/" },
+    { label: "축제", path: ROUTE_PATHS?.SEARCH || "/search" },
+    { label: "수다", path: ROUTE_PATHS?.COMMUNITY || "/community" },
+    { label: "내 정보", path: ROUTE_PATHS?.MYPAGE || "/mypage" },
   ];
 
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
-      logout(); 
-      updateUserStatus(); 
-      navigate(ROUTE_PATHS?.HOME || '/'); 
+      logout();
+      updateUserStatus();
+      navigate("/");
       setMobileMenuOpen(false);
-      alert("로그아웃 되었습니다.");
     }
   };
 
   const toggleTheme = () => {
     setIsDarkMode((prev) => {
-      const newTheme = !prev;
-      if (newTheme) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-      return newTheme;
+      const next = !prev;
+      document.documentElement.classList.toggle("dark", next);
+      return next;
     });
   };
 
+  // ✅ 헤더 스타일
+  const headerClass = isScrolled
+    ? "bg-white dark:bg-black shadow-sm border-b border-neutral-200 dark:border-white/10 py-4"
+    : "bg-transparent py-8";
+
+  // ✅ 오른쪽/로고 색상
+  const textColor =
+    isHome && !isScrolled ? "text-white" : "text-black dark:text-white";
+
   return (
-    <div className="min-h-screen flex flex-col bg-background font-sans transition-colors duration-300">
-      <header className="sticky top-0 z-50 w-full border-b border-foreground/15 bg-background/85 backdrop-blur-md py-4 transition-colors duration-300">
-        {/* 정중앙 배치를 위해 relative 속성을 추가했습니다. */}
-        <div className="container mx-auto px-4 flex items-center justify-between relative">
-          
-          {/* ======================================================= */}
-          {/* 1. 좌측 영역: 로고 (테두리 없음) */}
-          {/* ======================================================= */}
-          <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group z-10">
-            <span className="text-xl font-bold text-foreground transition-colors" style={{ fontFamily: 'GmarketSansBold' }}>
-              곡곡
+    <div className="min-h-screen flex flex-col transition-colors duration-300">
+      {/* 🔥 HEADER */}
+      <header
+        className={`fixed top-0 z-50 w-full transition-all duration-500 ${headerClass}`}
+      >
+        <div className="container mx-auto px-8 md:px-12 flex items-center justify-between relative">
+          {/* 로고 */}
+          <NavLink to="/">
+            <span className={`text-2xl font-black transition ${textColor}`}>
+              GOKGOK
             </span>
           </NavLink>
 
-          {/* ======================================================= */}
-          {/* 2. 중앙 영역: 네비게이션 메뉴 (화면 정가운데 배치) */}
-          {/* ======================================================= */}
-          <nav className="hidden md:flex items-center space-x-12 absolute left-1/2 -translate-x-1/2">
+          {/* 🔥 메뉴 */}
+          <nav className="hidden md:flex gap-10 absolute left-1/2 -translate-x-1/2">
             {baseNavItems.map((item) => (
               <NavLink
                 key={item.label}
                 to={item.path}
-                className={({ isActive }) =>
-                  `py-1 text-sm transition-all ${
-                    isActive
-                      ? 'font-bold text-foreground border-b-[2px] border-foreground'
-                      : 'font-medium text-muted-foreground hover:text-accent hover:border-b-[2px] hover:border-accent border-b-[2px] border-transparent'
-                  }`
-                }
+                className={({ isActive }) => {
+                  const base =
+                    "text-[10px] font-bold tracking-[0.3em] uppercase transition";
+
+                  const defaultColor =
+                    isHome && !isScrolled
+                      ? "text-white/70 hover:text-white"
+                      : "text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white";
+
+                  if (isActive) {
+                    return `${base} ${
+                      isHome && !isScrolled
+                        ? "text-white border-b border-white"
+                        : "text-black dark:text-white border-b border-black dark:border-white"
+                    }`;
+                  }
+
+                  return `${base} ${defaultColor}`;
+                }}
               >
                 {item.label}
               </NavLink>
             ))}
           </nav>
 
-          {/* ======================================================= */}
-          {/* 3. 우측 영역: 테마 및 로그아웃 버튼 */}
-          {/* ======================================================= */}
-          <div className="hidden md:flex items-center gap-4 z-10">
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 text-foreground hover:bg-foreground/10 rounded-full transition-colors"
-              aria-label="테마 변경"
-            >
-              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          {/* 🔥 오른쪽 */}
+          <div className={`hidden md:flex gap-6 ${textColor}`}>
+            <button onClick={toggleTheme}>
+              {isDarkMode ? (
+                <Sun className="w-4 h-4" />
+              ) : (
+                <Moon className="w-4 h-4" />
+              )}
             </button>
 
             {currentUser ? (
               <button
                 onClick={handleLogout}
-                className="px-4 py-1.5 text-xs font-bold text-foreground border border-foreground/30 rounded-md hover:bg-foreground hover:text-background transition-all"
+                className="text-[10px] uppercase tracking-widest border-b pb-0.5"
               >
-                로그아웃
+                Logout
               </button>
             ) : (
               <NavLink
-                to={ROUTE_PATHS?.NOTMYPAGE || '/login'}
-                className="px-4 py-1.5 text-xs font-bold text-foreground border border-foreground/30 rounded-md hover:bg-foreground hover:text-background transition-all"
+                to="/login"
+                className="text-[10px] uppercase tracking-widest border-b pb-0.5"
               >
-                로그인
+                Login
               </NavLink>
             )}
           </div>
 
-          {/* 모바일 환경 대응 */}
-          <div className="md:hidden flex items-center gap-2">
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 text-foreground hover:bg-foreground/10 rounded-full transition-colors"
-            >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-foreground"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
-
-          {mobileMenuOpen && (
-            <nav className="md:hidden absolute top-full left-0 w-full bg-background border-t border-border/50 py-3 px-4 space-y-1 shadow-lg z-50 transition-colors duration-300">
-              {baseNavItems.map((item) => (
-                <NavLink
-                  key={item.label}
-                  to={item.path}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={({ isActive }) =>
-                    `block px-4 py-2.5 rounded-md text-sm transition-colors text-center ${
-                      isActive
-                        ? 'font-bold text-foreground bg-foreground/5'
-                        : 'font-medium text-muted-foreground hover:text-accent hover:bg-foreground/5'
-                    }`
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-              
-              <div className="pt-2 mt-1 border-t border-foreground/10">
-                {currentUser ? (
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-center px-4 py-2.5 text-sm font-bold text-foreground hover:text-accent"
-                  >
-                    로그아웃
-                  </button>
-                ) : (
-                  <NavLink
-                    to={ROUTE_PATHS?.NOTMYPAGE || '/login'}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block w-full text-center px-4 py-2.5 text-sm font-bold text-foreground hover:text-accent"
-                  >
-                    로그인
-                  </NavLink>
-                )}
-              </div>
-            </nav>
-          )}
+          {/* 🔥 모바일 */}
+          <button
+            className={`md:hidden ${textColor}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X /> : <Menu />}
+          </button>
         </div>
       </header>
 
-      <main className="flex-1 px-2">{children}</main>
+      {/* 본문 */}
+      <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-foreground/15 bg-background pt-10 pb-8 mt-12 transition-colors duration-300">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex flex-col items-center md:items-start">
-              <div className="flex items-center space-x-2 mb-4">
-                <span className="text-lg font-bold text-foreground">곡곡</span>
-              </div>
-              <p className="text-sm font-medium text-muted-foreground">대한민국 지역 축제를 한눈에</p>
-            </div>
-
-            <div className="flex flex-col items-center md:items-start">
-              <h3 className="font-bold text-foreground mb-4">바로가기</h3>
-              <ul className="space-y-2 text-center md:text-left">
-                {baseNavItems.map((item) => (
-                  <li key={item.label}>
-                    <NavLink to={item.path} className="text-sm font-medium text-muted-foreground hover:text-accent transition-colors">
-                      {item.label}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="flex flex-col items-center md:items-start">
-              <h3 className="font-bold text-foreground mb-4">소셜 미디어</h3>
-              <div className="flex space-x-4">
-                <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
-                  <SiFacebook className="h-5 w-5" />
-                </a>
-                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
-                  <SiInstagram className="h-5 w-5" />
-                </a>
-                <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-accent transition-colors">
-                  <SiYoutube className="h-5 w-5" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-10 pt-6 border-t border-foreground/10 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-sm font-medium text-muted-foreground">© 2026 곡곡(GokGok). All rights reserved.</p>
-            <div className="flex gap-6">
-              <NavLink to="/terms" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">이용약관</NavLink>
-              <NavLink to="/privacy" className="text-sm font-bold text-foreground hover:text-accent transition-colors">개인정보처리방침</NavLink>
-            </div>
-          </div>
+      {/* 푸터 */}
+      <footer className="bg-black text-white py-20">
+        <div className="container mx-auto px-8">
+          <p className="text-sm opacity-60">© 2026 GOKGOK Archive</p>
         </div>
       </footer>
     </div>
