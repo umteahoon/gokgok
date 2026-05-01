@@ -1,14 +1,35 @@
-// 주환 - 2026.04.24: 커뮤니티 페이지
-import { useState, useEffect, useRef } from "react"; // useRef 추가
+// 주환 - 2026.04.24: 커뮤니티 페이지 (태훈 수정: Supabase 이미지 로드 보강)
+import { useState, useEffect, useRef } from "react"; 
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Heart, MessageCircle, Share2, User, Search, X, ChevronLeft, ChevronRight, Trash2, Pencil, ImagePlus } from "lucide-react"; // ImagePlus 아이콘 추가
+import { Plus, Heart, MessageCircle, Share2, User, Search, X, ChevronLeft, ChevronRight, Trash2, Pencil, ImagePlus } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/motion";
 import { getCategoryColor } from "@/lib/index";
 import { getCurrentUser } from "@/lib/login"; 
+
+// --- 🔥 [이미지 경로 최적화 로직] ---
+// Supabase 프로젝트 ID에 맞게 수정됨
+const STORAGE_BASE_URL = "https://ofslnmgvaiycywllsosc.supabase.co/storage/v1/object/public/post-images/";
+
+/**
+ * DB에 저장된 이미지 경로를 완전한 URL로 변환합니다.
+ */
+const getFullImageUrl = (imagePath: string) => {
+  if (!imagePath) return "https://placehold.co/800x400/eeeeee/999999?text=No+Photo";
+  
+  // 이미 http로 시작하는 전체 경로라면 그대로 사용 (예: 외부 링크 등)
+  if (imagePath.startsWith('http')) return imagePath;
+  
+  // blob 데이터(방금 업로드한 이미지)인 경우 그대로 사용
+  if (imagePath.startsWith('blob:')) return imagePath;
+
+  // 파일명만 있는 경우 Supabase Storage 주소와 합침
+  return `${STORAGE_BASE_URL}${imagePath}`;
+};
+// ------------------------------------
 
 interface CommentData {
   id: string;
@@ -36,12 +57,9 @@ interface CommunityPost {
 
 const getTimeAgo = (dateString: string) => {
   if (!dateString) return "방금 전";
-  if (!dateString.includes("T")) return dateString;
-
   const commentDate = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - commentDate.getTime();
-  
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
@@ -54,14 +72,19 @@ const getTimeAgo = (dateString: string) => {
   const year = commentDate.getFullYear();
   const month = String(commentDate.getMonth() + 1).padStart(2, '0');
   const day = String(commentDate.getDate()).padStart(2, '0');
-  
   return `${year}.${month}.${day}`;
 };
 
 const ImageCarousel = ({ images, isModal = false }: { images: string[], isModal?: boolean }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  if (!images || images.length === 0) return null;
+  if (!images || images.length === 0) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-muted">
+        <p className="text-sm text-muted-foreground">No Image</p>
+      </div>
+    );
+  }
 
   const next = (e: React.MouseEvent) => {
     e.stopPropagation(); 
@@ -75,7 +98,14 @@ const ImageCarousel = ({ images, isModal = false }: { images: string[], isModal?
 
   return (
     <div className="relative w-full h-full group bg-black">
-      <img src={images[currentIndex]} alt="festival" className={`w-full h-full transition-all duration-300 ${isModal ? 'object-contain' : 'object-cover'}`} />
+      <img 
+        src={getFullImageUrl(images[currentIndex])} 
+        alt="festival" 
+        className={`w-full h-full transition-all duration-300 ${isModal ? 'object-contain' : 'object-cover'}`} 
+        onError={(e) => {
+          e.currentTarget.src = "https://placehold.co/800x400/eeeeee/999999?text=Image+Load+Error";
+        }}
+      />
       {images.length > 1 && (
         <>
           <button onClick={prev} className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"><ChevronLeft className="w-5 h-5" /></button>
@@ -100,8 +130,6 @@ export default function Community() {
   const [editingPost, setEditingPost] = useState<CommunityPost | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
-  
-  // 수정 모달용 사진 상태 및 ref 추가
   const [editImages, setEditImages] = useState<string[]>([]);
   const [editIsDragging, setEditIsDragging] = useState(false);
   const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -114,7 +142,7 @@ export default function Community() {
   const [expandedPosts, setExpandedPosts] = useState<Set<string>>(new Set());
   const [commentText, setCommentText] = useState("");
 
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('accessToken');
   const authHeaders = {
     "Content-Type": "application/json",
     ...(token && { "Authorization": `Bearer ${token}` })
@@ -133,7 +161,7 @@ export default function Community() {
             author_email: p.author_email, 
             Title: p.title, 
             content: p.content,
-            images: p.images || [],
+            images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []),
             likes: p.likes || 0,
             comments: p.commentsList ? p.commentsList.length : 0,
             date: p.created_at,
@@ -192,11 +220,9 @@ export default function Community() {
     setEditingPost(post);
     setEditTitle(post.Title);
     setEditContent(post.content);
-    // 모달 오픈 시 기존 사진으로 초기화
     setEditImages(post.images || []);
   };
 
-  // 수정 모달용 사진 처리 함수들 (CommunityWrite.tsx에서 이식)
   const editProcessFiles = (files: File[]) => {
     const imageFiles = files.filter(file => file.type.startsWith("image/"));
     if (editImages.length + imageFiles.length > 30) {
@@ -242,16 +268,12 @@ export default function Community() {
 
   const submitEditPost = async () => {
     if (!editingPost) return;
-
-    // 모든 사진 삭제 시 기본 이미지 처리 로직 추가 (사용자 요청사항)
-    const DEFAULT_IMAGE = "https://placehold.co/800x400/eeeeee/999999?text=No+Photo";
-    const finalEditImages = editImages.length > 0 ? editImages : [DEFAULT_IMAGE];
+    const finalEditImages = editImages.length > 0 ? editImages : [];
 
     try {
       const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${editingPost.id}`, {
         method: "PUT",
         headers: authHeaders,
-        // images 데이터 추가 전송
         body: JSON.stringify({ 
           author_email: currentUser?.email, 
           title: editTitle, 
@@ -262,7 +284,6 @@ export default function Community() {
       const data = await response.json();
 
       if (data.success) {
-        // 상태 업데이트 시 이미지도 반영
         setPosts(posts.map(post => post.id === editingPost.id ? { ...post, Title: editTitle, content: editContent, images: finalEditImages } : post));
         setEditingPost(null);
         alert("수정되었습니다.");
@@ -408,7 +429,7 @@ export default function Community() {
               displayedPosts.map((post) => (
                 <motion.div key={post.id} variants={staggerItem}>
                   <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200 h-full flex flex-col cursor-pointer" onClick={() => setSelectedPost(post)}>
-                    <div className="aspect-video relative overflow-hidden shrink-0">
+                    <div className="aspect-video relative overflow-hidden shrink-0 bg-muted">
                       <ImageCarousel images={post.images} />
                     </div>
                     <div className="p-6 flex flex-col flex-1" onClick={(e) => e.stopPropagation()}>
@@ -493,7 +514,6 @@ export default function Community() {
                   <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} className="w-full px-3 py-2 border rounded-md h-32 resize-none focus:outline-none focus:ring-2 focus:ring-primary" />
                 </div>
                 
-                {/* 수정 모달용 사진 첨부 UI 추가 (사용자 요청사항 구현) */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-foreground">사진</span>
@@ -508,18 +528,15 @@ export default function Community() {
                       editIsDragging ? "border-primary bg-primary/10" : "border-border/50 bg-muted/20"
                     }`}
                   >
-                    {/* 사진 추가 버튼 */}
                     {editImages.length < 30 && (
                       <div onClick={handleEditImageClick} className="w-24 h-24 shrink-0 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground hover:bg-muted/50 cursor-pointer transition-colors bg-background">
                         <ImagePlus className="w-6 h-6 mb-1" />
                         <span className="text-[10px] text-center px-1">사진</span>
                       </div>
                     )}
-                    {/* 미리보기 및 삭제 버튼 */}
                     {editImages.map((url, idx) => (
                       <div key={idx} className="relative w-24 h-24 shrink-0 group">
-                        <img src={url} alt={`preview-${idx}`} className="w-full h-full object-cover rounded-lg border border-border" />
-                        {/* 개별 사진 삭제 버튼 */}
+                        <img src={getFullImageUrl(url)} alt={`preview-${idx}`} className="w-full h-full object-cover rounded-lg border border-border" />
                         <button type="button" onClick={(e) => handleEditRemoveImage(e, idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <X className="w-3 h-3" />
                         </button>

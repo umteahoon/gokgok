@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Menu, X, Sun, Moon, Clock } from 'lucide-react'; // Clock 아이콘 추가
+import { Menu, X, Sun, Moon, Clock } from 'lucide-react';
 import { SiFacebook, SiInstagram, SiYoutube } from 'react-icons/si';
 import { ROUTE_PATHS } from '@/lib/index';
 import { Button } from '@/components/ui/button';
 import { getCurrentUser, logout } from "@/lib/login";
-import { useToast } from "@/hooks/use-toast"; // Toast 훅 추가
+import { useToast } from "@/hooks/use-toast";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,7 +15,7 @@ export function Layout({ children }: LayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [timeLeft, setTimeLeft] = useState<number>(0); // 남은 시간 상태 추가
+  const [timeLeft, setTimeLeft] = useState<number>(0);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -39,7 +39,6 @@ export function Layout({ children }: LayoutProps) {
     }
   };
 
-  // [수정] 시스템에 의한 강제 로그아웃 (팝업창 없이 즉시 실행)
   const forceLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("gokgok_current_user");
@@ -60,8 +59,7 @@ export function Layout({ children }: LayoutProps) {
     const initialTime = calculateTimeLeft();
     setTimeLeft(Math.max(0, initialTime));
 
-    // [수정] 로그인을 막 한 시점에 시간이 0보다 작거나 같은 경우에만 실행
-    // -5초 정도 여유를 두어 통신 딜레이로 인한 즉시 로그아웃을 방지합니다.
+    // 로그인을 막 한 시점에 시간이 0보다 작거나 같은 경우에만 실행
     if (localStorage.getItem("accessToken") && initialTime < -5) {
       forceLogout();
     }
@@ -132,7 +130,6 @@ export function Layout({ children }: LayoutProps) {
     { label: '내 정보', path: ROUTE_PATHS?.MYPAGE || '/mypage' },
   ];
 
-  // 사용자가 직접 버튼을 눌렀을 때만 confirm 창 노출
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
       logout(); 
@@ -157,36 +154,53 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans transition-colors duration-300">
-      <header className="sticky top-0 z-50 w-full border-b border-foreground/15 bg-background/85 backdrop-blur-md py-4 transition-colors duration-300">
-        <div className="container mx-auto px-4 flex items-center justify-between">
+      {/* 배경 투명도 80% 및 블러 효과 적용 */}
+      <header className="sticky top-0 z-50 w-full border-b border-foreground/10 bg-background/80 backdrop-blur-md py-4 transition-colors duration-300">
+        <div className="relative w-full max-w-[1400px] mx-auto px-4 md:px-8 flex items-center justify-between h-8">
           
-          <div className="flex-shrink-0 w-[80px]">
+          {/* ============================== */}
+          {/* 1. 왼쪽: 로고 영역 */}
+          {/* ============================== */}
+          <div className="flex-shrink-0 z-10">
             <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group">
-              <span className="text-xl font-bold text-foreground transition-colors" style={{ fontFamily: 'GmarketSansBold' }}>
+              <span className="text-2xl md:text-3xl font-bold text-foreground transition-colors" style={{ fontFamily: 'GmarketSansBold' }}>
                 곡곡
               </span>
             </NavLink>
           </div>
 
-          <nav className="hidden md:flex items-center justify-center flex-1 space-x-8 lg:space-x-12">
+          {/* ============================== */}
+          {/* 2. 가운데: 네비게이션 메뉴 (완벽한 중앙 정렬) */}
+          {/* ============================== */}
+          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (
               <NavLink
                 key={item.label}
                 to={item.path}
                 className={({ isActive }) =>
-                  `py-1 text-sm transition-all whitespace-nowrap ${
+                  `py-1 text-[15px] lg:text-base transition-all whitespace-nowrap relative ${
                     isActive
-                      ? 'font-bold text-foreground border-b-[2px] border-foreground'
-                      : 'font-medium text-muted-foreground hover:text-accent hover:border-b-[2px] hover:border-accent border-b-[2px] border-transparent'
+                      ? 'font-bold text-foreground'
+                      : 'font-medium text-muted-foreground hover:text-foreground'
                   }`
                 }
               >
-                {item.label}
+                {({ isActive }) => (
+                  <>
+                    {item.label}
+                    {isActive && (
+                      <span className="absolute -bottom-[21px] left-0 right-0 h-[2.5px] bg-[#E3051B] dark:bg-primary" />
+                    )}
+                  </>
+                )}
               </NavLink>
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center justify-end gap-3 flex-shrink-0 min-w-[280px]">
+          {/* ============================== */}
+          {/* 3. 오른쪽: 유저 메뉴 및 타이머 영역 */}
+          {/* ============================== */}
+          <div className="hidden md:flex items-center justify-end gap-3 z-10">
             {currentUser && (
               <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-full border border-foreground/10 shrink-0">
                 <div className="flex items-center gap-1.5 text-[12px] font-mono font-bold text-foreground/80">
@@ -205,31 +219,33 @@ export function Layout({ children }: LayoutProps) {
 
             <button
               onClick={toggleTheme}
-              className="p-1.5 text-foreground hover:bg-foreground/10 rounded-full transition-colors shrink-0"
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-full transition-colors shrink-0"
               aria-label="테마 변경"
             >
-              {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
             </button>
 
             {currentUser ? (
               <button
                 onClick={handleLogout}
-                className="px-4 py-1.5 text-xs font-bold text-foreground border border-foreground/30 rounded-md hover:bg-foreground hover:text-background transition-all shrink-0"
+                className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
               >
                 로그아웃
               </button>
             ) : (
               <NavLink
                 to={ROUTE_PATHS?.NOTMYPAGE || '/login'}
-                className="px-4 py-1.5 text-xs font-bold text-foreground border border-foreground/30 rounded-md hover:bg-foreground hover:text-background transition-all shrink-0"
+                className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
               >
                 로그인
               </NavLink>
             )}
           </div>
 
-          {/* 모바일 대응 등 나머지 코드는 동일 */}
-          <div className="md:hidden flex items-center gap-2">
+          {/* ============================== */}
+          {/* 모바일 화면용 메뉴 */}
+          {/* ============================== */}
+          <div className="md:hidden flex items-center gap-2 z-10">
             {currentUser && (
               <span className="text-[10px] font-mono font-bold bg-foreground/5 px-2 py-1 rounded-full border border-foreground/10">
                 {formatTime(timeLeft)}
@@ -253,9 +269,9 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </header>
 
-      <main className="flex-1 px-2">{children}</main>
+      <main className="flex-1 w-full px-2">{children}</main>
 
-      {/* Footer 생략 (기존과 동일) */}
+      {/* Footer 영역 (기존에 있던 곳) */}
     </div>
   );
 }

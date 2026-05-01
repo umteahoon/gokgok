@@ -1,99 +1,113 @@
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { IMAGES } from "@/assets/images";
+import { Link } from "react-router-dom";
+import { mockFestivals } from "@/lib/index";
 
-// 대한민국 구석구석 스타일: 날짜와 지역 정보가 중요함
-const festivalList = [
-  { id: 1, title: "진해 군항제", region: "경남 창원시", date: "2026.03.22 ~ 04.01", tag: "#벚꽃명소", img: IMAGES.CULTURAL_EVENT_1 },
-  { id: 2, title: "진주 남강 유등축제", region: "경남 진주시", date: "2026.10.05 ~ 10.20", tag: "#야경맛집", img: IMAGES.FESTIVAL_EVENT_5 },
-  { id: 3, title: "무주 반딧불축제", region: "전북 무주군", date: "2026.08.31 ~ 09.08", tag: "#생태체험", img: IMAGES.FESTIVAL_MAIN_7 },
-  { id: 4, title: "여수 밤바다 불꽃축제", region: "전남 여수시", date: "2026.10.26 ~ 10.26", tag: "#불꽃놀이", img: IMAGES.CULTURAL_EVENT_6 },
-];
+// ✅ 수정 포인트: @/ 경로 대신 상대 경로(../)를 사용하여 확실하게 이미지를 불러옵니다.
+// 만약 Home.tsx 파일이 src 폴더 바로 안에 있다면 "./assets/busan.jpg" 로 변경해주세요!
+import busanBg from "../assets/busan.jpg";
 
-const topKeywords = ["#벚꽃", "#봄꽃여행", "#야경", "#가족여행", "#먹거리", "#전통체험"];
+// Festival 인터페이스 정의
+interface Festival {
+  id: string | number;
+  title: string;
+  image: string;
+  date: string;
+  location: string;
+  status: "ongoing" | "upcoming" | "ended" | string;
+  category?: string;
+}
+
 const regions = ["전체", "서울", "경기/인천", "강원", "충청", "전라", "경상", "제주"];
 
 export default function Home() {
+  const [activeRegion, setActiveRegion] = useState("전체");
+  
+  // 찜하기 상태 관리
+  const [wishlistedIds, setWishlistedIds] = useState<(string | number)[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "ongoing": return "진행중";
+      case "upcoming": return "예정";
+      case "ended": return "종료";
+      default: return status;
+    }
+  };
+
+  // 찜하기 토글 (클릭 시 상세페이지 이동 방지)
+  const toggleWishlist = (e: React.MouseEvent, id: string | number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setWishlistedIds(prev => 
+      prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+    );
+  };
+
+  // 가로 스크롤 로직
+  const handleScroll = (direction: "left" | "right") => {
+    if (scrollRef.current) {
+      const { scrollLeft, clientWidth } = scrollRef.current;
+      const moveAmount = clientWidth * 0.8;
+      const scrollTo = direction === "left" ? scrollLeft - moveAmount : scrollLeft + moveAmount;
+      scrollRef.current.scrollTo({ left: scrollTo, behavior: "smooth" });
+    }
+  };
+
+  const heartBtnStyle = { WebkitTapHighlightColor: 'transparent', outline: 'none' };
+  const recommendedFestivals = mockFestivals.slice(0, 6) as Festival[];
+
   return (
-    <div className="relative w-full min-h-screen bg-white text-gray-900 font-sans">
+    <div className="relative w-full min-h-screen bg-white text-[#111111] font-sans pb-20 overflow-x-hidden">
       
       {/* ========================================== */}
-      {/* 1. HERO SECTION (메인 배너 및 검색) */}
+      {/* 1. Hero Section (busan.jpg 배경 적용) */}
       {/* ========================================== */}
-      <section className="relative w-full h-[50vh] md:h-[60vh] flex flex-col justify-center items-center">
+      <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center justify-center overflow-hidden">
         {/* 배경 이미지 */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/public/45f1c8951ca8a760d4a413a01a54dc50.jpg"
+            src={busanBg} // ✅ 여기서 위에서 불러온 busanBg 변수를 사용합니다.
             alt="메인 배경"
-            className="w-full h-full object-cover brightness-75"
+            className="w-full h-full object-cover brightness-[0.85]"
           />
         </div>
+        
+        {/* 그라데이션 오버레이 (텍스트가 잘 보이도록 어둡게 처리) */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
 
-        {/* 메인 텍스트 & 검색창 */}
-        <div className="relative z-10 flex flex-col items-center w-full max-w-4xl px-4 mt-12">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 text-center tracking-tight"
-            style={{ textShadow: "0 2px 10px rgba(0,0,0,0.3)" }}
-          >
-            어디로 떠나볼까요?
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-lg text-white/90 mb-8 text-center"
-          >
-            곡곡에서 전국의 즐거운 축제를 찾아보세요
-          </motion.p>
-
-          {/* 검색창 */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="w-full max-w-2xl bg-white p-2 rounded-full shadow-2xl flex items-center"
-          >
-            <input 
-              type="text" 
-              placeholder="검색어를 입력하세요 (예: 벚꽃, 진해)" 
-              className="flex-1 bg-transparent px-6 py-3 md:py-4 text-base md:text-lg outline-none text-gray-800 placeholder-gray-400"
-            />
-            <button className="bg-[#E3051B] text-white px-8 py-3 md:py-4 rounded-full font-bold hover:bg-[#C10415] transition-colors whitespace-nowrap">
-              검색
-            </button>
-          </motion.div>
-
-          {/* 추천 해시태그 */}
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="flex flex-wrap justify-center gap-2 mt-6"
-          >
-            {topKeywords.map((keyword, idx) => (
-              <button key={idx} className="text-sm text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full transition-colors border border-white/20">
-                {keyword}
-              </button>
-            ))}
-          </motion.div>
-        </div>
+        {/* 메인 텍스트 */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="relative z-10 text-center text-white flex flex-col items-center px-4 pt-10"
+        >
+          <h2 className="text-[42px] sm:text-[52px] md:text-[64px] font-extrabold leading-[1.15] tracking-tight drop-shadow-xl">
+            <span className="block opacity-95">대한민국의</span>
+            <span className="block mt-1">따뜻한 매력을</span>
+            <span className="block mt-1">구석구석 느껴보세요.</span>
+          </h2>
+        </motion.div>
       </section>
-
+      
       {/* ========================================== */}
-      {/* 2. 지역별 필터 (네비게이션 바 형태) */}
+      {/* 2. 콘텐츠 영역 (Search.tsx 스타일 적용) */}
       {/* ========================================== */}
-      <div className="w-full border-b border-gray-200 bg-white sticky top-0 z-20 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 overflow-x-auto no-scrollbar">
-          <div className="flex space-x-8 py-4 min-w-max">
-            {regions.map((region, idx) => (
-              <button 
-                key={idx} 
-                className={`text-lg font-bold pb-4 -mb-4 border-b-4 transition-colors ${
-                  idx === 0 
-                  ? "border-[#E3051B] text-[#E3051B]" 
-                  : "border-transparent text-gray-500 hover:text-gray-900"
+      <main className="w-full max-w-[1200px] mx-auto py-12 px-4 md:px-10 bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] relative z-20 -mt-16 border-t border-gray-100">
+        
+        {/* 지역별 필터 */}
+        <div className="mb-14 pb-6 border-b border-gray-100 flex justify-center">
+          <div className="flex gap-2 overflow-x-auto no-scrollbar py-2 px-2">
+            {regions.map((region) => (
+              <button
+                key={region}
+                onClick={() => setActiveRegion(region)}
+                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap border ${
+                  activeRegion === region 
+                  ? "bg-[#111111] text-white border-[#111111] shadow-md" 
+                  : "bg-[#F5F5F5] text-[#666666] border-transparent hover:bg-gray-200"
                 }`}
               >
                 {region}
@@ -101,70 +115,77 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </div>
 
-      {/* ========================================== */}
-      {/* 3. 메인 콘텐츠 영역 (화이트 배경, 깔끔한 카드) */}
-      {/* ========================================== */}
-      <section className="w-full max-w-7xl mx-auto py-16 px-4 md:px-8">
-        
-        {/* 섹션 타이틀 */}
-        <div className="flex justify-between items-end mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">이달의 추천 축제</h2>
-            <p className="text-gray-500">지금 가장 사랑받는 전국의 축제들을 만나보세요.</p>
+        {/* 이달의 추천 축제 */}
+        <section className="mb-16 relative group">
+          <div className="flex justify-between items-end mb-6">
+            <div>
+              <h3 className="text-[24px] md:text-[28px] font-extrabold mb-1 tracking-tight">이달의 추천 축제 🌸</h3>
+              <p className="text-sm md:text-base text-gray-500 font-medium">지금 가장 사랑받는 전국의 축제를 만나보세요.</p>
+            </div>
+            {/* 좌우 스크롤 화살표 */}
+            <div className="hidden sm:flex gap-2">
+              <button onClick={() => handleScroll("left")} className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18L9 12L15 6"/></svg>
+              </button>
+              <button onClick={() => handleScroll("right")} className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
           </div>
-          <button className="text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-1">
-            더보기 &gt;
-          </button>
-        </div>
 
-        {/* 축제 카드 그리드 */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {festivalList.map((festival, idx) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              key={festival.id} 
-              className="group cursor-pointer flex flex-col"
-            >
-              {/* 썸네일 영역 */}
-              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-4 shadow-md group-hover:shadow-xl transition-shadow">
-                <img 
-                  src={festival.img} 
-                  alt={festival.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                />
-                {/* 뱃지 */}
-                <div className="absolute top-3 left-3">
-                  <span className="bg-black/70 text-white text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-md">
-                    진행중
-                  </span>
-                </div>
-              </div>
+          {/* 가로 스크롤 컨테이너 */}
+          <div ref={scrollRef} className="flex gap-4 md:gap-5 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-6 pt-2">
+            {recommendedFestivals.map((festival) => (
+              <Link to={`/festival/${festival.id}`} key={`rec-${festival.id}`} className="min-w-[75%] sm:min-w-[calc(33.333%-16px)] lg:min-w-[calc(25%-15px)] snap-start group/card cursor-pointer">
+                
+                {/* 썸네일 영역 */}
+                <div className="relative mb-3 aspect-[4/5] rounded-2xl overflow-hidden shadow-sm bg-gray-50">
+                  <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
+                  
+                  {/* 찜하기 버튼 */}
+                  <div 
+                    onClick={(e) => toggleWishlist(e, festival.id)}
+                    className="absolute top-3 right-3 z-10 cursor-pointer select-none"
+                    style={heartBtnStyle}
+                  >
+                    <motion.svg 
+                      whileTap={{ scale: 0.7 }}
+                      width="26" height="26" viewBox="0 0 24 24" 
+                      fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} 
+                      stroke="white" strokeWidth="2.5"
+                      className="drop-shadow-md transition-colors"
+                    >
+                      <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" />
+                    </motion.svg>
+                  </div>
 
-              {/* 텍스트 영역 */}
-              <div className="flex flex-col px-1">
-                <span className="text-[#E3051B] text-sm font-bold mb-1">{festival.region}</span>
-                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#E3051B] transition-colors line-clamp-1">
-                  {festival.title}
-                </h3>
-                <p className="text-gray-500 text-sm mb-3 flex items-center gap-1">
-                  🗓️ {festival.date}
-                </p>
-                <div>
-                  <span className="inline-block text-xs font-medium text-gray-600 bg-gray-100 px-2.5 py-1 rounded-md">
-                    {festival.tag}
-                  </span>
+                  {/* 상태 뱃지 */}
+                  <div className="absolute top-3 left-3">
+                    <span className={`px-2.5 py-1 rounded text-[11px] font-bold text-white ${festival.status === 'upcoming' ? 'bg-blue-500/90' : festival.status === 'ended' ? 'bg-gray-500/90' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>
+                      {getStatusLabel(festival.status)}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                
+                {/* 텍스트 영역 */}
+                <div className="px-1">
+                  <span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase tracking-tight">
+                    {festival.category || "테마여행"}
+                  </span>
+                  <h3 className="font-bold text-[16px] line-clamp-2 leading-snug mb-1.5 h-[44px] group-hover/card:text-[#FF3478] transition-colors">
+                    {festival.title}
+                  </h3>
+                  <p className="text-[13px] text-[#555555] font-semibold mb-0.5">{festival.location}</p>
+                  <p className="text-[13px] text-gray-400">{festival.date}</p>
+                </div>
+                
+              </Link>
+            ))}
+          </div>
+        </section>
         
-      </section>
+      </main>
     </div>
   );
 }

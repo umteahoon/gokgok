@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { X, Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { login, signup } from '@/lib/login';
 import { springPresets } from '@/lib/motion';
 import { useNavigate } from "react-router-dom";
@@ -18,7 +17,8 @@ interface AuthDialogProps {
 
 export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<string>("login");
+  // 탭 대신 현재 모드를 관리하는 state (login | signup)
+  const [mode, setMode] = useState<"login" | "signup">("login");
 
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -39,7 +39,6 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
 
     if (result.success) {
       setSuccess(result.message);
-
       window.dispatchEvent(new Event('auth-change'));
 
       setTimeout(() => {
@@ -64,7 +63,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
 
       setTimeout(() => {
         setSuccess("");
-        setActiveTab("login");
+        setMode("login"); // 가입 성공 시 로그인 모드로 전환
         setLoginEmail(signupEmail);
         setLoginPassword("");
       }, 3000);
@@ -92,7 +91,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={springPresets.gentle}
         >
-          <Card className="border-2">
+          <Card className="border-2 shadow-xl">
             <Button
               variant="ghost"
               size="icon"
@@ -102,45 +101,43 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
               <X className="h-4 w-4" />
             </Button>
 
-            <CardHeader className="text-center pb-4">
-              <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-bold text-xl">
-                  곡
-                </div>
-              </div>
-              <CardTitle className="text-2xl">곡곡에 오신 것을 환영합니다</CardTitle>
-              <CardDescription>로그인하고 모든 기능을 이용해보세요</CardDescription>
+            <CardHeader className="text-center pb-4 pt-8">
+              
+              <CardTitle className="text-2xl tracking-tight">
+                {mode === "login" ? "곡곡에 오신 것을 환영합니다" : "새로운 시작을 함께해요"}
+              </CardTitle>
+              <CardDescription>
+                {mode === "login" ? "로그인하고 모든 기능을 이용해보세요" : "간편한 회원가입으로 더 많은 혜택을 누리세요"}
+              </CardDescription>
             </CardHeader>
 
             <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="login" className="gap-2">
-                    <LogIn className="w-4 h-4" />
-                    로그인
-                  </TabsTrigger>
-                  <TabsTrigger value="signup" className="gap-2">
-                    <UserPlus className="w-4 h-4" />
-                    회원가입
-                  </TabsTrigger>
-                </TabsList>
+              {/* 메시지 영역 */}
+              {(error || success) && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`mb-6 p-3 rounded-lg text-sm whitespace-pre-line text-center ${
+                    error
+                      ? 'bg-destructive/10 text-destructive border border-destructive/20'
+                      : 'bg-green-500/10 text-green-600 border border-green-500/20'
+                  }`}
+                >
+                  {error || success}
+                </motion.div>
+              )}
 
-                {(error || success) && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`mb-4 p-3 rounded-lg text-sm whitespace-pre-line text-center ${
-                      error
-                        ? 'bg-destructive/10 text-destructive border border-destructive/20'
-                        : 'bg-green-500/10 text-green-600 border border-green-500/20'
-                    }`}
+              {/* 로그인 / 회원가입 폼 조건부 렌더링 */}
+              <AnimatePresence mode="wait">
+                {mode === "login" ? (
+                  <motion.form
+                    key="login-form"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 10 }}
+                    onSubmit={handleLogin}
+                    className="space-y-4"
                   >
-                    {error || success}
-                  </motion.div>
-                )}
-
-                <TabsContent value="login">
-                  <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="login-email">이메일</Label>
                       <div className="relative">
@@ -177,24 +174,35 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                           onClick={() => setShowLoginPassword((prev) => !prev)}
                         >
-                          {showLoginPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
+                          {showLoginPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                         </Button>
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full" size="lg">
-                      <LogIn className="w-4 h-4 mr-2" />
-                      로그인
+                    <Button type="submit" className="w-full h-11" size="lg">
+                      로그인하기
                     </Button>
-                  </form>
-                </TabsContent>
 
-                <TabsContent value="signup">
-                  <form onSubmit={handleSignup} className="space-y-4">
+                    <div className="pt-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setMode("signup")}
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                      >
+                        아직 회원이 아니신가요? <span className="font-semibold underline underline-offset-4">회원가입</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </motion.form>
+                ) : (
+                  <motion.form
+                    key="signup-form"
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -10 }}
+                    onSubmit={handleSignup}
+                    className="space-y-4"
+                  >
                     <div className="space-y-2">
                       <Label htmlFor="signup-name">이름</Label>
                       <div className="relative">
@@ -234,7 +242,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                         <Input
                           id="signup-password"
                           type={showSignupPassword ? "text" : "password"}
-                          placeholder="최소 6자 이상"
+                          placeholder="••••••••"
                           className="pl-10 pr-10"
                           value={signupPassword}
                           onChange={(e) => setSignupPassword(e.target.value)}
@@ -247,31 +255,38 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                           onClick={() => setShowSignupPassword((prev) => !prev)}
                         >
-                          {showSignupPassword ? (
-                            <EyeOff className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                          )}
+                          {showSignupPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
                         </Button>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        비밀번호는 최소 6자 이상이어야 합니다
+                      <p className="text-[11px] text-muted-foreground px-1">
+                        비밀번호는 최소 6자 이상이어야 합니다.
                       </p>
                     </div>
 
-                    <Button type="submit" className="w-full" size="lg">
-                      <UserPlus className="w-4 h-4 mr-2" />
+                    <Button type="submit" className="w-full h-11" size="lg">
                       회원가입
                     </Button>
-                  </form>
-                </TabsContent>
-              </Tabs>
 
-              <div className="mt-6 text-center text-sm text-muted-foreground">
+                    <div className="pt-4 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setMode("login")}
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                      >
+                        이미 계정이 있으신가요? <span className="font-semibold underline underline-offset-4">로그인</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
+
+              {/* 이용약관 영역 */}
+              <div className="mt-8 pt-6 border-t border-border text-center text-[12px] text-muted-foreground">
                 <p>
                   계속 진행하면{' '}
-                  <button className="text-primary hover:underline">이용약관</button> 및{' '}
-                  <button className="text-primary hover:underline">개인정보처리방침</button>에
+                  <button type="button" className="text-primary font-medium hover:underline">이용약관</button> 및{' '}
+                  <button type="button" className="text-primary font-medium hover:underline">개인정보처리방침</button>에
                   동의하는 것으로 간주됩니다.
                 </p>
               </div>
