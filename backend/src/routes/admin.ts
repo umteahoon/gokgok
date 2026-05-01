@@ -137,5 +137,73 @@ router.delete('/posts/:id', verifyAdmin, async (req: Request, res: Response) => 
     res.status(500).json({ message: "게시글 삭제 실패" });
   }
 });
+/**
+ * @route   GET /api/admin/contacts
+ * @desc    문의사항 목록 조회 (관리자용)
+ */
+router.get('/contacts', verifyAdmin, async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from('contact_inquiries')
+      .select('id, name, email, category, message, status, reply_content, created_at')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      data: data || [],
+    });
+  } catch (error: any) {
+    console.error("Contacts List Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "문의 목록 로드 실패",
+    });
+  }
+});
+
+
+/**
+ * @route   PUT /api/admin/contact/:id/reply
+ * @desc    문의사항 답변 등록 및 상태 변경
+ */
+router.put('/contact/:id/reply', verifyAdmin, async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { reply_content } = req.body;
+
+    if (!reply_content || !reply_content.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "답변 내용이 비어 있습니다.",
+      });
+    }
+
+    const { data, error } = await supabase
+      .from('contact_inquiries')
+      .update({
+        reply_content,
+        status: 'answered',
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      message: "답변이 저장되었습니다.",
+      data,
+    });
+  } catch (error: any) {
+    console.error("Contact Reply Error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "답변 저장 실패",
+    });
+  }
+});
 
 export default router;

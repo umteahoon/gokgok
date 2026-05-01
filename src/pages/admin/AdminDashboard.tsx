@@ -63,7 +63,10 @@ export default function AdminDashboard() {
         fetch(`${API_BASE_URL}/users`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/posts`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/security-logs`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${PUBLIC_API_URL}/contact`, { headers: { Authorization: `Bearer ${token}` } })
+        // fetch(`${PUBLIC_API_URL}/contact`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${PUBLIC_API_URL}/admin/contacts`, {
+        headers: { Authorization: `Bearer ${token}` }
+        })
       ]);
 
       if (!statsRes.ok || !usersRes.ok) throw new Error("인증 실패");
@@ -73,8 +76,14 @@ export default function AdminDashboard() {
       setPosts(postsRes.ok ? await postsRes.json() : []);
       setDbLogs(logsRes.ok ? await logsRes.json() : []);
       
-      const contactData = await contactRes.json();
-      setContacts(contactData.success ? contactData.data : []);
+      // const contactData = await contactRes.json();
+      // setContacts(contactData.success ? contactData.data : []);
+      if (contactRes.ok) {
+        const contactData = await contactRes.json();
+        setContacts(contactData.success ? contactData.data : []);
+      } else {
+        setContacts([]);
+}
 
     } catch (error: any) {
       console.error("데이터 로드 중 오류 발생:", error);
@@ -96,7 +105,7 @@ export default function AdminDashboard() {
     if (!reply) return;
 
     try {
-      const res = await fetch(`${PUBLIC_API_URL}/contact/${id}/reply`, {
+      const res = await fetch(`${PUBLIC_API_URL}/admin/contact/${id}/reply`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
