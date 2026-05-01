@@ -7,6 +7,7 @@ export const ROUTE_PATHS = {
   NOTMYPAGE: '/notmypage' ,// notmypage 추가 엄태훈
   TERMS: '/terms', //  이용약관 추가 엄태훈
   PRIVACY: '/privacy', // 개인정보 처리 방침 추가 엄태훈
+  CONTACT: "/contact", // 문의하기 페이지 추가 최원재
   
 } as const;
 

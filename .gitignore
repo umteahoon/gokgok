@@ -98,4 +98,5 @@ Thumbs.db
 
 # --- Uploaded Files ---
 uploaded_files/
-
+.env
+.env.local

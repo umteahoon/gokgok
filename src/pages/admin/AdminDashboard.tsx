@@ -3,8 +3,8 @@
  * 작성자: 엄태훈 (2026-04-24)
  * 주요기능: 
  * 1. 실시간 통계 및 유저/게시글 관리
- * 2. 세션 기반 비정상 새로고침 감지 및 서버 로그 통합 (DB 연동)
- * 3. 통합 검색 및 중앙 집중식 보안 관제 로그 출력
+ * 2. 실시간 침입 탐지 시스템 (IDS) 및 보안 로그 출력
+ * 3. 사용자 문의사항(Contact) 관리 및 직접 답변(Reply) 기능
  */
 
 import { useState, useEffect } from "react";
@@ -19,7 +19,10 @@ import {
   Search, 
   ShieldAlert, 
   Activity,
-  MessageSquare
+  MessageSquare,
+  Clock,
+  CheckCircle2,
+  Send // 💡 답변 전송용 아이콘 추가
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +37,7 @@ import { Input } from "@/components/ui/input";
 interface UserData { id: string; email: string; username: string; role: string; created_at: string; }
 interface PostData { id: string; title: string; author: string; category: string; created_at: string; }
 interface SecurityLog { id: string; user_email: string; violation_type: string; request_count: number; created_at: string; }
+interface ContactData { id: string; name: string; email: string; category: string; message: string; status: string; reply_content?: string; created_at: string; }
 
 export default function AdminDashboard() {
   const { toast } = useToast();
@@ -41,30 +45,25 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ totalUsers: 0, totalPosts: 0, activeFestivals: 0 });
   const [users, setUsers] = useState<UserData[]>([]);
   const [posts, setPosts] = useState<PostData[]>([]);
-  const [dbLogs, setDbLogs] = useState<SecurityLog[]>([]); // DB에서 가져온 통합 로그
+  const [contacts, setContacts] = useState<ContactData[]>([]);
+  const [dbLogs, setDbLogs] = useState<SecurityLog[]>([]);
   const [search, setSearch] = useState("");
   const [searchPosts, setSearchPosts] = useState("");
 
-  // --- [로컬 보안 상태] 본인의 세션 감시용 ---
-  const [refreshCount, setRefreshCount] = useState(() => Number(sessionStorage.getItem("gokgok_refresh_count") || 0));
-  const [isThreat, setIsThreat] = useState(() => sessionStorage.getItem("gokgok_is_threat") === "true");
-
   const API_BASE_URL = "https://gokgok-8ztf.onrender.com/api/admin";
+  const PUBLIC_API_URL = "https://gokgok-8ztf.onrender.com/api";
 
-  /**
-   * 서버로부터 관리자 데이터 및 통합 보안 로그를 로드합니다.
-   */
   const loadAdminData = async () => {
     setLoading(true);
     const token = localStorage.getItem("accessToken"); 
 
     try {
-      // 통계, 유저, 게시글, 그리고 DB 보안 로그를 병렬로 호출
-      const [statsRes, usersRes, postsRes, logsRes] = await Promise.all([
+      const [statsRes, usersRes, postsRes, logsRes, contactRes] = await Promise.all([
         fetch(`${API_BASE_URL}/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/users`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/posts`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_BASE_URL}/security-logs`, { headers: { Authorization: `Bearer ${token}` } }) // 신규 API
+        fetch(`${API_BASE_URL}/security-logs`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${PUBLIC_API_URL}/contact`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       if (!statsRes.ok || !usersRes.ok) throw new Error("인증 실패");
@@ -72,7 +71,10 @@ export default function AdminDashboard() {
       setStats(await statsRes.json());
       setUsers(await usersRes.json());
       setPosts(postsRes.ok ? await postsRes.json() : []);
-      setDbLogs(logsRes.ok ? await logsRes.json() : []); // 서버 로그 저장
+      setDbLogs(logsRes.ok ? await logsRes.json() : []);
+      
+      const contactData = await contactRes.json();
+      setContacts(contactData.success ? contactData.data : []);
 
     } catch (error: any) {
       console.error("데이터 로드 중 오류 발생:", error);
@@ -84,19 +86,42 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     loadAdminData();
-    // 30초마다 보안 로그 자동 갱신 (실시간 관제 느낌)
     const interval = setInterval(loadAdminData, 30000);
     return () => clearInterval(interval);
   }, []);
 
+  // 💡 관리자 답변 처리 함수
+  const handleReply = async (id: string, name: string) => {
+    const reply = prompt(`${name}님에게 보낼 답변 내용을 입력하세요.`);
+    if (!reply) return;
+
+    try {
+      const res = await fetch(`${PUBLIC_API_URL}/contact/${id}/reply`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem("accessToken")}` 
+        },
+        body: JSON.stringify({ reply_content: reply })
+      });
+      
+      const result = await res.json();
+      if (result.success) {
+        toast({ title: "답변 전송 완료", description: "사용자에게 답변이 전달되었습니다." });
+        loadAdminData(); 
+      }
+    } catch (err) {
+      toast({ variant: "destructive", title: "오류 발생", description: "답변 처리 중 문제가 발생했습니다." });
+    }
+  };
+
   // 검색 필터링
   const filteredUsers = users.filter((u) => (u.username?.toLowerCase() || "").includes(search.toLowerCase()) || (u.email?.toLowerCase() || "").includes(search.toLowerCase()));
   const filteredPosts = posts.filter((p) => 
-  (p.title?.toLowerCase() || "").includes(searchPosts.toLowerCase()) || 
-  (p.author?.toLowerCase() || "").includes(searchPosts.toLowerCase()) ||
-  (p.category?.toLowerCase() || "").includes(searchPosts.toLowerCase())
-
-);
+    (p.title?.toLowerCase() || "").includes(searchPosts.toLowerCase()) || 
+    (p.author?.toLowerCase() || "").includes(searchPosts.toLowerCase()) ||
+    (p.category?.toLowerCase() || "").includes(searchPosts.toLowerCase())
+  );
 
   const handleUserDelete = async (id: string, email: string) => {
     if (!window.confirm(`${email} 사용자를 강제 탈퇴시키겠습니까?`)) return;
@@ -119,7 +144,7 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
               <Settings className="w-8 h-8 text-primary" /> 곡곡 관리자 시스템
             </h1>
-            <p className="text-muted-foreground mt-1 text-sm font-mono tracking-tighter">Security Monitoring: {API_BASE_URL}</p>
+            <p className="text-muted-foreground mt-1 text-sm font-mono tracking-tighter">Security Monitoring Active</p>
           </div>
           <Button onClick={loadAdminData} disabled={loading} variant={dbLogs.length > 0 ? "destructive" : "default"} className="shadow-md">
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> 데이터 새로고침
@@ -128,18 +153,20 @@ export default function AdminDashboard() {
 
         {/* 통계 요약 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="border-t-4 border-t-blue-500 shadow-sm transition-transform hover:scale-[1.01]"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-500"><Users className="w-4 h-4" /> 전체 회원 수</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalUsers}명</div></CardContent></Card>
-          <Card className="border-t-4 border-t-green-500 shadow-sm transition-transform hover:scale-[1.01]"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2 text-green-600"><FileText className="w-4 h-4" /> 전체 게시글</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalPosts}개</div></CardContent></Card>
-          <Card className="border-t-4 border-t-orange-500 shadow-sm transition-transform hover:scale-[1.01]"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2 text-orange-500"><BarChart3 className="w-4 h-4" /> 운영 축제</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeFestivals}개</div></CardContent></Card>
+          <Card className="border-t-4 border-t-blue-500 shadow-sm"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2 text-blue-500"><Users className="w-4 h-4" /> 전체 회원 수</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalUsers}명</div></CardContent></Card>
+          <Card className="border-t-4 border-t-green-500 shadow-sm"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2 text-green-600"><FileText className="w-4 h-4" /> 전체 게시글</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalPosts}개</div></CardContent></Card>
+          <Card className="border-t-4 border-t-orange-500 shadow-sm"><CardHeader className="pb-2"><CardTitle className="text-sm font-medium flex items-center gap-2 text-orange-500"><BarChart3 className="w-4 h-4" /> 운영 축제</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeFestivals}개</div></CardContent></Card>
         </div>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8 shadow-sm h-12">
+          <TabsList className="grid w-full grid-cols-4 mb-8 shadow-sm h-12">
             <TabsTrigger value="users">사용자 관리</TabsTrigger>
             <TabsTrigger value="posts">콘텐츠 관리</TabsTrigger>
+            <TabsTrigger value="contact">문의사항</TabsTrigger>
             <TabsTrigger value="system">보안 로그</TabsTrigger>
           </TabsList>
 
+          {/* 사용자 관리 탭 */}
           <TabsContent value="users">
             <Card>
               <CardHeader><CardTitle>가입 유저 목록</CardTitle></CardHeader>
@@ -163,18 +190,14 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* 콘텐츠 관리 탭 */}
           <TabsContent value="posts">
             <Card className="shadow-md">
               <CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><MessageSquare className="w-5 h-5" /> 커뮤니티 게시글 관리</CardTitle></CardHeader>
               <CardContent>
                 <div className="mb-4 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="게시글 검색..."
-                    value={searchPosts}
-                    onChange={(e) => setSearchPosts(e.target.value)}
-                    className="pl-9 max-w-md shadow-inner"
-                  />
+                  <Input placeholder="게시글 검색..." value={searchPosts} onChange={(e) => setSearchPosts(e.target.value)} className="pl-9 max-w-md shadow-inner" />
                 </div>
                 <Table>
                   <TableHeader><TableRow><TableHead>카테고리</TableHead><TableHead>제목</TableHead><TableHead>작성자</TableHead><TableHead className="text-right">삭제</TableHead></TableRow></TableHeader>
@@ -193,50 +216,94 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
+          {/* 💡 문의사항 관리 탭 (답변하기 기능 추가) */}
+          <TabsContent value="contact">
+            <Card className="shadow-md">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-blue-600"><MessageSquare className="w-5 h-5" /> 문의사항 관리</CardTitle>
+                    <CardDescription>사용자 문의를 확인하고 직접 답변을 보낼 수 있습니다.</CardDescription>
+                  </div>
+                  <Badge variant="secondary" className="px-3 py-1">총 {contacts.length}건 접수</Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <Card className="p-4 border shadow-sm flex items-center gap-4">
+                    <div className="p-2 bg-orange-100 rounded-lg"><Clock className="w-5 h-5 text-orange-600" /></div>
+                    <div><p className="text-xs text-muted-foreground uppercase font-bold">미답변 문의</p><p className="text-xl font-bold">{contacts.filter(c => c.status === 'pending').length}건</p></div>
+                  </Card>
+                  <Card className="p-4 border shadow-sm flex items-center gap-4">
+                    <div className="p-2 bg-green-100 rounded-lg"><CheckCircle2 className="w-5 h-5 text-green-600" /></div>
+                    <div><p className="text-xs text-muted-foreground uppercase font-bold">처리 완료</p><p className="text-xl font-bold">{contacts.filter(c => c.status !== 'pending').length}건</p></div>
+                  </Card>
+                </div>
+
+                <div className="rounded-lg border overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-muted/50">
+                      <TableRow>
+                        <TableHead className="w-[100px]">접수일</TableHead>
+                        <TableHead className="w-[120px]">성함</TableHead>
+                        <TableHead className="w-[150px]">유형</TableHead>
+                        <TableHead>문의 내용</TableHead>
+                        <TableHead className="text-right">관리</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {contacts.length > 0 ? (
+                        contacts.map((contact) => (
+                          <TableRow key={contact.id} className="hover:bg-muted/20">
+                            <TableCell className="text-[10px] text-muted-foreground">{new Date(contact.created_at).toLocaleDateString()}</TableCell>
+                            <TableCell className="font-medium text-xs">{contact.name}</TableCell>
+                            <TableCell><Badge variant="secondary" className="text-[10px]">{contact.category}</Badge></TableCell>
+                            <TableCell className="text-xs">
+                              <p className="max-w-[300px] truncate" title={contact.message}>{contact.message}</p>
+                              {contact.reply_content && (
+                                <p className="text-[10px] text-blue-600 mt-1 font-semibold">Re: {contact.reply_content}</p>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {contact.status === 'pending' ? (
+                                <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => handleReply(contact.id, contact.name)}>
+                                  <Send className="w-3 h-3" /> 답변하기
+                                </Button>
+                              ) : (
+                                <Badge className="bg-green-600 pointer-events-none">처리완료</Badge>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      ) : (
+                        <TableRow><TableCell colSpan={5} className="h-32 text-center text-muted-foreground">접수된 문의사항이 없습니다.</TableCell></TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* 보안 로그 탭 */}
           <TabsContent value="system">
             <Card>
               <CardHeader><CardTitle className="flex items-center gap-2 text-destructive"><ShieldAlert className="w-5 h-5" /> 실시간 침입 탐지 시스템 (IDS)</CardTitle></CardHeader>
               <CardContent className="pt-4">
                 <div className="bg-slate-950 text-green-400 p-6 rounded-xl font-mono text-[11px] shadow-2xl border border-slate-800 relative overflow-hidden min-h-[300px]">
                   <div className="absolute top-3 right-4 flex gap-1.5 opacity-50"><div className="w-2.5 h-2.5 rounded-full bg-red-500"></div><div className="w-2.5 h-2.5 rounded-full bg-yellow-500"></div><div className="w-2.5 h-2.5 rounded-full bg-green-500"></div></div>
-                  
                   <div className="flex flex-col gap-1.5 mt-2">
-                    <p className="text-slate-500 font-bold mb-1"># GOKGOK SECURE SHELL v2.0 ACTIVE (Centralized Logging)</p>
-                    <p><span className="text-slate-500">[{new Date().toLocaleTimeString()}]</span> <span className="text-blue-400">[INFO]</span> Listening for global network anomalies...</p>
-
+                    <p className="text-slate-500 font-bold mb-1"># GOKGOK SECURE SHELL v2.0 ACTIVE</p>
                     {dbLogs.length > 0 ? (
                       dbLogs.map((log) => (
                         <motion.div key={log.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="my-2 p-3 border border-red-500/50 bg-red-950/30 rounded-lg">
                           <p className="text-red-500 font-bold animate-pulse">🚨 [CRITICAL] {log.violation_type}</p>
-                          <div className="mt-1 text-red-400 space-y-1 ml-2">
-                            <p>● <span className="text-white">Attack Source:</span> {log.user_email}</p>
-                            <p>● <span className="text-white">Packet Pattern:</span> HTTP GET ({log.request_count} times)</p>
-                            <p>● <span className="text-white">Timestamp:</span> {new Date(log.created_at).toLocaleString()}</p>
-                          </div>
+                          <p className="text-[10px] text-red-400 ml-2">● Source: {log.user_email} | Pattern: HTTP GET ({log.request_count} times)</p>
                         </motion.div>
                       ))
                     ) : (
                       <p className="text-green-500 italic mt-4 animate-pulse">● All systems nominal. No threats detected in database.</p>
                     )}
-                  </div>
-                </div>
-
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl border bg-muted/50 flex flex-col gap-2 shadow-inner">
-                    <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest text-center">Global Threat Indicator</span>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1 h-2.5 bg-slate-200 rounded-full overflow-hidden">
-                        <motion.div className={`h-full ${dbLogs.length > 0 ? 'bg-red-500 shadow-[0_0_8px_#ef4444]' : 'bg-blue-500'}`} animate={{ width: dbLogs.length > 0 ? "100%" : "0%" }} />
-                      </div>
-                      <span className="text-[10px] font-mono font-bold">{dbLogs.length > 0 ? "100%" : "0%"}</span>
-                    </div>
-                  </div>
-                  <div className="p-4 rounded-xl border bg-muted/50 flex items-center justify-between shadow-inner">
-                    <div>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">System Status</p>
-                      <p className={`text-sm font-bold ${dbLogs.length > 0 ? 'text-red-600' : 'text-green-600'}`}>{dbLogs.length > 0 ? "SYSTEM LOCKDOWN" : "SECURE & STABLE"}</p>
-                    </div>
-                    <Activity className={`w-5 h-5 ${dbLogs.length > 0 ? 'text-red-500' : 'text-green-500'} animate-pulse`} />
                   </div>
                 </div>
               </CardContent>

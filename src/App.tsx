@@ -24,11 +24,13 @@ import NotMyPage from "@/pages/NotMyPage";
 import MyPage from "@/pages/MyPage"; 
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import Contact from "@/pages/Contact";
 import FestivalDetail from "@/pages/FestivalDetail"; 
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import AdminDashboard from "@/pages/admin/AdminDashboard"; 
 import { useToast } from "@/hooks/use-toast"; 
 import { Button } from "@/components/ui/button"; 
+
 
 const queryClient = new QueryClient();
 
@@ -179,6 +181,7 @@ const App = () => {
                 <Route path={ROUTE_PATHS.MYPAGE} element={<MyPage />} />
                 <Route path={ROUTE_PATHS.TERMS} element={<TermsOfService />} />
                 <Route path={ROUTE_PATHS.PRIVACY} element={<PrivacyPolicy />} />
+                <Route path={ROUTE_PATHS.CONTACT} element={<Contact />} />
 
                 {/* 관리자 전용 페이지 (AdminRoute 권한 보호) */}
                 <Route 

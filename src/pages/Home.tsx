@@ -3,8 +3,8 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { mockFestivals } from "@/lib/index";
 
-// ✅ 통합된 images.ts 모듈을 불러옵니다.
-import { IMAGES } from "@/assets/images";
+// 로컬 사진을 다이렉트로 가져옵니다!
+import busanBg from "@/assets/image2.jpg";
 
 // Festival 인터페이스 정의
 interface Festival {
@@ -53,28 +53,22 @@ export default function Home() {
   const recommendedFestivals = mockFestivals.slice(0, 6) as Festival[];
 
   return (
-    // 최상위 div에서 배경색(bg-white)을 빼고 투명하게 만듭니다.
     <div className="relative w-full min-h-screen text-[#111111] font-sans pb-20 overflow-x-hidden">
       
-      {/* ========================================== */}
-      {/* 1. 글로벌 고정 배경 (화면 전체를 꽉 채우고 고정됨) */}
-      {/* ========================================== */}
+      {/* 1. 글로벌 고정 배경 */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <img
-          src={IMAGES.MAIN_BG} 
+          src={busanBg} 
           alt="메인 배경"
           className="w-full h-full object-cover brightness-[0.85]"
         />
-        {/* 글씨가 잘 보이도록 약간의 그라데이션 어두운 막 추가 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent"></div>
       </div>
 
-      {/* ========================================== */}
-      {/* 2. 스크롤되는 콘텐츠 영역 (배경 위를 덮으면서 올라옴) */}
-      {/* ========================================== */}
+      {/* 2. 스크롤되는 콘텐츠 영역 */}
       <div className="relative z-10 w-full">
         
-        {/* Hero Section (기존 60vh에서 화면을 꽉 채우는 h-screen으로 변경) */}
+        {/* Hero Section */}
         <section className="w-full h-[100vh] flex items-center justify-center pt-10">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -90,12 +84,12 @@ export default function Home() {
           </motion.div>
         </section>
         
-        {/* 하단 콘텐츠 영역 (하얀색 판이 스크롤 시 예쁘게 덮으며 올라옵니다) */}
+        {/* 하단 콘텐츠 영역 */}
         <main className="w-full max-w-[1200px] mx-auto py-12 px-4 md:px-10 bg-white rounded-t-[2.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.15)] relative -mt-10 border-t border-gray-100">
           
           {/* 지역별 필터 */}
           <div className="mb-14 pb-6 border-b border-gray-100 flex justify-center">
-            <div className="flex gap-2 overflow-x-auto no-scrollbar py-2 px-2">
+            <div className="flex gap-2 overflow-x-auto py-2 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {regions.map((region) => (
                 <button
                   key={region}
@@ -114,48 +108,64 @@ export default function Home() {
 
           {/* 이달의 추천 축제 */}
           <section className="mb-16 relative group">
-            <div className="flex justify-between items-end mb-6">
-              <div>
-                <h3 className="text-[24px] md:text-[28px] font-extrabold mb-1 tracking-tight">이달의 추천 축제 🌸</h3>
-                <p className="text-sm md:text-base text-gray-500 font-medium">지금 가장 사랑받는 전국의 축제를 만나보세요.</p>
-              </div>
-              <div className="hidden sm:flex gap-2">
-                <button onClick={() => handleScroll("left")} className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18L9 12L15 6"/></svg>
-                </button>
-                <button onClick={() => handleScroll("right")} className="w-10 h-10 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg>
-                </button>
-              </div>
+            {/* 타이틀 영역 (기존에 있던 우측 상단 화살표 제거됨) */}
+            <div className="mb-6">
+              <h3 className="text-[24px] md:text-[28px] font-extrabold mb-1 tracking-tight">이달의 추천 축제 🌸</h3>
+              <p className="text-sm md:text-base text-gray-500 font-medium">지금 가장 사랑받는 전국의 축제를 만나보세요.</p>
             </div>
 
-            <div ref={scrollRef} className="flex gap-4 md:gap-5 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-6 pt-2">
-              {recommendedFestivals.map((festival) => (
-                <Link to={`/festival/${festival.id}`} key={`rec-${festival.id}`} className="min-w-[75%] sm:min-w-[calc(33.333%-16px)] lg:min-w-[calc(25%-15px)] snap-start group/card cursor-pointer">
-                  <div className="relative mb-3 aspect-[4/5] rounded-2xl overflow-hidden shadow-sm bg-gray-50">
-                    <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
-                    
-                    <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-3 right-3 z-10 cursor-pointer">
-                      <motion.svg whileTap={{ scale: 0.7 }} width="26" height="26" viewBox="0 0 24 24" fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} stroke="white" strokeWidth="2.5" className="drop-shadow-md transition-colors">
-                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" />
-                      </motion.svg>
-                    </div>
+            {/* 슬라이더 전체 래퍼 (화살표 배치를 위해 relative 추가) */}
+            <div className="relative w-full">
+              
+              {/* 왼쪽 화살표 (사진 위 왼쪽에 둥둥 떠있음) */}
+              <button 
+                onClick={() => handleScroll("left")} 
+                className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-4 z-20 w-12 h-12 rounded-full border border-gray-100 flex items-center justify-center bg-white shadow-lg hover:bg-gray-50 transition-all hidden sm:flex opacity-0 group-hover:opacity-100"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18L9 12L15 6"/></svg>
+              </button>
 
-                    <div className="absolute top-3 left-3">
-                      <span className={`px-2.5 py-1 rounded text-[11px] font-bold text-white ${festival.status === 'upcoming' ? 'bg-blue-500/90' : festival.status === 'ended' ? 'bg-gray-500/90' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>
-                        {getStatusLabel(festival.status)}
-                      </span>
+              {/* 오른쪽 화살표 (사진 위 오른쪽에 둥둥 떠있음) */}
+              <button 
+                onClick={() => handleScroll("right")} 
+                className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-4 z-20 w-12 h-12 rounded-full border border-gray-100 flex items-center justify-center bg-white shadow-lg hover:bg-gray-50 transition-all hidden sm:flex opacity-0 group-hover:opacity-100"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+
+              {/* 가로 스크롤 컨테이너 (스크롤바 완벽하게 숨김) */}
+              <div 
+                ref={scrollRef} 
+                className="flex gap-4 md:gap-5 overflow-x-auto snap-x snap-mandatory pb-6 pt-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+              >
+                {recommendedFestivals.map((festival) => (
+                  <Link to={`/festival/${festival.id}`} key={`rec-${festival.id}`} className="min-w-[75%] sm:min-w-[calc(33.333%-16px)] lg:min-w-[calc(25%-15px)] snap-start group/card cursor-pointer">
+                    <div className="relative mb-3 aspect-[4/5] rounded-2xl overflow-hidden shadow-sm bg-gray-50">
+                      <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
+                      
+                      <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-3 right-3 z-10 cursor-pointer">
+                        <motion.svg whileTap={{ scale: 0.7 }} width="26" height="26" viewBox="0 0 24 24" fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} stroke="white" strokeWidth="2.5" className="drop-shadow-md transition-colors">
+                          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" />
+                        </motion.svg>
+                      </div>
+
+                      <div className="absolute top-3 left-3">
+                        <span className={`px-2.5 py-1 rounded text-[11px] font-bold text-white ${festival.status === 'upcoming' ? 'bg-blue-500/90' : festival.status === 'ended' ? 'bg-gray-500/90' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>
+                          {getStatusLabel(festival.status)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div className="px-1">
-                    <span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase tracking-tight">{festival.category || "테마여행"}</span>
-                    <h3 className="font-bold text-[16px] line-clamp-2 leading-snug mb-1.5 h-[44px] group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
-                    <p className="text-[13px] text-[#555555] font-semibold mb-0.5">{festival.location}</p>
-                    <p className="text-[13px] text-gray-400">{festival.date}</p>
-                  </div>
-                </Link>
-              ))}
+                    
+                    <div className="px-1">
+                      <span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase tracking-tight">{festival.category || "테마여행"}</span>
+                      <h3 className="font-bold text-[16px] line-clamp-2 leading-snug mb-1.5 h-[44px] group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
+                      <p className="text-[13px] text-[#555555] font-semibold mb-0.5">{festival.location}</p>
+                      <p className="text-[13px] text-gray-400">{festival.date}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
             </div>
           </section>
         </main>

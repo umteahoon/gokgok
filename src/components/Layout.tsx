@@ -121,7 +121,7 @@ export function Layout({ children }: LayoutProps) {
     { label: '마당', path: ROUTE_PATHS?.HOME || '/' },
     { label: '축제', path: ROUTE_PATHS?.SEARCH || '/search' },
     { label: '수다', path: ROUTE_PATHS?.COMMUNITY || '/community' },
-    { label: '내 정보', path: ROUTE_PATHS?.MYPAGE || '/mypage' },
+    { label: '내 정보', path: ROUTE_PATHS?.MYPAGE || '/mypage' },,
   ];
 
   const handleLogout = () => {
