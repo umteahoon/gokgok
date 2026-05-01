@@ -14,7 +14,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // 라우터 임포트
 import favoritesRouter from "./routes/favorites"; 
-import reviewRouter from "./routes/reviews ";           
+import reviewRouter from './routes/reviews ';           
 import adminRouter from './routes/admin';
 import communityRouter from './routes/community'; 
 import contactRouter from './routes/contact'; // 문의사항 라우터
