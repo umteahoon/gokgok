@@ -151,7 +151,7 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans transition-colors duration-300">
       <header className="sticky top-0 z-50 w-full border-b border-foreground/10 bg-background/80 backdrop-blur-md py-4 transition-colors duration-300">
-        <div className="relative w-full max-w-[1400px] mx-auto px-4 md:px-8 flex items-center justify-between h-8">
+        <div className="relative w-full max-w-[1400px] mx-auto pl-4 pr-2 md:pl-8 md:pr-2 flex items-center justify-between h-8">
 
           {/* 1. 왼쪽: 로고 영역 */}
           <div className="flex-shrink-0 z-10">
@@ -192,53 +192,59 @@ export function Layout({ children }: LayoutProps) {
           </nav>
 
           {/* 3. 오른쪽: 유저 메뉴 및 타이머 영역 */}
-          <div className="hidden md:flex items-center justify-end gap-3 z-10">
-            {currentUser && (
-              <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-full border border-foreground/10 shrink-0">
-                <div className="flex items-center gap-1.5 text-[12px] font-mono font-bold text-foreground/80">
-                  <Clock className="w-3.5 h-3.5 text-primary" />
-                  <span>{formatTime(timeLeft)}</span>
+          <div className="hidden md:flex items-center justify-end gap-8 z-10">
+            {/* 왼쪽 그룹: 타이머 + 로그인/로그아웃 */}
+            <div className="flex items-center gap-2">
+              {currentUser && (
+                <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-full border border-foreground/10 shrink-0">
+                  <div className="flex items-center gap-1.5 text-[12px] font-mono font-bold text-foreground/80">
+                    <Clock className="w-3.5 h-3.5 text-primary" />
+                    <span>{formatTime(timeLeft)}</span>
+                  </div>
+                  <div className="h-3 w-[1px] bg-foreground/20 mx-1" />
+                  <button
+                    onClick={handleExtend}
+                    className="text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    연장
+                  </button>
                 </div>
-                <div className="h-3 w-[1px] bg-foreground/20 mx-1" />
+              )}
+
+              {currentUser ? (
                 <button
-                  onClick={handleExtend}
-                  className="text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors"
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
                 >
-                  연장
+                  로그아웃
                 </button>
-              </div>
-            )}
+              ) : (
+                <NavLink
+                  to={ROUTE_PATHS?.NOTMYPAGE || '/login'}
+                  className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
+                >
+                  로그인
+                </NavLink>
+              )}
+            </div>
 
-            <button
-              onClick={toggleTheme}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-full transition-colors shrink-0"
-              aria-label="테마 변경"
-            >
-              {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
-            </button>
-
-            {currentUser ? (
+            {/* 오른쪽 그룹: 다크모드 + 문의사항 */}
+            <div className="flex items-center gap-3">
               <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
+                onClick={toggleTheme}
+                className="p-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-full transition-colors shrink-0"
+                aria-label="테마 변경"
               >
-                로그아웃
+                {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
               </button>
-            ) : (
+
               <NavLink
-                to={ROUTE_PATHS?.NOTMYPAGE || '/login'}
+                to="/contact"
                 className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
               >
-                로그인
+                문의사항
               </NavLink>
-            )}
-
-            <NavLink
-              to="/contact"
-              className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
-            >
-              문의사항
-            </NavLink>
+            </div>
           </div>
 
           {/* 모바일 화면용 메뉴 */}
