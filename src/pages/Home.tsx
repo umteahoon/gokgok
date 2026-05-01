@@ -1,82 +1,99 @@
 import { motion } from "framer-motion";
-// 이미지는 assets/images에 저장되어 있다고 가정
 import { IMAGES } from "@/assets/images";
 
-// 실제 이미지 경로로 수정 (assets 폴더에 이미지가 있어야 함)
+// 대한민국 구석구석 스타일: 날짜와 지역 정보가 중요함
 const festivalList = [
-  { id: 1, title: "진해 군항제", region: "경남 창원시", date: "2026.03.22 ~ 04.01", tag: "#벚꽃명소", img: "/assets/images/jinhae_cherry.jpg" },
-  { id: 2, title: "진주 남강 유등축제", region: "경남 진주시", date: "2026.10.05 ~ 10.20", tag: "#야경맛집", img: "/assets/images/jinju_lanterns.jpg" },
-  { id: 3, title: "무주 반딧불축제", region: "전북 무주군", date: "2026.08.31 ~ 09.08", tag: "#생태체험", img: "/assets/images/muju_fireflies.jpg" },
-  { id: 4, title: "여수 밤바다 불꽃축제", region: "전남 여수시", date: "2026.10.26 ~ 10.26", tag: "#불꽃놀이", img: "/assets/images/yeosu_fireworks.jpg" },
+  { id: 1, title: "진해 군항제", region: "경남 창원시", date: "2026.03.22 ~ 04.01", tag: "#벚꽃명소", img: IMAGES.CULTURAL_EVENT_1 },
+  { id: 2, title: "진주 남강 유등축제", region: "경남 진주시", date: "2026.10.05 ~ 10.20", tag: "#야경맛집", img: IMAGES.FESTIVAL_EVENT_5 },
+  { id: 3, title: "무주 반딧불축제", region: "전북 무주군", date: "2026.08.31 ~ 09.08", tag: "#생태체험", img: IMAGES.FESTIVAL_MAIN_7 },
+  { id: 4, title: "여수 밤바다 불꽃축제", region: "전남 여수시", date: "2026.10.26 ~ 10.26", tag: "#불꽃놀이", img: IMAGES.CULTURAL_EVENT_6 },
 ];
 
+const topKeywords = ["#벚꽃", "#봄꽃여행", "#야경", "#가족여행", "#먹거리", "#전통체험"];
 const regions = ["전체", "서울", "경기/인천", "강원", "충청", "전라", "경상", "제주"];
 
 export default function Home() {
   return (
-    <div className="w-full min-h-screen bg-[#FDF9F3] text-gray-900 font-sans">
+    <div className="relative w-full min-h-screen bg-white text-gray-900 font-sans">
       
-      {/* 1. Header (로고 & GNB) */}
-      <header className="fixed top-0 left-0 w-full bg-[#FDF9F3]/90 backdrop-blur-sm z-50 px-8 py-4 flex items-center justify-between border-b border-[#E3051B]/10">
-        <div className="flex items-center gap-16">
-          <h1 className="text-3xl font-bold text-gray-950 font-serif tracking-tight">곡곡</h1>
-          <nav className="flex items-center gap-10 text-lg font-medium text-gray-700">
-            {['마당', '축제', '수다', '내 정보'].map((item, idx) => (
-              <a key={item} href="#" className={`relative ${idx === 0 ? 'text-[#E3051B]' : 'hover:text-[#E3051B]'}`}>
-                {item}
-                {idx === 0 && <span className="absolute -bottom-1 left-0 right-0 h-1 bg-[#E3051B] rounded-full" />}
-              </a>
-            ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-4 text-sm">
-          <span className="text-gray-600 font-mono">00:52:48</span>
-          <button className="bg-gray-100 px-4 py-1.5 rounded-full hover:bg-gray-200">연장</button>
-          <button className="text-xl">🌙</button>
-          <button className="bg-gray-100 px-4 py-1.5 rounded-full font-bold hover:bg-gray-200">로그아웃</button>
-        </div>
-      </header>
-
-      {/* 2. Hero Section */}
-      <section className="relative w-full h-[65vh] flex items-center justify-center pt-24 overflow-hidden">
-        {/* 풍등 야경 배경 이미지 */}
-        <div className="absolute inset-0 z-0 scale-105">
+      {/* ========================================== */}
+      {/* 1. HERO SECTION (메인 배너 및 검색) */}
+      {/* ========================================== */}
+      <section className="relative w-full h-[50vh] md:h-[60vh] flex flex-col justify-center items-center">
+        {/* 배경 이미지 */}
+        <div className="absolute inset-0 z-0">
           <img
-            src="/assets/images/main_hero_ lanterns.jpg" // 등불 이미지로 대체
-            alt="감성 배경"
-            className="w-full h-full object-cover brightness-90"
+            src="/public/45f1c8951ca8a760d4a413a01a54dc50.jpg"
+            alt="메인 배경"
+            className="w-full h-full object-cover brightness-75"
           />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
 
-        {/* 메인 텍스트 */}
-        <div className="relative z-10 text-center text-white flex flex-col items-center">
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
+        {/* 메인 텍스트 & 검색창 */}
+        <div className="relative z-10 flex flex-col items-center w-full max-w-4xl px-4 mt-12">
+          <motion.h1 
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            className="font-serif text-[72px] font-medium leading-tight tracking-tighter"
+            className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 text-center tracking-tight"
+            style={{ textShadow: "0 2px 10px rgba(0,0,0,0.3)" }}
           >
-            <span className="block">대한민국의</span>
-            <span className="block mt-[-10px]">따뜻한 매력을</span>
-            <span className="block mt-[-10px]">구석구석 느껴보세요.</span>
+            어디로 떠나볼까요?
           </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-lg text-white/90 mb-8 text-center"
+          >
+            곡곡에서 전국의 즐거운 축제를 찾아보세요
+          </motion.p>
+
+          {/* 검색창 */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="w-full max-w-2xl bg-white p-2 rounded-full shadow-2xl flex items-center"
+          >
+            <input 
+              type="text" 
+              placeholder="검색어를 입력하세요 (예: 벚꽃, 진해)" 
+              className="flex-1 bg-transparent px-6 py-3 md:py-4 text-base md:text-lg outline-none text-gray-800 placeholder-gray-400"
+            />
+            <button className="bg-[#E3051B] text-white px-8 py-3 md:py-4 rounded-full font-bold hover:bg-[#C10415] transition-colors whitespace-nowrap">
+              검색
+            </button>
+          </motion.div>
+
+          {/* 추천 해시태그 */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+            className="flex flex-wrap justify-center gap-2 mt-6"
+          >
+            {topKeywords.map((keyword, idx) => (
+              <button key={idx} className="text-sm text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full transition-colors border border-white/20">
+                {keyword}
+              </button>
+            ))}
+          </motion.div>
         </div>
       </section>
-      
-      {/* 3. 콘텐츠 영역 */}
-      <main className="w-full max-w-7xl mx-auto py-16 px-8 bg-white rounded-t-3xl shadow-[-5px_0_30px_rgba(0,0,0,0.03)] -mt-12 relative z-20">
-        
-        {/* 지역별 필터 (현대적인 Pill 디자인) */}
-        <div className="mb-12 pb-8 border-b border-gray-100">
-          <div className="flex gap-3 overflow-x-auto no-scrollbar py-2">
+
+      {/* ========================================== */}
+      {/* 2. 지역별 필터 (네비게이션 바 형태) */}
+      {/* ========================================== */}
+      <div className="w-full border-b border-gray-200 bg-white sticky top-0 z-20 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 overflow-x-auto no-scrollbar">
+          <div className="flex space-x-8 py-4 min-w-max">
             {regions.map((region, idx) => (
-              <button
-                key={region}
-                className={`px-8 py-3.5 rounded-full text-base font-bold transition-all ${
+              <button 
+                key={idx} 
+                className={`text-lg font-bold pb-4 -mb-4 border-b-4 transition-colors ${
                   idx === 0 
-                  ? "bg-[#E3051B] text-white shadow-md shadow-[#E3051B]/20" 
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  ? "border-[#E3051B] text-[#E3051B]" 
+                  : "border-transparent text-gray-500 hover:text-gray-900"
                 }`}
               >
                 {region}
@@ -84,54 +101,70 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </div>
 
-        {/* 이달의 추천 축제 */}
-        <section className="mb-16">
-          <div className="flex justify-between items-end mb-10">
-            <div>
-              <h2 className="text-4xl font-serif font-medium text-gray-950 mb-3 tracking-tighter">이달의 추천 축제</h2>
-              <p className="text-xl text-gray-600 font-medium">지금 가장 사랑받는 전국의 축제들을 만나보세요.</p>
-            </div>
-            <button className="text-lg font-bold text-gray-400 hover:text-gray-700 transition-colors">
-              전체보기 &gt;
-            </button>
+      {/* ========================================== */}
+      {/* 3. 메인 콘텐츠 영역 (화이트 배경, 깔끔한 카드) */}
+      {/* ========================================== */}
+      <section className="w-full max-w-7xl mx-auto py-16 px-4 md:px-8">
+        
+        {/* 섹션 타이틀 */}
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">이달의 추천 축제</h2>
+            <p className="text-gray-500">지금 가장 사랑받는 전국의 축제들을 만나보세요.</p>
           </div>
+          <button className="text-sm font-medium text-gray-500 hover:text-gray-900 flex items-center gap-1">
+            더보기 &gt;
+          </button>
+        </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {festivalList.map((festival, idx) => (
-              <motion.div
-                key={festival.id}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                className="group cursor-pointer rounded-3xl overflow-hidden bg-white shadow-xl shadow-gray-100 border border-gray-100 hover:shadow-2xl transition-all"
-              >
-                {/* 썸네일 */}
-                <div className="aspect-[11/14] overflow-hidden bg-gray-200">
-                  <img
-                    src={festival.img}
-                    alt={festival.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
+        {/* 축제 카드 그리드 */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {festivalList.map((festival, idx) => (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              key={festival.id} 
+              className="group cursor-pointer flex flex-col"
+            >
+              {/* 썸네일 영역 */}
+              <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden mb-4 shadow-md group-hover:shadow-xl transition-shadow">
+                <img 
+                  src={festival.img} 
+                  alt={festival.title} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                />
+                {/* 뱃지 */}
+                <div className="absolute top-3 left-3">
+                  <span className="bg-black/70 text-white text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-md">
+                    진행중
+                  </span>
                 </div>
-                {/* 텍스트 정보 */}
-                <div className="p-7">
-                  <h3 className="text-2xl font-serif font-medium text-gray-950 mb-3 group-hover:text-[#E3051B]">
-                    {festival.title}
-                  </h3>
-                  <p className="text-lg text-gray-600 font-medium mb-1 tracking-tight">
-                    🗓️ {festival.date}
-                  </p>
-                  <p className="text-base text-[#E3051B] font-bold tracking-tighter">
-                    #{festival.tag.replace('#', '')}
-                  </p>
+              </div>
+
+              {/* 텍스트 영역 */}
+              <div className="flex flex-col px-1">
+                <span className="text-[#E3051B] text-sm font-bold mb-1">{festival.region}</span>
+                <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#E3051B] transition-colors line-clamp-1">
+                  {festival.title}
+                </h3>
+                <p className="text-gray-500 text-sm mb-3 flex items-center gap-1">
+                  🗓️ {festival.date}
+                </p>
+                <div>
+                  <span className="inline-block text-xs font-medium text-gray-600 bg-gray-100 px-2.5 py-1 rounded-md">
+                    {festival.tag}
+                  </span>
                 </div>
-              </motion.div>
-            ))}
-          </div>
-        </section>
-      </main>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        
+      </section>
     </div>
   );
 }

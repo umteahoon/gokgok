@@ -5,6 +5,7 @@ import { mockFestivals, topFestivals } from "@/lib/index";
 import { KoreaMap } from "@/components/KoreaMap"; 
 import { SearchBar } from "@/components/SearchBar";
 
+// Festival 인터페이스 정의
 interface Festival {
   id: string | number;
   title: string;
@@ -22,6 +23,7 @@ export default function Search() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedTaste, setSelectedTaste] = useState("NEW");
   
+  // 찜하기 상태 관리
   const [wishlistedIds, setWishlistedIds] = useState<(string | number)[]>([]);
 
   const bestScrollRef = useRef<HTMLDivElement>(null);
@@ -40,8 +42,8 @@ export default function Search() {
   };
 
   const toggleWishlist = (e: React.MouseEvent, id: string | number) => {
-    e.preventDefault(); 
-    e.stopPropagation(); 
+    e.preventDefault(); // 부모 Link 클릭 이벤트 방지 (상세페이지 이동 방지)
+    e.stopPropagation(); // 이벤트 버블링 방지
     setWishlistedIds(prev => 
       prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
     );
@@ -70,8 +72,13 @@ export default function Search() {
     setSelectedRegion(regionId === selectedRegion ? "" : regionId);
   };
 
-  // 공통 버튼 스타일 (테두리 및 하이라이트 제거)
-  const heartBtnClassName = "absolute z-10 bg-transparent border-none outline-none focus:outline-none focus:ring-0 active:bg-transparent p-0 appearance-none select-none";
+  /**
+   * 하트 버튼 스타일: 
+   * - outline-none & ring-0: 포커스 시 테두리 제거
+   * - select-none: 텍스트 선택 방지
+   * - WebkitTapHighlightColor: 모바일 터치 시 하이라이트 제거
+   */
+  const heartBtnClassName = "absolute z-10 bg-transparent border-none outline-none focus:outline-none focus:ring-0 active:bg-transparent p-0 appearance-none select-none touch-none";
   const heartBtnStyle = { WebkitTapHighlightColor: 'transparent' };
 
   return (
@@ -131,7 +138,7 @@ export default function Search() {
                           <motion.svg 
                             whileTap={{ scale: 0.8 }}
                             width="24" height="24" viewBox="0 0 24 24" 
-                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(0,0,0,0.25)"} 
+                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} 
                             stroke="white" strokeWidth="2"
                             className="drop-shadow-md transition-colors"
                           >
@@ -185,7 +192,7 @@ export default function Search() {
                           <motion.svg 
                             whileTap={{ scale: 0.8 }}
                             width="24" height="24" viewBox="0 0 24 24" 
-                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(0,0,0,0.25)"} 
+                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} 
                             stroke="white" strokeWidth="2"
                             className="drop-shadow-md transition-colors"
                           >
@@ -243,7 +250,7 @@ export default function Search() {
                           <motion.svg 
                             whileTap={{ scale: 0.8 }}
                             width="28" height="28" viewBox="0 0 24 24" 
-                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(0,0,0,0.3)"} 
+                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} 
                             stroke="white" strokeWidth="2.5"
                             className="drop-shadow-xl transition-colors"
                           >

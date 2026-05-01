@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [dbLogs, setDbLogs] = useState<SecurityLog[]>([]); // DB에서 가져온 통합 로그
   const [search, setSearch] = useState("");
+  const [searchPosts, setSearchPosts] = useState("");
 
   // --- [로컬 보안 상태] 본인의 세션 감시용 ---
   const [refreshCount, setRefreshCount] = useState(() => Number(sessionStorage.getItem("gokgok_refresh_count") || 0));
@@ -90,7 +91,10 @@ export default function AdminDashboard() {
 
   // 검색 필터링
   const filteredUsers = users.filter((u) => (u.username?.toLowerCase() || "").includes(search.toLowerCase()) || (u.email?.toLowerCase() || "").includes(search.toLowerCase()));
-  const filteredPosts = posts.filter((p) => (p.title?.toLowerCase() || "").includes(search.toLowerCase()) || (p.author?.toLowerCase() || "").includes(search.toLowerCase()));
+  const filteredPosts = posts.filter((p) => 
+  (p.title?.toLowerCase() || "").includes(searchPosts.toLowerCase()) || 
+  (p.author?.toLowerCase() || "").includes(searchPosts.toLowerCase())
+);
 
   const handleUserDelete = async (id: string, email: string) => {
     if (!window.confirm(`${email} 사용자를 강제 탈퇴시키겠습니까?`)) return;
@@ -161,6 +165,15 @@ export default function AdminDashboard() {
             <Card className="shadow-md">
               <CardHeader><CardTitle className="flex items-center gap-2 text-green-600"><MessageSquare className="w-5 h-5" /> 커뮤니티 게시글 관리</CardTitle></CardHeader>
               <CardContent>
+                <div className="mb-4 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="게시글 검색..."
+                    value={searchPosts}
+                    onChange={(e) => setSearchPosts(e.target.value)}
+                    className="pl-9 max-w-md shadow-inner"
+                  />
+                </div>
                 <Table>
                   <TableHeader><TableRow><TableHead>카테고리</TableHead><TableHead>제목</TableHead><TableHead>작성자</TableHead><TableHead className="text-right">삭제</TableHead></TableRow></TableHeader>
                   <TableBody>
