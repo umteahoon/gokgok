@@ -93,7 +93,9 @@ export default function AdminDashboard() {
   const filteredUsers = users.filter((u) => (u.username?.toLowerCase() || "").includes(search.toLowerCase()) || (u.email?.toLowerCase() || "").includes(search.toLowerCase()));
   const filteredPosts = posts.filter((p) => 
   (p.title?.toLowerCase() || "").includes(searchPosts.toLowerCase()) || 
-  (p.author?.toLowerCase() || "").includes(searchPosts.toLowerCase())
+  (p.author?.toLowerCase() || "").includes(searchPosts.toLowerCase()) ||
+  (p.category?.toLowerCase() || "").includes(searchPosts.toLowerCase())
+
 );
 
   const handleUserDelete = async (id: string, email: string) => {
