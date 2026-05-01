@@ -24,7 +24,7 @@ import NotMyPage from "@/pages/NotMyPage";
 import MyPage from "@/pages/MyPage"; 
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
-import Contact from "@/pages/Contact";
+import Contact from "./pages/Contact";
 import FestivalDetail from "@/pages/FestivalDetail"; 
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import AdminDashboard from "@/pages/admin/AdminDashboard"; 
