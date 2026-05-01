@@ -1,4 +1,4 @@
-// CommunityWrite.tsx (Render 백엔드 DB 스키마 최적화 버전)
+// CommunityWrite.tsx (Render 백엔드 전체 주소 반영 버전)
 import { useState, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -7,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fadeInUp } from "@/lib/motion";
 import { getCurrentUser } from "@/lib/login";
+
+// 💡 백엔드 서버의 실제 주소를 상수로 관리합니다.
+const API_BASE_URL = "https://gokgok-8ztf.onrender.com";
 
 export default function CommunityWrite() {
   const navigate = useNavigate();
@@ -61,30 +64,36 @@ export default function CommunityWrite() {
     const sendData = new FormData();
     
     /**
-     * 💡 DB 스키마(image_774954.png) 컬럼명에 맞춰 전송
-     * 백엔드에서 req.body.title 식으로 받을 수 있게 이름을 맞췄습니다.
+     * 💡 DB 스키마 컬럼명에 맞춰 데이터 추가
      */
     sendData.append("author", currentUser?.name || "익명");
-    sendData.append("author_email", currentUser?.email || ""); // 스키마에 있는 필드
-    sendData.append("title", formData.festivalTitle);         // festivalTitle -> title로 변경 전송
+    sendData.append("author_email", currentUser?.email || ""); 
+    sendData.append("title", formData.festivalTitle);         
     sendData.append("content", formData.content);
     sendData.append("category", formData.category);
-    sendData.append("status", "active");                       // 스키마의 status 기본값 부여
+    sendData.append("status", "active"); 
 
-    // 파일 객체들을 'images'라는 이름으로 추가
     imageFiles.forEach((file) => {
       sendData.append("images", file); 
     });
 
     try {
-      const response = await fetch("https://gokgok-8ztf.onrender.com/api/community", {
+      // 💡 주소를 API_BASE_URL을 포함한 전체 경로로 수정했습니다.
+      const response = await fetch(`${API_BASE_URL}/api/community`, {
         method: "POST",
         headers: {
-          // FormData를 사용할 때는 Content-Type을 명시하지 않아야 합니다.
+          // FormData 사용 시 브라우저가 boundary를 자동 설정하므로 Content-Type은 적지 않습니다.
           ...(token && { "Authorization": `Bearer ${token}` })
         },
         body: sendData
       });
+
+      // 서버가 에러 HTML을 보낼 경우를 대비해 텍스트를 먼저 확인하거나 응답 상태를 체크합니다.
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("서버 에러 상세:", errorText);
+        throw new Error("서버 응답이 올바르지 않습니다.");
+      }
 
       const data = await response.json();
 
@@ -92,12 +101,11 @@ export default function CommunityWrite() {
         alert("게시글이 성공적으로 등록되었습니다.");
         navigate("/community"); 
       } else {
-        // 백엔드에서 보내주는 구체적인 에러 메시지를 띄웁니다.
         alert(`실패: ${data.message || '서버 내부 오류가 발생했습니다.'}`);
       }
     } catch (error) {
       console.error("작성 에러:", error);
-      alert("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해주세요.");
+      alert("서버 통신 중 오류가 발생했습니다. 백엔드 서버 주소를 다시 확인해주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -110,7 +118,7 @@ export default function CommunityWrite() {
       <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">새 게시글 작성</h1>
-          <p className="text-muted-foreground">백엔드 DB 규격에 맞춰 안전하게 전송합니다.</p>
+          <p className="text-muted-foreground">백엔드 서버({API_BASE_URL})로 안전하게 전송합니다.</p>
         </div>
 
         <Card className="p-6 md:p-8">
@@ -118,11 +126,11 @@ export default function CommunityWrite() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-2">
                 <label className="text-sm font-medium">축제 이름</label>
-                <input name="festivalTitle" type="text" required value={formData.festivalTitle} onChange={handleChange} placeholder="축제명을 입력하세요" className="w-full px-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-primary" />
+                <input name="festivalTitle" type="text" required value={formData.festivalTitle} onChange={handleChange} placeholder="축제명을 입력하세요" className="w-full px-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-primary outline-none" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">카테고리</label>
-                <select name="category" value={formData.category} onChange={handleChange} className="w-full px-4 py-2 bg-background border border-input rounded-md">
+                <select name="category" value={formData.category} onChange={handleChange} className="w-full px-4 py-2 bg-background border border-input rounded-md outline-none">
                   <option value="전통문화">전통문화</option>
                   <option value="불꽃축제">불꽃축제</option>
                   <option value="겨울축제">겨울축제</option>
@@ -134,7 +142,7 @@ export default function CommunityWrite() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">내용</label>
-              <textarea name="content" required value={formData.content} onChange={handleChange} placeholder="생생한 후기를 작성해주세요." className="w-full px-4 py-3 h-48 bg-background border border-input rounded-md resize-none" />
+              <textarea name="content" required value={formData.content} onChange={handleChange} placeholder="생생한 후기를 작성해주세요." className="w-full px-4 py-3 h-48 bg-background border border-input rounded-md resize-none outline-none" />
             </div>
 
             <div className="space-y-2">

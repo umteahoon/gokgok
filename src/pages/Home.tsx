@@ -5,7 +5,7 @@ import { mockFestivals } from "@/lib/index";
 
 // ✅ 통합된 images.ts 모듈을 불러옵니다.
 // import { IMAGES } from "@/assets/images";
-import busanBg from "../assets/busan.jpg";
+import mainBg from "../assets/image2.jpg";
 
 // Festival 인터페이스 정의
 interface Festival {
@@ -62,7 +62,7 @@ export default function Home() {
           {/* ✅ images.ts에서 등록한 MAIN_BG(busan.jpg)를 사용합니다. */}
           <img
             // src={IMAGES.MAIN_BG} 
-            src="/busan.jpg"
+            src={mainBg}
             alt="메인 배경"
             className="w-full h-full object-cover brightness-[0.85]"
           />

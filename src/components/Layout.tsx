@@ -32,7 +32,6 @@ export function Layout({ children }: LayoutProps) {
       const payload = JSON.parse(window.atob(token.split('.')[1]));
       const exp = payload.exp * 1000;
       const now = Date.now();
-      // 초 단위로 변환
       return Math.floor((exp - now) / 1000);
     } catch (e) {
       return 0;
@@ -45,26 +44,23 @@ export function Layout({ children }: LayoutProps) {
     setCurrentUser(null);
     setTimeLeft(0);
     navigate(ROUTE_PATHS?.HOME || '/');
-    toast({ 
-      variant: "destructive", 
-      title: "⏰ 세션 만료", 
-      description: "로그인 시간이 만료되어 자동 로그아웃되었습니다." 
+    toast({
+      variant: "destructive",
+      title: "⏰ 세션 만료",
+      description: "로그인 시간이 만료되어 자동 로그아웃되었습니다."
     });
   };
 
   useEffect(() => {
     updateUserStatus();
-    
-    // 초기 시간 설정
+
     const initialTime = calculateTimeLeft();
     setTimeLeft(Math.max(0, initialTime));
 
-    // 로그인을 막 한 시점에 시간이 0보다 작거나 같은 경우에만 실행
     if (localStorage.getItem("accessToken") && initialTime < -5) {
       forceLogout();
     }
 
-    // 1초마다 타이머 갱신
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         const currentToken = localStorage.getItem("accessToken");
@@ -72,7 +68,7 @@ export function Layout({ children }: LayoutProps) {
 
         if (prev <= 1) {
           clearInterval(timer);
-          forceLogout(); // 시간이 다 되면 강제 로그아웃
+          forceLogout();
           return 0;
         }
         return prev - 1;
@@ -81,7 +77,7 @@ export function Layout({ children }: LayoutProps) {
 
     window.addEventListener('hashchange', updateUserStatus);
     window.addEventListener('auth-change', updateUserStatus);
-    
+
     if (document.documentElement.classList.contains('dark')) {
       setIsDarkMode(true);
     }
@@ -91,7 +87,7 @@ export function Layout({ children }: LayoutProps) {
       window.removeEventListener('hashchange', updateUserStatus);
       window.removeEventListener('auth-change', updateUserStatus);
     };
-  }, [currentUser?.id]); 
+  }, [currentUser?.id]);
 
   const formatTime = (seconds: number) => {
     if (seconds <= 0) return "00:00:00";
@@ -114,7 +110,7 @@ export function Layout({ children }: LayoutProps) {
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem("accessToken", data.token);
-        setTimeLeft(3600); // 1시간으로 리셋
+        setTimeLeft(3600);
         toast({ title: "✅ 세션 연장 성공", description: "로그인 시간이 1시간 연장되었습니다." });
       }
     } catch (err) {
@@ -132,9 +128,9 @@ export function Layout({ children }: LayoutProps) {
 
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
-      logout(); 
-      updateUserStatus(); 
-      navigate(ROUTE_PATHS?.HOME || '/'); 
+      logout();
+      updateUserStatus();
+      navigate(ROUTE_PATHS?.HOME || '/');
       setMobileMenuOpen(false);
       toast({ title: "로그아웃 완료", description: "정상적으로 로그아웃 되었습니다." });
     }
@@ -154,24 +150,22 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans transition-colors duration-300">
-      {/* 배경 투명도 80% 및 블러 효과 적용 */}
       <header className="sticky top-0 z-50 w-full border-b border-foreground/10 bg-background/80 backdrop-blur-md py-4 transition-colors duration-300">
         <div className="relative w-full max-w-[1400px] mx-auto px-4 md:px-8 flex items-center justify-between h-8">
-          
-          {/* ============================== */}
+
           {/* 1. 왼쪽: 로고 영역 */}
-          {/* ============================== */}
           <div className="flex-shrink-0 z-10">
             <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group">
-              <span className="text-2xl md:text-3xl font-bold text-foreground transition-colors" style={{ fontFamily: 'GmarketSansBold' }}>
+              <span
+                className="text-2xl md:text-3xl font-bold text-foreground transition-colors"
+                style={{ fontFamily: 'GmarketSansBold' }}
+              >
                 곡곡
               </span>
             </NavLink>
           </div>
 
-          {/* ============================== */}
-          {/* 2. 가운데: 네비게이션 메뉴 (완벽한 중앙 정렬) */}
-          {/* ============================== */}
+          {/* 2. 가운데: 네비게이션 메뉴 */}
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (
               <NavLink
@@ -197,9 +191,7 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
-          {/* ============================== */}
           {/* 3. 오른쪽: 유저 메뉴 및 타이머 영역 */}
-          {/* ============================== */}
           <div className="hidden md:flex items-center justify-end gap-3 z-10">
             {currentUser && (
               <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-full border border-foreground/10 shrink-0">
@@ -208,7 +200,7 @@ export function Layout({ children }: LayoutProps) {
                   <span>{formatTime(timeLeft)}</span>
                 </div>
                 <div className="h-3 w-[1px] bg-foreground/20 mx-1" />
-                <button 
+                <button
                   onClick={handleExtend}
                   className="text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors"
                 >
@@ -240,11 +232,16 @@ export function Layout({ children }: LayoutProps) {
                 로그인
               </NavLink>
             )}
+
+            <NavLink
+              to="/contact"
+              className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
+            >
+              문의사항
+            </NavLink>
           </div>
 
-          {/* ============================== */}
           {/* 모바일 화면용 메뉴 */}
-          {/* ============================== */}
           <div className="md:hidden flex items-center gap-2 z-10">
             {currentUser && (
               <span className="text-[10px] font-mono font-bold bg-foreground/5 px-2 py-1 rounded-full border border-foreground/10">
@@ -270,8 +267,6 @@ export function Layout({ children }: LayoutProps) {
       </header>
 
       <main className="flex-1 w-full px-2">{children}</main>
-
-      {/* Footer 영역 (기존에 있던 곳) */}
     </div>
   );
 }

@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { User, Heart, Calendar, Settings, LogIn, Camera, LogOut, Key, UserX } from "lucide-react";
+import { User, Camera, LogOut, Key, UserX, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
@@ -20,12 +19,14 @@ import {
   type User as AuthUser 
 } from "@/lib/login";
 
+// 💡 백엔드 서버의 실제 주소입니다.
+const API_BASE_URL = "https://gokgok-8ztf.onrender.com";
+
 export default function MyPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   
-  // 상태 관리
   const [dbFavorites, setDbFavorites] = useState<any[]>([]); 
   const [reviewCount, setReviewCount] = useState(0);         
   const [isLoading, setIsLoading] = useState(true);          
@@ -41,17 +42,17 @@ export default function MyPage() {
       setCurrentUser(user);
 
       try {
-        // 1. 찜 목록 불러오기 (Mount 경로: /api/interactions + /favorites)
-        const favRes = await fetch(`/api/interactions/favorites/${user.email}`);
+        // 1. 찜 목록 불러오기 (Render 백엔드 전체 주소 사용)
+        const favRes = await fetch(`${API_BASE_URL}/api/interactions/favorites/${user.email}`);
         const favData = await favRes.json();
         
-        // [지적 반영] favData.favorites가 아니라 favData.data를 사용
         if (favData.success) {
+          // 서버 응답 구조가 { success: true, data: [...] } 인 경우에 맞춤
           setDbFavorites(favData.data || []); 
         }
 
-        // 2. 리뷰 목록 불러오기 (Mount 경로: /api/reviews + /user)
-        const revRes = await fetch(`/api/reviews/user/${user.email}`);
+        // 2. 리뷰 목록 불러오기 (Render 백엔드 전체 주소 사용)
+        const revRes = await fetch(`${API_BASE_URL}/api/reviews/user/${user.email}`);
         const revData = await revRes.json();
         
         if (revData.success) {
@@ -67,7 +68,6 @@ export default function MyPage() {
     loadUserData();
   }, []);
 
-  // 사진 업로드 핸들러
   const handlePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && currentUser) {
@@ -83,7 +83,6 @@ export default function MyPage() {
     }
   };
 
-  // 로그아웃 핸들러
   const handleLogout = () => {
     if (confirm("로그아웃 하시겠습니까?")) {
       logout();
@@ -92,7 +91,6 @@ export default function MyPage() {
     }
   };
 
-  // 비밀번호 변경 핸들러
   const handleChangePassword = async () => {
     const currentPw = prompt("현재 비밀번호를 입력하세요.");
     if (!currentPw) return;
@@ -102,7 +100,6 @@ export default function MyPage() {
     alert(result.message);
   };
 
-  // 회원 탈퇴 핸들러
   const handleDeleteAccount = async () => {
     if (confirm("정말로 탈퇴하시겠습니까? 데이터는 복구할 수 없습니다.")) {
       const result = await deleteAccount(currentUser?.email || "");
@@ -116,12 +113,10 @@ export default function MyPage() {
     }
   };
 
-  // 필터링 로직 (ID 비교 시 형변환 적용)
+  // 찜한 축제 필터링 (DB의 festival_id와 mock 데이터의 id 매칭)
   const savedFestivals = mockFestivals.filter(f => 
     dbFavorites.some(fav => String(fav.festival_id) === String(f.id))
   );
-
-  const attendedFestivals = mockFestivals.slice(4, 7);
 
   if (!currentUser) {
     return (
@@ -166,21 +161,17 @@ export default function MyPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl">
             <Card className="border-none shadow-sm">
               <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">찜한 축제</CardTitle></CardHeader>
               <CardContent>
-                <p className="text-4xl font-bold text-primary">
-                  {isLoading ? '...' : savedFestivals.length}
-                </p>
+                <p className="text-4xl font-bold text-primary">{isLoading ? '...' : savedFestivals.length}</p>
               </CardContent>
             </Card>
             <Card className="border-none shadow-sm">
               <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">작성한 리뷰</CardTitle></CardHeader>
               <CardContent>
-                <p className="text-4xl font-bold text-primary">
-                  {isLoading ? '...' : reviewCount}
-                </p>
+                <p className="text-4xl font-bold text-primary">{isLoading ? '...' : reviewCount}</p>
               </CardContent>
             </Card>
           </div>
@@ -190,8 +181,8 @@ export default function MyPage() {
       <div className="container mx-auto px-4 py-12">
         <Tabs defaultValue="saved" className="w-full">
           <TabsList className="flex w-full max-w-md border-b bg-transparent h-auto p-0 mb-10 gap-8">
-            <TabsTrigger value="saved" className="px-2 py-3 border-b-2 border-transparent data-[state=active]:border-primary rounded-none">찜한 축제</TabsTrigger>
-            <TabsTrigger value="settings" className="px-2 py-3 border-b-2 border-transparent data-[state=active]:border-primary rounded-none">설정</TabsTrigger>
+            <TabsTrigger value="saved" className="px-2 py-3 border-b-2 border-transparent data-[state=active]:border-primary rounded-none shadow-none">찜한 축제</TabsTrigger>
+            <TabsTrigger value="settings" className="px-2 py-3 border-b-2 border-transparent data-[state=active]:border-primary rounded-none shadow-none">설정</TabsTrigger>
           </TabsList>
 
           <TabsContent value="saved">
@@ -215,7 +206,6 @@ export default function MyPage() {
               )
             )}
           </TabsContent>
-
 
           <TabsContent value="settings">
             <div className="max-w-2xl space-y-6">

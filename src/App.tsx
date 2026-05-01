@@ -169,7 +169,10 @@ const App = () => {
               <Routes>
                 <Route path={ROUTE_PATHS.HOME} element={<Home />} />
                 <Route path={ROUTE_PATHS.SEARCH} element={<Search />} />
-                <Route path="/festivals/:id" element={<FestivalDetail />} />
+                
+                {/* 🔥 수정 포인트: /festivals/:id 에서 /festival/:id 로 수정 */}
+                <Route path="/festival/:id" element={<FestivalDetail />} />
+                
                 <Route path={ROUTE_PATHS.COMMUNITY} element={<Community />} />
                 <Route path={ROUTE_PATHS.COMMUNITY_WRITE} element={<CommunityWrite />} /> 
                 <Route path={ROUTE_PATHS.NOTMYPAGE} element={<NotMyPage />} />

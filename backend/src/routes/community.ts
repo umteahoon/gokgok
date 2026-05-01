@@ -31,17 +31,20 @@ router.get('/', async (req: any, res: any) => {
 });
 
 // 2. [새 게시글 작성] POST /api/community
-// 💡 (router.post as any)를 사용하여 multer와 express 타입 충돌을 강제로 해결했습니다.
+// 💡 타입 충돌 방지를 위해 router.post를 any로 캐스팅합니다.
 (router.post as any)('/', upload.array('images'), async (req: any, res: any) => {
   try {
+    // 프론트엔드 FormData 추출
     const { author, author_email, title, content, category } = req.body;
-    
     const files = req.files as any[]; 
     const imageUrls: string[] = [];
 
+    // 💡 이미지 업로드 프로세스
     if (files && files.length > 0) {
       for (const file of files) {
-        const fileName = `${Date.now()}_${file.originalname}`;
+        // 파일명 보안 처리 (특수문자 제거)
+        const safeName = file.originalname.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+        const fileName = `${Date.now()}_${safeName}`;
         
         const { error: uploadError } = await supabase.storage
           .from('community_images') 
@@ -50,7 +53,10 @@ router.get('/', async (req: any, res: any) => {
             upsert: true
           });
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+          console.error("STORAGE 업로드 실패:", uploadError.message);
+          throw new Error(`이미지 서버 저장 실패: ${uploadError.message}`);
+        }
 
         const { data: { publicUrl } } = supabase.storage
           .from('community_images')
@@ -60,25 +66,30 @@ router.get('/', async (req: any, res: any) => {
       }
     }
 
-    const { data, error } = await supabase
+    // 💡 DB 저장 시 필수 값(status: active) 강제 부여
+    const { data, error: dbError } = await supabase
       .from('community_posts')
       .insert([{ 
-        author, 
-        author_email, 
-        title, 
-        content, 
-        category, 
+        author: author || "익명", 
+        author_email: author_email || "", 
+        title: title || "제목 없음", 
+        content: content || "", 
+        category: category || "기타", 
         images: imageUrls, 
         status: 'active' 
       }])
-      .select()
-      .single();
+      .select();
 
-    if (error) throw error;
-    res.status(201).json({ success: true, post: data });
+    if (dbError) {
+      console.error("DB 저장 실패:", dbError.message);
+      throw new Error(`데이터베이스 저장 실패: ${dbError.message}`);
+    }
+
+    res.status(201).json({ success: true, post: data?.[0] });
   } catch (error: any) {
-    console.error("작성 에러 상세:", error.message);
-    res.status(500).json({ success: false, message: '글 작성 실패' });
+    // 💡 에러 메시지를 구체적으로 반환하여 프론트엔드에서 원인을 알 수 있게 함
+    console.error("최종 catch 에러:", error.message);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -150,7 +161,6 @@ router.delete('/:postId/comments/:commentId', async (req: any, res: any) => {
 });
 
 // 6. [게시글 수정] PUT /api/community/:id
-// 💡 PUT 요청도 타입 충돌 방지를 위해 any로 처리했습니다.
 (router.put as any)('/:id', upload.array('images'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
