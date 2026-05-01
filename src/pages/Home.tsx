@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { mockFestivals } from "@/lib/index";
 
-// 🔥 로컬 사진을 다이렉트로 가져옵니다
+// 🔥 로컬 사진 다이렉트 호출
 import busanBg from "@/assets/image2.jpg";
 
 // Festival 인터페이스 정의
@@ -56,24 +56,26 @@ export default function Home() {
     <div className="relative w-full min-h-screen bg-white text-[#111111] font-sans pb-20 overflow-x-hidden">
       
       {/* ========================================== */}
-      {/* 1. Hero Section (다이렉트로 가져온 부산 배경) */}
+      {/* 1. Hero Section (딱 이 상단 영역에만 사진이 들어갑니다!) */}
       {/* ========================================== */}
-      <section className="relative w-full h-[60vh] md:h-[70vh] flex items-center justify-center overflow-hidden">
+      {/* 🔥 높이를 h-screen(화면 100%)으로 설정하여 처음 들어왔을 때 화면을 꽉 채웁니다. */}
+      <section className="relative w-full h-screen flex items-center justify-center overflow-hidden">
+        
+        {/* 배경 이미지 (고정이 아니라 이 section 안에만 갇혀 있습니다) */}
         <div className="absolute inset-0 z-0">
           <img
             src={busanBg} 
             alt="메인 배경"
             className="w-full h-full object-cover brightness-[0.85]"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
         </div>
-        
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
 
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="relative z-10 text-center text-white flex flex-col items-center px-4 pt-10"
+          className="relative z-10 text-center text-white flex flex-col items-center px-4 -mt-10"
         >
           <h2 className="text-[42px] sm:text-[52px] md:text-[64px] font-extrabold leading-[1.15] tracking-tight drop-shadow-xl">
             <span className="block opacity-95">대한민국의</span>
@@ -84,13 +86,13 @@ export default function Home() {
       </section>
       
       {/* ========================================== */}
-      {/* 2. 콘텐츠 영역 */}
+      {/* 2. 콘텐츠 영역 (스크롤 내리면 하얀 배경으로 나옴) */}
       {/* ========================================== */}
-      <main className="w-full max-w-[1200px] mx-auto py-12 px-4 md:px-10 bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] relative z-20 -mt-16 border-t border-gray-100">
+      {/* 🔥 -mt-24를 줘서 하얀색 둥근 판이 사진을 살짝 덮으면서 올라오게 디자인했습니다. */}
+      <main className="w-full max-w-[1200px] mx-auto py-12 px-4 md:px-10 bg-white rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] relative z-20 -mt-24 border-t border-gray-100">
         
         {/* 지역별 필터 */}
         <div className="mb-14 pb-6 border-b border-gray-100 flex justify-center">
-          {/* 스크롤바 강제 숨김 추가 */}
           <div className="flex gap-2 overflow-x-auto py-2 px-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {regions.map((region) => (
               <button
@@ -109,20 +111,17 @@ export default function Home() {
         </div>
 
         {/* 이달의 추천 축제 */}
-        {/* 🔥 hover 시 화살표가 나오게 하기 위해 group 클래스 유지 */}
         <section className="mb-16 relative group">
           <div className="flex justify-between items-end mb-6">
             <div>
               <h3 className="text-[24px] md:text-[28px] font-extrabold mb-1 tracking-tight">이달의 추천 축제 🌸</h3>
               <p className="text-sm md:text-base text-gray-500 font-medium">지금 가장 사랑받는 전국의 축제를 만나보세요.</p>
             </div>
-            {/* 우측 상단에 있던 화살표 제거됨 */}
           </div>
 
-          {/* 슬라이드 래퍼 (화살표 위치 기준점) */}
           <div className="relative w-full">
             
-            {/* 왼쪽 화살표 (마우스 올리면 스르륵 나타남) */}
+            {/* 왼쪽 화살표 */}
             <button 
               onClick={() => handleScroll("left")} 
               className="absolute left-0 top-[35%] -translate-y-1/2 -translate-x-5 z-20 w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center bg-white/95 backdrop-blur shadow-lg hover:scale-110 transition-all duration-300 hidden sm:flex opacity-0 group-hover:opacity-100"
@@ -130,7 +129,7 @@ export default function Home() {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18L9 12L15 6"/></svg>
             </button>
 
-            {/* 오른쪽 화살표 (마우스 올리면 스르륵 나타남) */}
+            {/* 오른쪽 화살표 */}
             <button 
               onClick={() => handleScroll("right")} 
               className="absolute right-0 top-[35%] -translate-y-1/2 translate-x-5 z-20 w-12 h-12 rounded-full border border-gray-200 flex items-center justify-center bg-white/95 backdrop-blur shadow-lg hover:scale-110 transition-all duration-300 hidden sm:flex opacity-0 group-hover:opacity-100"
@@ -138,7 +137,7 @@ export default function Home() {
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
             </button>
 
-            {/* 가로 스크롤 컨테이너 (스크롤바 완벽하게 강제 삭제) */}
+            {/* 슬라이드 컨테이너 (스크롤바 완벽 제거) */}
             <div 
               ref={scrollRef} 
               className="flex gap-4 md:gap-5 overflow-x-auto snap-x snap-mandatory pb-6 pt-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"

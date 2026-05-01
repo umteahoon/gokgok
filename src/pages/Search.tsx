@@ -18,15 +18,41 @@ interface Festival {
   description?: string;
 }
 
+// 지도 ID와 데이터 매칭을 위한 매핑 객체
+const REGION_NAME_MAP: Record<string, string> = {
+  Seoul: "서울",
+  Gyeonggi: "경기",
+  Incheon: "인천",
+  Gangwon: "강원",
+  Chungnam: "충남",
+  Chungbuk: "충북",
+  Daejeon: "대전",
+  Sejong: "세종",
+  Jeonbuk: "전북",
+  Jeonnam: "전남",
+  Gwangju: "광주",
+  Gyeongbuk: "경북",
+  Gyeongnam: "경남",
+  Daegu: "대구",
+  Busan: "부산",
+  Ulsan: "울산",
+  Jeju: "제주",
+};
+
 export default function Search() {  
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<"list" | "map">("list");
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [selectedTaste, setSelectedTaste] = useState("NEW");
   
+  // 히어로 슬라이더 상태
   const [currentSlide, setCurrentSlide] = useState(0);
   const heroItems = topFestivals.slice(0, 5);
+
+  // 테마 섹션 개폐 상태
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+  
+  // 찜하기 상태 관리
   const [wishlistedIds, setWishlistedIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -34,6 +60,7 @@ export default function Search() {
     setWishlistedIds(savedWishlist.map((id: string | number) => String(id)));
   }, []);
 
+  // 각 섹션별 스크롤 Ref
   const bestScrollRef = useRef<HTMLDivElement>(null);
   const risingScrollRef = useRef<HTMLDivElement>(null);
   const tasteScrollRef = useRef<HTMLDivElement>(null);
@@ -46,26 +73,21 @@ export default function Search() {
     { title: "역사와 전통이 함께", items: [...topFestivals, ...mockFestivals].slice(5, 10) }
   ];
 
-  // 🔥 [핵심 로직] 모든 데이터를 통합하여 지도 클릭 시 필터링
+  // 🔥 지도 탭 필터링 로직
   const regionFestivals = useMemo(() => {
     if (!selectedRegion) return [];
-    
-    // 1. 전체 데이터 합치기
     const combined = [...topFestivals, ...mockFestivals] as Festival[];
-    
-    // 2. ID 기준 중복 데이터 제거
-    const uniqueFestivals = combined.filter((v, i, a) => 
-      a.findIndex(t => t.id === v.id) === i
-    );
-    
-    // 3. 선택된 지역명이 location 문자열에 포함되어 있는지 확인
-    // 예: selectedRegion이 "충남"이면 "충청남도 금산군" 데이터를 찾아냄
-    return uniqueFestivals.filter(f => 
-      f.location.includes(selectedRegion) || 
-      (selectedRegion === "서울" && f.location.includes("서울특별시")) ||
-      (selectedRegion === "경기" && f.location.includes("경기도"))
-    );
+    const uniqueFestivals = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+    const searchTarget = REGION_NAME_MAP[selectedRegion] || selectedRegion;
+    return uniqueFestivals.filter(f => f.location.includes(searchTarget));
   }, [selectedRegion]);
+
+  // 🔥 리스트 탭 취향 필터링 로직
+  const filteredList = useMemo(() => {
+    const combined = [...topFestivals, ...mockFestivals] as Festival[];
+    const uniqueFestivals = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+    return uniqueFestivals.filter(f => selectedTaste === "NEW" ? true : f.category === selectedTaste);
+  }, [selectedTaste]);
 
   const nextSlide = (e: React.MouseEvent) => {
     e.preventDefault(); e.stopPropagation();
@@ -103,15 +125,6 @@ export default function Search() {
     setWishlistedIds(updatedWishlist.map((id: string | number) => String(id)));
   };
 
-  const filteredList = useMemo(() => {
-    const combined = [...topFestivals, ...mockFestivals] as Festival[];
-    const uniqueFestivals = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-    return uniqueFestivals.filter(f => {
-      const matchesTaste = selectedTaste === "NEW" ? true : f.category === selectedTaste;
-      return matchesTaste;
-    });
-  }, [selectedTaste]);
-
   const handleScroll = (ref: React.RefObject<HTMLDivElement>, direction: "left" | "right") => {
     if (ref.current) {
       const { scrollLeft, clientWidth } = ref.current;
@@ -122,7 +135,6 @@ export default function Search() {
   };
 
   const handleRegionSelect = (regionId: string) => {
-    // 지도 컴포넌트에서 넘겨주는 지역 ID(서울, 경기 등)를 상태에 저장
     setSelectedRegion(regionId === selectedRegion ? "" : regionId);
   };
 
@@ -132,14 +144,17 @@ export default function Search() {
     <div className="w-full bg-white text-[#111111] pb-20 font-sans overflow-x-hidden pt-10 rounded-t-3xl">
       <main className="container mx-auto">
         
-        {/* 상단 히어로 슬라이더 */}
-        <section className="relative w-[calc(100%-2rem)] mx-auto h-[220px] md:h-[320px] mb-16 bg-black overflow-hidden rounded-[2rem] md:rounded-[3.5rem] shadow-xl cursor-pointer">
+        {/* 1. 상단 히어로 슬라이더 섹션 */}
+        <section className="relative w-[calc(100%-2rem)] mx-auto h-[220px] md:h-[320px] mb-16 bg-black overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] shadow-xl cursor-pointer">
           <AnimatePresence mode="wait">
             <Link to={`/festival/${heroItems[currentSlide].id}`} key={currentSlide} className="absolute inset-0 block">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="absolute inset-0 flex items-center justify-between px-10 md:px-20">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="absolute inset-0 flex items-center justify-between px-10 md:px-24 lg:px-40">
                 <div className="absolute inset-0"><img src={heroItems[currentSlide].image} className="w-full h-full object-cover opacity-30 blur-md" alt="" /><div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" /></div>
-                <div className="relative z-10 text-white max-w-sm"><motion.h1 initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-xl md:text-3xl font-black mb-2 leading-tight drop-shadow-lg">{heroItems[currentSlide].title}</motion.h1><div className="text-gray-400 space-y-0.5 text-xs md:text-sm font-medium"><p>📍 {heroItems[currentSlide].location}</p><p>📅 {heroItems[currentSlide].date}</p></div></div>
-                <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="relative z-10 hidden md:block w-[160px] lg:w-[200px] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl border border-white/10"><img src={heroItems[currentSlide].image} className="w-full h-full object-cover" alt="" /></motion.div>
+                <div className="relative z-10 text-white max-w-sm">
+                  <motion.h1 initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-xl md:text-3xl font-black mb-2 leading-tight drop-shadow-lg">{heroItems[currentSlide].title}</motion.h1>
+                  <div className="text-gray-400 space-y-0.5 text-xs md:text-sm font-medium"><p>📍 {heroItems[currentSlide].location}</p><p>📅 {heroItems[currentSlide].date}</p></div>
+                </div>
+                <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="relative z-10 hidden md:block w-[180px] lg:w-[220px] aspect-[3/4] rounded-xl overflow-hidden shadow-2xl border border-white/10"><img src={heroItems[currentSlide].image} className="w-full h-full object-cover" alt="" /></motion.div>
               </motion.div>
             </Link>
           </AnimatePresence>
@@ -149,6 +164,7 @@ export default function Search() {
         </section>
 
         <div className="px-4">
+          {/* 탭 메뉴 */}
           <div className="flex gap-6 mb-10 border-b border-gray-100">
             <button onClick={() => setActiveTab("list")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "list" ? "text-[#FF3478]" : "text-gray-400 hover:text-gray-600"}`}>목록보기 {activeTab === "list" && <motion.div layoutId="t-line" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}</button>
             <button onClick={() => setActiveTab("map")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "map" ? "text-[#FF3478]" : "text-gray-400 hover:text-gray-600"}`}>지도보기 {activeTab === "map" && <motion.div layoutId="t-line" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}</button>
@@ -157,68 +173,98 @@ export default function Search() {
           <AnimatePresence mode="wait">
             {activeTab === "list" ? (
               <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                
                 {/* 섹션 1: TOP! 베스트 축제 */}
                 <section className="mb-16 relative group">
                   <div className="flex justify-between items-center mb-6"><h2 className="text-[22px] font-extrabold italic underline decoration-[#FF3478]/20 underline-offset-8">TOP! 베스트 축제</h2><div className="flex gap-2"><button onClick={() => handleScroll(bestScrollRef, "left")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><ChevronLeft size={18} /></button><button onClick={() => handleScroll(bestScrollRef, "right")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><ChevronRight size={18} /></button></div></div>
                   <div ref={bestScrollRef} className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
                     {topFestivals.map((festival, idx) => (
                       <Link to={`/festival/${festival.id}`} key={`best-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
-                        <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50"><img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" /><div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-2 right-2 z-10 p-1 cursor-pointer" style={heartBtnStyle}><motion.div whileTap={{ scale: 0.7 }}><Heart className={`w-6 h-6 drop-shadow-md transition-colors ${wishlistedIds.includes(String(festival.id)) ? "fill-[#FF3478] text-[#FF3478]" : "text-white/70 hover:text-white"}`} /></motion.div></div><div className="absolute top-2 left-2"><span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>{getStatusLabel(festival.status)}</span></div><div className="absolute bottom-0 left-0 leading-none pointer-events-none text-[#111111] font-black italic text-5xl opacity-80 px-2 drop-shadow-lg">{idx + 1}</div></div>
-                        <div className="px-1"><span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase tracking-tight">{festival.category}</span><h3 className="font-bold text-[14.5px] line-clamp-2 leading-snug mb-2 h-[40px] group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3><p className="text-[12px] text-[#555555] font-semibold mb-0.5">{festival.location}</p><p className="text-[12px] text-gray-400">{festival.date}</p></div>
+                        <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50">
+                          <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
+                          <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-2 right-2 z-10 p-1 cursor-pointer" style={heartBtnStyle}><motion.div whileTap={{ scale: 0.7 }}><Heart className={`w-6 h-6 drop-shadow-md transition-colors ${wishlistedIds.includes(String(festival.id)) ? "fill-[#FF3478] text-[#FF3478]" : "text-white/70 hover:text-white"}`} /></motion.div></div>
+                          <div className="absolute top-2 left-2"><span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>{getStatusLabel(festival.status || "")}</span></div>
+                          <div className="absolute bottom-0 left-0 leading-none pointer-events-none text-[#111111] font-black italic text-5xl opacity-80 px-2 drop-shadow-lg">{idx + 1}</div>
+                        </div>
+                        <div className="px-1"><span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase tracking-tight">{festival.category}</span><h3 className="font-bold text-[14.5px] line-clamp-2 h-[40px] group-hover/card:text-[#FF3478]">{festival.title}</h3><p className="text-[12px] text-[#555555] font-semibold mb-0.5">{festival.location}</p><p className="text-[12px] text-gray-400">{festival.date}</p></div>
                       </Link>
                     ))}
                   </div>
                 </section>
-                {/* 섹션 2, 3, 4 등 리스트 탭의 다른 부분들 동일하게 유지 */}
+
+                {/* 섹션 2: 지금 인기 급상승 🔥 */}
+                <section className="mb-16 relative group">
+                  <div className="flex justify-between items-center mb-6"><h2 className="text-[22px] font-extrabold">지금 인기 급상승 🔥</h2><div className="flex gap-2"><button onClick={() => handleScroll(risingScrollRef, "left")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><ChevronLeft size={18} /></button><button onClick={() => handleScroll(risingScrollRef, "right")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><ChevronRight size={18} /></button></div></div>
+                  <div ref={risingScrollRef} className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
+                    {mockFestivals.map((festival) => (
+                      <Link to={`/festival/${festival.id}`} key={`rising-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
+                        <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50">
+                          <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
+                          <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-2 right-2 z-10 p-1 cursor-pointer" style={heartBtnStyle}><motion.div whileTap={{ scale: 0.7 }}><Heart className={`w-6 h-6 drop-shadow-md transition-colors ${wishlistedIds.includes(String(festival.id)) ? "fill-[#FF3478] text-[#FF3478]" : "text-white/70 hover:text-white"}`} /></motion.div></div>
+                          <div className="absolute top-2 left-2"><span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>{getStatusLabel(festival.status || "")}</span></div>
+                        </div>
+                        <div className="px-1"><h3 className="font-bold text-[14.5px] line-clamp-2 h-[40px] group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3><p className="text-[12px] text-gray-400">{festival.date}</p></div>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+
+                {/* 섹션 3: 취향에 따라 고르는 여행 */}
+                <section className="mb-20 relative group">
+                  <div className="flex justify-between items-center mb-6"><h2 className="text-[22px] font-bold">취향에 따라 고르는 여행</h2><div className="flex gap-2"><button onClick={() => handleScroll(tasteScrollRef, "left")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><ChevronLeft size={18} /></button><button onClick={() => handleScroll(tasteScrollRef, "right")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><ChevronRight size={18} /></button></div></div>
+                  <div className="flex gap-2 mb-8 overflow-x-auto no-scrollbar">{tastes.map((taste) => (<button key={taste} onClick={() => setSelectedTaste(taste)} className={`px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${selectedTaste === taste ? "bg-[#111111] text-white border-[#111111]" : "bg-[#F5F5F5] text-[#666666] border-transparent"}`}>{taste}</button>))}</div>
+                  <div ref={tasteScrollRef} className="flex gap-5 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
+                    {filteredList.map((festival) => (
+                      <Link to={`/festival/${festival.id}`} key={`holic-${festival.id}`} className="w-[280px] md:w-[320px] flex-shrink-0 snap-start group/card cursor-pointer">
+                        <div className="relative mb-4 aspect-[1.4/1] rounded-2xl overflow-hidden shadow-md bg-gray-100"><img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105" /><div className="absolute top-3 left-3 flex flex-col gap-1"><span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white w-fit ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>{getStatusLabel(festival.status || "")}</span></div></div>
+                        <h3 className="font-bold text-[17px] line-clamp-1 group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
+                        <p className="text-[13px] text-gray-500 mt-1">{festival.location}</p>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+
+                {/* 섹션 4: 테마 추천 (Accordion) */}
+                <section className="mb-20 space-y-4">
+                  <h2 className="text-[22px] font-extrabold mb-6">테마 추천</h2>
+                  {themes.map((theme, idx) => {
+                    const isExpanded = expandedIndex === idx;
+                    return (
+                      <div key={idx} className={`border rounded-2xl overflow-hidden transition-all duration-300 ${isExpanded ? "border-blue-500 ring-1 ring-blue-500 shadow-md" : "border-gray-200 shadow-sm"}`}>
+                        <button onClick={() => setExpandedIndex(isExpanded ? null : idx)} className="w-full px-6 py-5 flex justify-between items-center bg-white transition-colors"><span className={`text-lg font-bold ${isExpanded ? "text-gray-900" : "text-gray-500"}`}>{theme.title}</span><ChevronLeft className={`w-6 h-6 transition-transform duration-300 ${isExpanded ? "-rotate-90 text-blue-500" : "rotate-0 text-gray-400"}`} /></button>
+                        <AnimatePresence>{isExpanded && (<motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }}><div className="px-6 pb-8"><div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x">{theme.items.map((item) => (<Link to={`/festival/${item.id}`} key={item.id} className="min-w-[160px] md:min-w-[200px] snap-start group/item relative"><div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-2"><img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" /><div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4"><p className="text-white font-bold text-sm leading-tight line-clamp-2">{item.title}</p></div></div></Link>))}</div></div></motion.div>)}</AnimatePresence>
+                      </div>
+                    );
+                  })}
+                </section>
+
               </motion.div>
             ) : (
-              /* --- 🔥 수정된 지도보기 탭: 클릭 시에만 해당 지역 데이터 로드 --- */
+              /* --- 2. 지도보기 탭 영역 --- */
               <motion.div key="map-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[650px]">
-                {/* 왼쪽: 지도 */}
-                <div className="lg:col-span-7 bg-[#F8F9FA] rounded-[2.5rem] flex items-center justify-center border border-gray-100 overflow-hidden relative shadow-inner p-4">
+                <div className="lg:col-span-7 bg-[#F8F9FA] rounded-[3rem] flex items-center justify-center border border-gray-100 overflow-hidden relative shadow-inner p-4">
                    <KoreaMap selectedRegion={selectedRegion} onRegionSelect={handleRegionSelect} />
                    <div className="absolute bottom-6 left-8 bg-white/80 backdrop-blur-md px-5 py-2.5 rounded-full border border-gray-100 shadow-sm flex items-center gap-2">
                      <MapPin size={16} className="text-[#FF3478]" />
                      <p className="text-sm font-bold text-gray-600">
-                       {selectedRegion ? `${selectedRegion} 지역 탐색 중` : "지도의 지역을 클릭해보세요"}
+                       {selectedRegion ? `${REGION_NAME_MAP[selectedRegion]} 지역 탐색 중` : "지도의 지역을 클릭해보세요"}
                      </p>
                    </div>
                 </div>
 
-                {/* 오른쪽: 필터링된 결과 리스트 */}
                 <div className="lg:col-span-5 flex flex-col">
                    <AnimatePresence mode="wait">
                      {selectedRegion ? (
-                       <motion.div 
-                         key="region-list"
-                         initial={{ opacity: 0, x: 20 }}
-                         animate={{ opacity: 1, x: 0 }}
-                         exit={{ opacity: 0, x: 20 }}
-                         className="flex flex-col h-full"
-                       >
+                       <motion.div key="region-results" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex flex-col h-full">
                          <div className="flex justify-between items-end mb-6 px-2">
-                           <h3 className="text-2xl font-black text-gray-900">{selectedRegion}의 축제</h3>
-                           <span className="text-sm font-bold text-[#FF3478] bg-[#FF3478]/5 px-3 py-1 rounded-full">
-                             총 {regionFestivals.length}건 검색됨
-                           </span>
+                           <h3 className="text-2xl font-black text-gray-900">{REGION_NAME_MAP[selectedRegion]} 축제</h3>
+                           <span className="text-sm font-bold text-[#FF3478] bg-[#FF3478]/5 px-3 py-1 rounded-full">총 {regionFestivals.length}건</span>
                          </div>
-
                          <div className="flex-1 overflow-y-auto no-scrollbar space-y-4 pr-2">
                            {regionFestivals.length > 0 ? (
                              regionFestivals.map((festival) => (
-                               <Link 
-                                 to={`/festival/${festival.id}`} 
-                                 key={`map-item-${festival.id}`}
-                                 className="group flex gap-4 bg-white p-3 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
-                               >
-                                 <div className="relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden">
-                                   <img src={festival.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                                   <div className="absolute top-1.5 left-1.5">
-                                     <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'}`}>
-                                       {getStatusLabel(festival.status)}
-                                     </span>
-                                   </div>
-                                 </div>
+                               <Link to={`/festival/${festival.id}`} key={`map-item-${festival.id}`} className="group flex gap-4 bg-white p-3 rounded-[2rem] border border-gray-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
+                                 <div className="relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden shadow-sm"><img src={festival.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" /></div>
                                  <div className="flex flex-col justify-center overflow-hidden">
                                    <span className="text-[10px] text-[#FF3478] font-bold mb-0.5">{festival.category}</span>
                                    <h4 className="font-bold text-[16px] truncate group-hover:text-[#FF3478] transition-colors">{festival.title}</h4>
@@ -230,25 +276,17 @@ export default function Search() {
                            ) : (
                              <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50 rounded-[2.5rem] border border-dashed border-gray-200 p-8">
                                <SearchIcon className="w-10 h-10 text-gray-300 mb-3" />
-                               <p className="text-gray-400 font-medium">해당 지역에 등록된 축제가 없습니다.</p>
+                               <p className="text-gray-400 font-medium text-sm">해당 지역에 등록된 축제가 없습니다.</p>
                              </div>
                            )}
                          </div>
                        </motion.div>
                      ) : (
-                       /* 지역 선택 전 안내 화면 */
-                       <motion.div 
-                         key="no-selection"
-                         initial={{ opacity: 0 }}
-                         animate={{ opacity: 1 }}
-                         className="h-full flex flex-col items-center justify-center text-center bg-gray-50 rounded-[2.5rem] border border-dashed border-gray-200 p-10"
-                       >
-                         <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4">
-                           <MapPin className="text-gray-300 w-8 h-8" />
-                         </div>
-                         <h4 className="text-gray-600 font-bold mb-2">지역을 선택해 보세요</h4>
-                         <p className="text-gray-400 text-sm">왼쪽 지도에서 궁금한 지역을 클릭하면<br/>해당 지역의 정보를 볼 수 있습니다.</p>
-                       </motion.div>
+                       <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50 rounded-[2.5rem] border border-dashed border-gray-200 p-10">
+                         <div className="w-16 h-16 bg-white rounded-full shadow-sm flex items-center justify-center mb-4"><MapPin className="text-gray-300 w-8 h-8" /></div>
+                         <h4 className="text-gray-600 font-bold mb-2 text-lg">지역을 선택해 보세요</h4>
+                         <p className="text-gray-400 text-sm">왼쪽 지도에서 궁금한 지역을 클릭하면<br/>해당 지역의 축제 정보를 한눈에 볼 수 있습니다!</p>
+                       </div>
                      )}
                    </AnimatePresence>
                 </div>

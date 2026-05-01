@@ -1,6 +1,6 @@
 /**
  * 곡곡 백엔드 메인 서버 - 엄태훈 최종 수정본
- * 주요 기능: 회원가입, 로그인, 세션 연장, 보안 위협 로그 기록 및 관리자 통합 조회
+ * 주요 기능: 회원가입, 로그인, 세션 연장, 보안 위협 로그 기록 및 문의사항 시스템 통합
  */
 
 import dotenv from 'dotenv'; 
@@ -14,14 +14,13 @@ import { createClient } from '@supabase/supabase-js';
 
 // 라우터 임포트
 import favoritesRouter from "./routes/favorites"; 
-import reviewRouter from './routes/reviews ';           
+import reviewRouter from "./routes/reviews ";           
 import adminRouter from './routes/admin';
 import communityRouter from './routes/community'; 
-import contactRouter from './routes/contact';
+import contactRouter from './routes/contact'; // 문의사항 라우터
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
 
 // [보안] 필수 환경변수 체크
 const secretKey = process.env.JWT_SECRET;
@@ -29,7 +28,7 @@ if (!secretKey) {
   console.error("❌ Critical Error: JWT_SECRET 환경변수가 설정되지 않았습니다!");
 }
 
-// Supabase 클라이언트 초기화 (Service Role Key 사용으로 RLS 우회 기록 가능)
+// Supabase 클라이언트 초기화
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -66,13 +65,17 @@ const verifyAdminInternal = (req: Request, res: Response, next: any) => {
   }
 };
 
-// API 경로 매핑
+// --- API 경로 매핑 ---
+
+// 1. 문의사항 관련 (프론트엔드 호출 경로와 일치시킴)
+app.use('/api', contactRouter);      // 사용자 문의 접수용 (POST /api/contact)
+app.use('/api/admin', contactRouter); // 관리자 문의 조회용 (GET /api/admin/contacts)
+
+// 2. 기타 기능 관련
 app.use('/api/interactions', favoritesRouter); 
-app.use('/api/reviews', reviewRouter);         
-app.use('/api/admin', adminRouter);            
-app.use('/api/community', communityRouter);    
-app.use('/api/admin', contactRouter); // 관리자용 문의 조회 (/api/admin/contacts)
-app.use('/api/contact', contactRouter); // 사용자용 문의 접수 (/api/contact/contact)
+app.use('/api/reviews', reviewRouter);          
+app.use('/api/admin', adminRouter);             
+app.use('/api/community', communityRouter);     
 
 /**
  * 1. 회원가입 API
@@ -136,7 +139,6 @@ app.post('/api/auth/refresh', async (req: Request, res: Response) => {
 
 /**
  * 4. 보안 위협 로그 기록 API
- * 클라이언트에서 이상 징후 감지 시 서버 DB에 실시간 기록
  */
 app.post('/api/admin/report-threat', async (req: Request, res: Response) => {
   try {
@@ -162,7 +164,6 @@ app.post('/api/admin/report-threat', async (req: Request, res: Response) => {
 
 /**
  * 5. 보안 위협 로그 조회 API (관리자 전용)
- * DB에 저장된 모든 유저의 위협 로그를 최신순으로 반환
  */
 app.get('/api/admin/security-logs', verifyAdminInternal, async (req: Request, res: Response) => {
   try {

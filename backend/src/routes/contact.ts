@@ -11,7 +11,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// 1. [사용자] 문의사항 접수: POST /api/contact/contact
+// 1. [사용자] 문의사항 접수: POST /api/contact
+// index.ts에서 /api를 붙여줬으므로 여기서는 /contact만 씁니다.
 router.post('/contact', async (req, res) => {
   try {
     const { name, email, category, message } = req.body;
@@ -28,6 +29,7 @@ router.post('/contact', async (req, res) => {
 });
 
 // 2. [관리자] 문의 목록 조회: GET /api/admin/contacts
+// index.ts에서 /api/admin을 붙여줬으므로 여기서는 /contacts만 씁니다.
 router.get('/contacts', async (req, res) => {
   try {
     const { data, error } = await supabase
