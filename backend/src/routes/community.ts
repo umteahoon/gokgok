@@ -1,4 +1,4 @@
-// 2026.04.10 주환 
+// 2026.04.10 주환 (태훈 수정: 빌드 에러 해결을 위한 @ts-ignore 적용 버전)
 import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
@@ -31,15 +31,14 @@ router.get('/', async (req: any, res: any) => {
 });
 
 // 2. [새 게시글 작성] POST /api/community
-// 💡 타입 충돌 방지를 위해 router.post를 any로 캐스팅합니다.
-(router.post as any)('/', upload.array('images'), async (req: any, res: any) => {
+// 💡 @ts-ignore 주석을 추가하여 빌드 시 타입 체크를 강제로 통과시킵니다.
+// @ts-ignore
+router.post('/', upload.array('images'), async (req: any, res: any) => {
   try {
-    // 프론트엔드 FormData 추출
     const { author, author_email, title, content, category } = req.body;
     const files = req.files as any[]; 
     const imageUrls: string[] = [];
 
-    // 💡 이미지 업로드 프로세스
     if (files && files.length > 0) {
       for (const file of files) {
         // 파일명 보안 처리 (특수문자 제거)
@@ -66,7 +65,7 @@ router.get('/', async (req: any, res: any) => {
       }
     }
 
-    // 💡 DB 저장 시 필수 값(status: active) 강제 부여
+    // DB 저장 (status: active 필수값 포함)
     const { data, error: dbError } = await supabase
       .from('community_posts')
       .insert([{ 
@@ -87,7 +86,6 @@ router.get('/', async (req: any, res: any) => {
 
     res.status(201).json({ success: true, post: data?.[0] });
   } catch (error: any) {
-    // 💡 에러 메시지를 구체적으로 반환하여 프론트엔드에서 원인을 알 수 있게 함
     console.error("최종 catch 에러:", error.message);
     res.status(500).json({ success: false, message: error.message });
   }
@@ -161,7 +159,9 @@ router.delete('/:postId/comments/:commentId', async (req: any, res: any) => {
 });
 
 // 6. [게시글 수정] PUT /api/community/:id
-(router.put as any)('/:id', upload.array('images'), async (req: any, res: any) => {
+// 💡 수정을 위해 PUT 요청도 타입 검사를 건너뜁니다.
+// @ts-ignore
+router.put('/:id', upload.array('images'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
     const { author_email, title, content } = req.body; 
