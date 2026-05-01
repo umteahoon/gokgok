@@ -17,9 +17,11 @@ import favoritesRouter from "./routes/favorites";
 import reviewRouter from './routes/reviews ';           
 import adminRouter from './routes/admin';
 import communityRouter from './routes/community'; 
+import contactRouter from './routes/contact';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
 
 // [보안] 필수 환경변수 체크
 const secretKey = process.env.JWT_SECRET;
@@ -69,6 +71,8 @@ app.use('/api/interactions', favoritesRouter);
 app.use('/api/reviews', reviewRouter);         
 app.use('/api/admin', adminRouter);            
 app.use('/api/community', communityRouter);    
+app.use('/api/admin', contactRouter); // 관리자용 문의 조회 (/api/admin/contacts)
+app.use('/api/contact', contactRouter); // 사용자용 문의 접수 (/api/contact/contact)
 
 /**
  * 1. 회원가입 API
