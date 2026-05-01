@@ -1,4 +1,4 @@
-// 주환 - 2026.04.24: 커뮤니티 페이지 (태훈 수정: Supabase 이미지 로드 보강)
+// 주환 - 2026.04.24: 커뮤니티 페이지 
 import { useState, useEffect, useRef } from "react"; 
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";

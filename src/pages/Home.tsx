@@ -3,9 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { mockFestivals } from "@/lib/index";
 
-// ✅ 수정 포인트: @/ 경로 대신 상대 경로(../)를 사용하여 확실하게 이미지를 불러옵니다.
-// 만약 Home.tsx 파일이 src 폴더 바로 안에 있다면 "./assets/busan.jpg" 로 변경해주세요!
-import busanBg from "../assets/busan.jpg";
+import busanBg from "@/assets/busan.jpg";
 
 // Festival 인터페이스 정의
 interface Festival {
@@ -36,7 +34,7 @@ export default function Home() {
     }
   };
 
-  // 찜하기 토글 (클릭 시 상세페이지 이동 방지)
+  // 찜하기 토글
   const toggleWishlist = (e: React.MouseEvent, id: string | number) => {
     e.preventDefault();
     e.stopPropagation();
@@ -59,6 +57,7 @@ export default function Home() {
   const recommendedFestivals = mockFestivals.slice(0, 6) as Festival[];
 
   return (
+    // 🔥 Layout.tsx와 충돌을 막기 위해 자체 Header는 깔끔하게 제거했습니다!
     <div className="relative w-full min-h-screen bg-white text-[#111111] font-sans pb-20 overflow-x-hidden">
       
       {/* ========================================== */}
@@ -68,7 +67,7 @@ export default function Home() {
         {/* 배경 이미지 */}
         <div className="absolute inset-0 z-0">
           <img
-            src={busanBg} // ✅ 여기서 위에서 불러온 busanBg 변수를 사용합니다.
+            src={busanBg} // ✅ 2. import 한 busanBg 변수를 여기에 넣습니다!
             alt="메인 배경"
             className="w-full h-full object-cover brightness-[0.85]"
           />
