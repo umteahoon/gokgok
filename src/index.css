@@ -6,6 +6,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
+
+
 :root {
   /* 기존 명조/고딕 자리를 모두 에스코어 드림으로 통일하여 TSX 수정 없이 일괄 적용 */
   --font-serif: 'SCoreDream', -apple-system, sans-serif;

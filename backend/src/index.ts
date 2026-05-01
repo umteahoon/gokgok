@@ -78,7 +78,7 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
     const { email, password, name } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const adminEmails = ['am2869@naver.com', 'qwe@qwe.com', 'juhwan@test.com', 'qwer@1234.com'];
+    const adminEmails = ['am2869@naver.com', 'qwe@qwe.com', 'juhwan@test.com', 'qwer@1234.com','phj03@naver.com'];
     const isAdmin = adminEmails.includes(email);
 
     const { error } = await supabase
