@@ -1,228 +1,282 @@
-  import { useState } from "react";
-  import { motion, AnimatePresence } from "framer-motion";
-  import { mockFestivals, topFestivals } from "@/lib/index";
-  import { fadeInUp, staggerContainer, staggerItem } from "@/lib/motion";
-  import { FestivalCard } from "@/components/FestivalCard";
-  import { KoreaMap } from "@/components/KoreaMap"; 
-  import { SearchBar } from "@/components/SearchBar";
+import { useState, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom"; 
+import { mockFestivals, topFestivals } from "@/lib/index";
+import { KoreaMap } from "@/components/KoreaMap"; 
+import { SearchBar } from "@/components/SearchBar";
 
-  export default function Search() {  
-    
-    const [activeTab, setActiveTab] = useState<"list" | "map">("list");
-    const [selectedRegion, setSelectedRegion] = useState<string>("");
-    const [searchQuery, setSearchQuery] = useState<string>("");
+interface Festival {
+  id: string | number;
+  title: string;
+  image: string;
+  date: string; 
+  location: string;
+  status: "ongoing" | "upcoming" | "ended" | string;
+  category?: string;
+  description?: string;
+}
 
-    const regionMap: Record<string, string[]> = {
-      서울: ["서울특별시"],
-      경기: ["경기도"],
-      인천: ["인천광역시"],
-      강원: ["강원도"],
-      충북: ["충청북도"],
-      충남: ["충청남도"],
-      대전: ["대전광역시"],
-      세종: ["세종특별자치시"],
-      전북: ["전라북도"],
-      전남: ["전라남도"],
-      광주: ["광주광역시"],
-      경북: ["경상북도"],
-      경남: ["경상남도"],
-      대구: ["대구광역시"],
-      울산: ["울산광역시"],
-      부산: ["부산광역시"],
-      제주: ["제주특별자치도"],
-    };
+export default function Search() {  
+  const [activeTab, setActiveTab] = useState<"list" | "map">("list");
+  const [selectedRegion, setSelectedRegion] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedTaste, setSelectedTaste] = useState("NEW");
+  
+  const [wishlistedIds, setWishlistedIds] = useState<(string | number)[]>([]);
 
-    const englishToKoreanMap: Record<string, string> = {
-      Seoul: "서울",
-      Gyeonggi: "경기",
-      Incheon: "인천",
-      Gangwon: "강원",
-      Chungbuk: "충북",
-      Chungnam: "충남",
-      Daejeon: "대전",
-      Sejong: "세종",
-      Jeonbuk: "전북",
-      Jeonnam: "전남",
-      Gwangju: "광주",
-      Gyeongbuk: "경북",
-      Gyeongnam: "경남",
-      Daegu: "대구",
-      Ulsan: "울산",
-      Busan: "부산",
-      Jeju: "제주",
-    };
+  const bestScrollRef = useRef<HTMLDivElement>(null);
+  const risingScrollRef = useRef<HTMLDivElement>(null);
+  const tasteScrollRef = useRef<HTMLDivElement>(null);
 
-    const currentKoreanRegion = englishToKoreanMap[selectedRegion] || "";
+  const tastes = ["NEW", "축구홀릭", "레저/스포츠홀릭", "문화/공연홀릭", "트레킹홀릭", "프라이빗홀릭", "컨시어지홀릭"];
 
-    const filteredFestivals = [...topFestivals, ...mockFestivals].filter((festival) => {
-      const matchesSearch = searchQuery
-        ? festival.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          festival.location.toLowerCase().includes(searchQuery.toLowerCase())
-        : true;
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "ongoing": return "진행중";
+      case "upcoming": return "예정";
+      case "ended": return "종료";
+      default: return status;
+    }
+  };
 
-      const matchesRegion = currentKoreanRegion
-        ? regionMap[currentKoreanRegion]?.some((loc) => festival.location.includes(loc))
-        : true;
+  const toggleWishlist = (e: React.MouseEvent, id: string | number) => {
+    e.preventDefault(); 
+    e.stopPropagation(); 
+    setWishlistedIds(prev => 
+      prev.includes(id) ? prev.filter(itemId => itemId !== id) : [...prev, id]
+    );
+  };
 
+  const filteredList = useMemo(() => {
+    const all = [...topFestivals, ...mockFestivals] as Festival[];
+    return all.filter(f => {
+      const matchesSearch = f.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            f.location.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRegion = selectedRegion ? f.location.includes(selectedRegion) : true;
       return matchesSearch && matchesRegion;
     });
+  }, [searchQuery, selectedRegion]);
 
-    const handleRegionSelect = (regionId: string) => {
-      setSelectedRegion(regionId === selectedRegion ? "" : regionId);
-    };
+  const handleScroll = (ref: React.RefObject<HTMLDivElement>, direction: "left" | "right") => {
+    if (ref.current) {
+      const { scrollLeft, clientWidth } = ref.current;
+      const moveAmount = clientWidth * 0.8; 
+      const scrollTo = direction === "left" ? scrollLeft - moveAmount : scrollLeft + moveAmount;
+      ref.current.scrollTo({ left: scrollTo, behavior: "smooth" });
+    }
+  };
 
-    const handleSearch = (query: string) => {
-      setSearchQuery(query);
-    };
+  const handleRegionSelect = (regionId: string) => {
+    setSelectedRegion(regionId === selectedRegion ? "" : regionId);
+  };
 
-    return (
-      <motion.div
-        variants={fadeInUp}
-        initial="hidden"
-        animate="visible"
-        className="min-h-screen bg-[#FDFBF7] dark:bg-[#121212] py-12 transition-colors duration-300"
-      >
-        <div className="container mx-auto px-4">
-          
-          {/* 상단 타이틀 및 검색바 */}
-          <div className="mb-16 flex flex-col items-center">
-            <h1 className="text-4xl md:text-5xl font-bold text-[#4A342E] dark:text-[#EAE5E1] mb-8 text-center transition-colors" 
-                style={{ fontFamily: 'GmarketSansBold' }}>
-              전국 방방곡곡 축제 찾기
-            </h1>
-            <div className="w-full max-w-3xl">
-              <SearchBar onSearch={handleSearch} />
-            </div>
+  // 공통 버튼 스타일 (테두리 및 하이라이트 제거)
+  const heartBtnClassName = "absolute z-10 bg-transparent border-none outline-none focus:outline-none focus:ring-0 active:bg-transparent p-0 appearance-none select-none";
+  const heartBtnStyle = { WebkitTapHighlightColor: 'transparent' };
+
+  return (
+    <div className="min-h-screen bg-white text-[#111111] pb-20 font-sans overflow-x-hidden">
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <Link to="/" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18L9 12L15 6"/></svg>
+          </Link>
+          <h1 className="text-lg font-bold">전국 축제 탐색</h1>
+          <div className="flex gap-1">
+            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button>
+            <button className="p-2 hover:bg-gray-100 rounded-full transition-colors"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></button>
           </div>
-
-          {/* 리스트/지도 전환 탭 */}
-          <div className="mb-8 flex justify-end">
-            <div className="relative flex items-center bg-[#F5F1EE] dark:bg-[#1E1E1E] rounded-full p-1 shadow-inner border border-[#EAE5E1] dark:border-[#333333] transition-colors">
-              <motion.div
-                className="absolute top-1 bottom-1 w-[100px] bg-white dark:bg-[#333333] rounded-full shadow-sm"
-                initial={false}
-                animate={{ left: activeTab === "list" ? 4 : 104 }}
-                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-              />
-              <button
-                onClick={() => setActiveTab("list")}
-                className={`relative z-10 w-[100px] py-2 text-sm font-bold transition-colors rounded-full ${
-                  activeTab === "list" ? "text-[#8B4513] dark:text-[#D4A373]" : "text-[#9CA3AF] dark:text-[#666666] hover:text-[#6B5A55] dark:hover:text-[#AAAAAA]"
-                }`}
-              >
-                목록보기
-              </button>
-              <button
-                onClick={() => setActiveTab("map")}
-                className={`relative z-10 w-[100px] py-2 text-sm font-bold transition-colors rounded-full ${
-                  activeTab === "map" ? "text-[#8B4513] dark:text-[#D4A373]" : "text-[#9CA3AF] dark:text-[#666666] hover:text-[#6B5A55] dark:hover:text-[#AAAAAA]"
-                }`}
-              >
-                지도보기
-              </button>
-            </div>
-          </div>  
-
-          <AnimatePresence mode="wait">
-            {activeTab === "list" ? (
-              <motion.div
-                key="list"
-                variants={staggerContainer}
-                initial="hidden"
-                animate="visible"
-                exit={{ opacity: 0, y: 20 }}
-                className="bg-[#FDFBF7] dark:bg-[#121212] transition-colors duration-300"
-              >
-                {/* 테두리를 제거하여 배경과 일체감을 주었습니다. */}
-                <div className="min-h-[750px] py-4">
-                  {/* lg:grid-cols-4 설정을 통해 한 줄에 4개씩 배치했습니다. */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 pb-10">
-                    {filteredFestivals.length > 0 ? (
-                      filteredFestivals.map((festival) => (
-                        <motion.div key={festival.id} variants={staggerItem}>
-                          <FestivalCard festival={festival} />
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="col-span-full text-center py-32 border border-dashed border-[#D1D5DB] dark:border-[#444444] rounded-3xl">
-                        <p className="text-[#9CA3AF] dark:text-[#888888] text-xl font-medium">
-                          찾으시는 축제 결과가 없습니다. 다시 검색해 보세요!
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            ) 
-
-            : (
-              <motion.div
-                key="map"
-                variants={fadeInUp}
-                initial="hidden"
-                animate="visible"
-                exit={{ opacity: 0, y: 20 }}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start pb-20"
-              >
-                {/* 좌측 지도 섹션 (테두리 두께 조절로 깔끔하게 변경) */}
-                <div className="lg:col-span-7 h-[750px] flex flex-col">
-                  <div className="flex-1 flex flex-col border border-black/10 dark:border-white/10 rounded-[2rem] p-8 overflow-hidden bg-white/50 dark:bg-white/5 backdrop-blur-sm">
-                    <div className="flex items-center justify-between mb-4 shrink-0">
-                      <h2 className="text-2xl font-bold text-[#4A342E] dark:text-[#EAE5E1]">지역별 탐색</h2>
-                      <span className="text-xs text-[#8B4513] dark:text-[#D4A373] font-bold bg-[#8B4513]/10 dark:bg-[#D4A373]/10 px-4 py-1.5 rounded-full">
-                        원하는 지역을 클릭해 보세요
-                      </span>
-                    </div>
-                    
-                    <div className="flex-1 flex justify-center items-center relative">
-                      <KoreaMap 
-                        selectedRegion={selectedRegion} 
-                        onRegionSelect={handleRegionSelect} 
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* 우측 리스트 섹션 */}
-                <div className="lg:col-span-5 h-[750px] flex flex-col">
-                  <div className="flex-1 flex flex-col border border-black/10 dark:border-white/10 rounded-[2rem] p-8 overflow-hidden bg-white/50 dark:bg-white/5 backdrop-blur-sm">
-                    <h2 className="text-2xl font-bold text-[#4A342E] dark:text-[#EAE5E1] mb-6 flex items-center gap-2 shrink-0">
-                      <span className="w-1.5 h-6 bg-[#8B4513] dark:bg-[#D4A373] rounded-full inline-block"></span>
-                      {currentKoreanRegion ? `${currentKoreanRegion} 지역 축제` : "전체 축제"}
-                    </h2>
-                    
-                    <div className="flex-1 overflow-y-auto pr-3 custom-scrollbar relative">
-                      <AnimatePresence mode="wait">
-                        <motion.div
-                          key={selectedRegion || "all"} 
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -15 }}
-                          transition={{ duration: 0.3 }}
-                          className="space-y-4"
-                        >
-                          {filteredFestivals.length > 0 ? (
-                            filteredFestivals.map((festival) => (
-                              <FestivalCard key={festival.id} festival={festival} variant="compact" />
-                            ))
-                          ) : (
-                            <div className="text-center py-20">
-                              <p className="text-[#9CA3AF] dark:text-[#888888]">
-                                {currentKoreanRegion
-                                  ? `${currentKoreanRegion} 지역에 등록된 축제가 없습니다.`
-                                  : "표시할 축제 정보가 없습니다."}
-                              </p>
-                            </div>
-                          )}
-                        </motion.div>
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
-      </motion.div>
-    );
-  }
+      </header>
+
+      <main className="container mx-auto px-4 mt-8">
+        <section className="mb-10 max-w-2xl mx-auto">
+          <SearchBar onSearch={(q) => setSearchQuery(q)} />
+        </section>
+
+        <div className="flex gap-6 mb-10 border-b border-gray-100">
+          <button onClick={() => setActiveTab("list")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "list" ? "text-[#FF3478]" : "text-gray-400 hover:text-gray-600"}`}>
+            목록보기 {activeTab === "list" && <motion.div layoutId="t-line" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}
+          </button>
+          <button onClick={() => setActiveTab("map")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "map" ? "text-[#FF3478]" : "text-gray-400 hover:text-gray-600"}`}>
+            지도보기 {activeTab === "map" && <motion.div layoutId="t-line" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}
+          </button>
+        </div>
+
+        <AnimatePresence mode="wait">
+          {activeTab === "list" ? (
+            <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              
+              {/* 섹션 1: TOP! 베스트 축제 */}
+              <section className="mb-16 relative group">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-[22px] font-extrabold italic underline decoration-[#FF3478]/20 underline-offset-8">TOP! 베스트 축제</h2>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleScroll(bestScrollRef, "left")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18L9 12L15 6"/></svg></button>
+                    <button onClick={() => handleScroll(bestScrollRef, "right")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg></button>
+                  </div>
+                </div>
+
+                <div ref={bestScrollRef} className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
+                  {(topFestivals as Festival[]).map((festival, idx) => (
+                    <Link to={`/festival/${festival.id}`} key={`best-${festival.id}`} className="min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
+                      <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50">
+                        <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
+                        
+                        <button 
+                          onClick={(e) => toggleWishlist(e, festival.id)}
+                          className={`${heartBtnClassName} top-2.5 right-2.5`}
+                          style={heartBtnStyle}
+                        >
+                          <motion.svg 
+                            whileTap={{ scale: 0.8 }}
+                            width="24" height="24" viewBox="0 0 24 24" 
+                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(0,0,0,0.25)"} 
+                            stroke="white" strokeWidth="2"
+                            className="drop-shadow-md transition-colors"
+                          >
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" />
+                          </motion.svg>
+                        </button>
+
+                        <div className="absolute top-2 left-2">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>
+                            {getStatusLabel(festival.status)}
+                          </span>
+                        </div>
+                        <div className="absolute bottom-0 left-0 leading-none pointer-events-none">
+                          <svg width="65" height="65" viewBox="0 0 100 100">
+                            <text x="12" y="92" fontSize="52" fontWeight="900" fontStyle="italic" fill="#111111">{idx + 1}</text>
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="px-1">
+                        <span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase tracking-tight">{festival.category || "전통문화"}</span>
+                        <h3 className="font-bold text-[14.5px] line-clamp-2 leading-snug mb-2 h-[40px] group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
+                        <p className="text-[12px] text-[#555555] font-semibold mb-0.5">{festival.location}</p>
+                        <p className="text-[12px] text-gray-400">{festival.date}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+
+              {/* 섹션 2: 인기 급상승 */}
+              <section className="mb-16 relative group">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-[22px] font-extrabold">지금 인기 급상승 🔥</h2>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleScroll(risingScrollRef, "left")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18L9 12L15 6"/></svg></button>
+                    <button onClick={() => handleScroll(risingScrollRef, "right")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg></button>
+                  </div>
+                </div>
+
+                <div ref={risingScrollRef} className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
+                  {(mockFestivals as Festival[]).map((festival) => (
+                    <Link to={`/festival/${festival.id}`} key={`rising-${festival.id}`} className="min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
+                      <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50">
+                        <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
+                        
+                        <button 
+                          onClick={(e) => toggleWishlist(e, festival.id)}
+                          className={`${heartBtnClassName} top-2.5 right-2.5`}
+                          style={heartBtnStyle}
+                        >
+                          <motion.svg 
+                            whileTap={{ scale: 0.8 }}
+                            width="24" height="24" viewBox="0 0 24 24" 
+                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(0,0,0,0.25)"} 
+                            stroke="white" strokeWidth="2"
+                            className="drop-shadow-md transition-colors"
+                          >
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" />
+                          </motion.svg>
+                        </button>
+
+                        <div className="absolute top-2 left-2">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'upcoming' ? 'bg-blue-500/90' : 'bg-orange-500/90'} backdrop-blur-sm shadow-md`}>
+                            {getStatusLabel(festival.status)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="px-1">
+                        <span className="text-[11px] text-gray-400 font-bold mb-1 block uppercase tracking-tight">{festival.category || "자연생태계"}</span>
+                        <h3 className="font-bold text-[14.5px] line-clamp-2 leading-snug mb-2 h-[40px] group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
+                        <p className="text-[12px] text-[#555555] font-semibold mb-0.5">{festival.location}</p>
+                        <p className="text-[12px] text-gray-400">{festival.date}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+
+              {/* 섹션 3: 취향별 홀릭 */}
+              <section className="mb-20 relative group">
+                <div className="mb-6">
+                  <h2 className="text-[22px] font-bold">
+                    <span className="bg-[#D6E6FF] px-1 font-extrabold">취향에 따라 고르는 여행</span>, <span className="text-[#FF3478] font-black">홀릭</span>
+                  </h2>
+                </div>
+                
+                <div className="flex gap-2 mb-8 overflow-x-auto no-scrollbar">
+                  {tastes.map((taste) => (
+                    <button key={taste} onClick={() => setSelectedTaste(taste)} className={`px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${selectedTaste === taste ? "bg-[#111111] text-white border-[#111111]" : "bg-[#F5F5F5] text-[#666666] border-transparent hover:bg-gray-200"}`}>{taste}</button>
+                  ))}
+                </div>
+
+                <div className="absolute right-0 top-[60px] flex gap-2">
+                  <button onClick={() => handleScroll(tasteScrollRef, "left")} className="w-10 h-10 rounded-full bg-white shadow-md border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18L9 12L15 6"/></svg></button>
+                  <button onClick={() => handleScroll(tasteScrollRef, "right")} className="w-10 h-10 rounded-full bg-white shadow-md border border-gray-100 flex items-center justify-center hover:bg-gray-50 transition-all"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg></button>
+                </div>
+
+                <div ref={tasteScrollRef} className="flex gap-5 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
+                  {filteredList.map((festival) => (
+                    <Link to={`/festival/${festival.id}`} key={`holic-${festival.id}`} className="min-w-[calc(25%-15px)] snap-start group/card cursor-pointer">
+                      <div className="relative mb-4 aspect-[1.4/1] rounded-2xl overflow-hidden shadow-md bg-gray-100">
+                        <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105" />
+                        
+                        <button 
+                          onClick={(e) => toggleWishlist(e, festival.id)}
+                          className={`${heartBtnClassName} top-3.5 right-3.5`}
+                          style={heartBtnStyle}
+                        >
+                          <motion.svg 
+                            whileTap={{ scale: 0.8 }}
+                            width="28" height="28" viewBox="0 0 24 24" 
+                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(0,0,0,0.3)"} 
+                            stroke="white" strokeWidth="2.5"
+                            className="drop-shadow-xl transition-colors"
+                          >
+                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" />
+                          </motion.svg>
+                        </button>
+
+                        <div className="absolute top-3 left-3 flex gap-1.5">
+                          <span className="bg-black/60 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-md">{festival.category || "문화공연"}</span>
+                        </div>
+                      </div>
+                      <div className="px-1">
+                        <h3 className="font-bold text-[17px] line-clamp-1 mb-1.5 group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
+                        <p className="text-[13px] text-[#555555] font-semibold mb-0.5">{festival.location}</p>
+                        <p className="text-[13px] text-gray-400 mb-2">{festival.date}</p>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[#FF3478] font-extrabold text-[18px]">LIVE</span>
+                          <span className="font-black text-[18px]">축제 확인하기</span>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+
+            </motion.div>
+          ) : (
+            <div className="h-[650px] bg-[#F8F9FA] rounded-[2rem] flex items-center justify-center border border-gray-100 overflow-hidden relative shadow-inner">
+               <KoreaMap selectedRegion={selectedRegion} onRegionSelect={handleRegionSelect} />
+            </div>
+          )}
+        </AnimatePresence>
+      </main>
+    </div>
+  );
+}

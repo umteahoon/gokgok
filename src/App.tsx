@@ -1,4 +1,13 @@
-import { useEffect } from "react"; // 추가
+/**
+ * 곡곡 메인 애플리케이션 컴포넌트
+ * 작성자: 엄태훈 (2026-04-29)
+ * 주요기능: 
+ * 1. 전역 라우팅 설정 및 보안 라우트 적용
+ * 2. 세션 만료 감시 및 토큰 자동 연장 기능
+ * 3. 비정상 새로고침(DDoS 패턴) 감지 및 실시간 보안 서버 보고
+ */
+
+import { useEffect } from "react"; 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,16 +19,16 @@ import { Layout } from "@/components/Layout";
 import Home from "@/pages/Home";
 import Search from "@/pages/Search";
 import Community from "@/pages/Community";
-import CommunityWrite from "@/pages/CommunityWrite"; // @로 통일
+import CommunityWrite from "@/pages/CommunityWrite"; 
 import NotMyPage from "@/pages/NotMyPage";
-import MyPage from "@/pages/MyPage"; // @로 통일
+import MyPage from "@/pages/MyPage"; 
 import TermsOfService from "@/pages/TermsOfService";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import FestivalDetail from "@/pages/FestivalDetail"; 
 import { AdminRoute } from "@/components/auth/AdminRoute";
-import AdminDashboard from "@/pages/admin/AdminDashboard"; // 관리자 대시보드 추가
-import { useToast } from "@/hooks/use-toast"; // Toast 사용을 위한 훅
-import { Button } from "@/components/ui/button"; // 연장 버튼용
+import AdminDashboard from "@/pages/admin/AdminDashboard"; 
+import { useToast } from "@/hooks/use-toast"; 
+import { Button } from "@/components/ui/button"; 
 
 const queryClient = new QueryClient();
 
@@ -104,7 +113,7 @@ const App = () => {
           연장하기
         </Button>
       ),
-      duration: 15000, // 15초 동안 표시
+      duration: 15000, 
     });
   };
 
@@ -142,7 +151,6 @@ const App = () => {
       console.error("연장 요청 에러:", err);
     }
   };
-  // ---------------------------------------------
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -150,16 +158,18 @@ const App = () => {
         <MotionConfig reducedMotion="user">
           <Toaster />
           <Sonner />
-          <HashRouter>
+          {/* v7 경고 해결을 위한 Future Flag 적용 */}
+          <HashRouter 
+            future={{ 
+              v7_startTransition: true, 
+              v7_relativeSplatPath: true 
+            }}
+          >
             <Layout>
               <Routes>
                 <Route path={ROUTE_PATHS.HOME} element={<Home />} />
                 <Route path={ROUTE_PATHS.SEARCH} element={<Search />} />
-                
-                {/* 만약 ROUTE_PATHS.FESTIVAL_DETAIL에서 에러가 나면 
-                    직접 "/festivals/:id" 라고 써서 테스트해보세요 */}
                 <Route path="/festivals/:id" element={<FestivalDetail />} />
-
                 <Route path={ROUTE_PATHS.COMMUNITY} element={<Community />} />
                 <Route path={ROUTE_PATHS.COMMUNITY_WRITE} element={<CommunityWrite />} /> 
                 <Route path={ROUTE_PATHS.NOTMYPAGE} element={<NotMyPage />} />
@@ -167,7 +177,7 @@ const App = () => {
                 <Route path={ROUTE_PATHS.TERMS} element={<TermsOfService />} />
                 <Route path={ROUTE_PATHS.PRIVACY} element={<PrivacyPolicy />} />
 
-                {/* 관리자 전용 페이지 (AdminRoute로 감싸서 권한 보호) */}
+                {/* 관리자 전용 페이지 (AdminRoute 권한 보호) */}
                 <Route 
                   path="/admin" 
                   element={

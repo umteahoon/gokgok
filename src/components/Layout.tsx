@@ -40,13 +40,28 @@ export function Layout({ children }: LayoutProps) {
 
   useEffect(() => {
     updateUserStatus();
-    setTimeLeft(calculateTimeLeft());
+    
+    // 초기 시간 설정
+    const initialTime = calculateTimeLeft();
+    setTimeLeft(initialTime);
+
+    // [중요] 토큰은 존재하는데 실제 시간이 만료된 경우에만 자동 로그아웃 실행
+    if (localStorage.getItem("accessToken") && initialTime <= 0) {
+      handleLogout();
+    }
 
     // 1초마다 타이머 갱신
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
-        if (prev <= 1 && localStorage.getItem("accessToken")) {
-          handleLogout(); // 시간 만료 시 자동 로그아웃
+        const currentToken = localStorage.getItem("accessToken");
+        
+        // 토큰이 없으면 타이머를 돌리지 않음
+        if (!currentToken) return 0;
+
+        if (prev <= 1) {
+          // 시간이 실제로 다 되었을 때만 로그아웃 실행
+          clearInterval(timer);
+          handleLogout(); 
           return 0;
         }
         return prev - 1;
@@ -65,7 +80,7 @@ export function Layout({ children }: LayoutProps) {
       window.removeEventListener('hashchange', updateUserStatus);
       window.removeEventListener('auth-change', updateUserStatus);
     };
-  }, []);
+  }, [currentUser?.id]); // 사용자 정보가 바뀔 때(로그인 시) 타이머 재설정
 
   const formatTime = (seconds: number) => {
     if (seconds <= 0) return "00:00:00";
@@ -129,28 +144,30 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans transition-colors duration-300">
       <header className="sticky top-0 z-50 w-full border-b border-foreground/15 bg-background/85 backdrop-blur-md py-4 transition-colors duration-300">
-        {/* 정중앙 배치를 위해 relative 속성을 추가했습니다. */}
-        <div className="container mx-auto px-4 flex items-center justify-between relative">
+        {/* 정중앙 배치를 위해 relative 대신 flex 구조를 최적화했습니다. */}
+        <div className="container mx-auto px-4 flex items-center justify-between">
           
           {/* ======================================================= */}
           {/* 1. 좌측 영역: 로고 (테두리 없음) */}
           {/* ======================================================= */}
-          <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group z-10">
-            <span className="text-xl font-bold text-foreground transition-colors" style={{ fontFamily: 'GmarketSansBold' }}>
-              곡곡
-            </span>
-          </NavLink>
+          <div className="flex-shrink-0 w-[80px]">
+            <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group">
+              <span className="text-xl font-bold text-foreground transition-colors" style={{ fontFamily: 'GmarketSansBold' }}>
+                곡곡
+              </span>
+            </NavLink>
+          </div>
 
           {/* ======================================================= */}
-          {/* 2. 중앙 영역: 네비게이션 메뉴 (화면 정가운데 배치) */}
+          {/* 2. 중앙 영역: 네비게이션 메뉴 (중앙 정렬 유지) */}
           {/* ======================================================= */}
-          <nav className="hidden md:flex items-center space-x-12 absolute left-1/2 -translate-x-1/2">
+          <nav className="hidden md:flex items-center justify-center flex-1 space-x-8 lg:space-x-12">
             {baseNavItems.map((item) => (
               <NavLink
                 key={item.label}
                 to={item.path}
                 className={({ isActive }) =>
-                  `py-1 text-sm transition-all ${
+                  `py-1 text-sm transition-all whitespace-nowrap ${
                     isActive
                       ? 'font-bold text-foreground border-b-[2px] border-foreground'
                       : 'font-medium text-muted-foreground hover:text-accent hover:border-b-[2px] hover:border-accent border-b-[2px] border-transparent'
@@ -165,10 +182,10 @@ export function Layout({ children }: LayoutProps) {
           {/* ======================================================= */}
           {/* 3. 우측 영역: 세션 타이머, 테마 및 로그아웃 버튼 */}
           {/* ======================================================= */}
-          <div className="hidden md:flex items-center gap-4 z-10">
+          <div className="hidden md:flex items-center justify-end gap-3 flex-shrink-0 min-w-[280px]">
             {/* ⏰ 실시간 세션 타이머 UI */}
             {currentUser && (
-              <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-full border border-foreground/10 mr-2">
+              <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-full border border-foreground/10 shrink-0">
                 <div className="flex items-center gap-1.5 text-[12px] font-mono font-bold text-foreground/80">
                   <Clock className="w-3.5 h-3.5 text-primary" />
                   <span>{formatTime(timeLeft)}</span>
@@ -185,7 +202,7 @@ export function Layout({ children }: LayoutProps) {
 
             <button
               onClick={toggleTheme}
-              className="p-1.5 text-foreground hover:bg-foreground/10 rounded-full transition-colors"
+              className="p-1.5 text-foreground hover:bg-foreground/10 rounded-full transition-colors shrink-0"
               aria-label="테마 변경"
             >
               {isDarkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -194,14 +211,14 @@ export function Layout({ children }: LayoutProps) {
             {currentUser ? (
               <button
                 onClick={handleLogout}
-                className="px-4 py-1.5 text-xs font-bold text-foreground border border-foreground/30 rounded-md hover:bg-foreground hover:text-background transition-all"
+                className="px-4 py-1.5 text-xs font-bold text-foreground border border-foreground/30 rounded-md hover:bg-foreground hover:text-background transition-all shrink-0"
               >
                 로그아웃
               </button>
             ) : (
               <NavLink
                 to={ROUTE_PATHS?.NOTMYPAGE || '/login'}
-                className="px-4 py-1.5 text-xs font-bold text-foreground border border-foreground/30 rounded-md hover:bg-foreground hover:text-background transition-all"
+                className="px-4 py-1.5 text-xs font-bold text-foreground border border-foreground/30 rounded-md hover:bg-foreground hover:text-background transition-all shrink-0"
               >
                 로그인
               </NavLink>
