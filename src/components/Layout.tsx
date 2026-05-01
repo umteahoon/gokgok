@@ -24,7 +24,6 @@ export function Layout({ children }: LayoutProps) {
     setCurrentUser(user);
   };
 
-  // --- 🔥 [세션 타이머 로직 시작] ---
   const calculateTimeLeft = () => {
     const token = localStorage.getItem("accessToken");
     if (!token) return 0;
@@ -117,7 +116,6 @@ export function Layout({ children }: LayoutProps) {
       toast({ variant: "destructive", title: "연장 실패", description: "다시 로그인해주세요." });
     }
   };
-  // --- 🔥 [세션 타이머 로직 끝] ---
 
   const baseNavItems = [
     { label: '마당', path: ROUTE_PATHS?.HOME || '/' },
@@ -153,7 +151,6 @@ export function Layout({ children }: LayoutProps) {
       <header className="sticky top-0 z-50 w-full border-b border-foreground/10 bg-background/80 backdrop-blur-md py-4 transition-colors duration-300">
         <div className="relative w-full max-w-[1400px] mx-auto pl-4 pr-2 md:pl-8 md:pr-2 flex items-center justify-between h-8">
 
-          {/* 1. 왼쪽: 로고 영역 */}
           <div className="flex-shrink-0 z-10">
             <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group">
               <span
@@ -165,7 +162,6 @@ export function Layout({ children }: LayoutProps) {
             </NavLink>
           </div>
 
-          {/* 2. 가운데: 네비게이션 메뉴 */}
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (
               <NavLink
@@ -191,9 +187,7 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
-          {/* 3. 오른쪽: 유저 메뉴 및 타이머 영역 */}
           <div className="hidden md:flex items-center justify-end gap-8 z-10">
-            {/* 왼쪽 그룹: 타이머 + 로그인/로그아웃 */}
             <div className="flex items-center gap-2">
               {currentUser && (
                 <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-full border border-foreground/10 shrink-0">
@@ -228,7 +222,6 @@ export function Layout({ children }: LayoutProps) {
               )}
             </div>
 
-            {/* 오른쪽 그룹: 다크모드 + 문의사항 */}
             <div className="flex items-center gap-3">
               <button
                 onClick={toggleTheme}
@@ -238,16 +231,15 @@ export function Layout({ children }: LayoutProps) {
                 {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
               </button>
 
-              <NavLink
-                to="/contact"
+              <button
+                onClick={() => navigate('/contact')}
                 className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
               >
                 문의사항
-              </NavLink>
+              </button>
             </div>
           </div>
 
-          {/* 모바일 화면용 메뉴 */}
           <div className="md:hidden flex items-center gap-2 z-10">
             {currentUser && (
               <span className="text-[10px] font-mono font-bold bg-foreground/5 px-2 py-1 rounded-full border border-foreground/10">

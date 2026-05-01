@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom"; 
 import { mockFestivals, topFestivals } from "@/lib/index";
 import { KoreaMap } from "@/components/KoreaMap"; 
+import { SearchBar } from "@/components/SearchBar";
 
 // Festival 인터페이스 정의
 interface Festival {
@@ -19,9 +20,10 @@ interface Festival {
 export default function Search() {  
   const [activeTab, setActiveTab] = useState<"list" | "map">("list");
   const [selectedRegion, setSelectedRegion] = useState<string>("");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedTaste, setSelectedTaste] = useState("NEW");
   
-  // 테마 섹션 개폐 상태
+  // 테마 섹션 개폐 상태 (기본값 0번째 펼침)
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
   
   // 찜하기 상태 관리
@@ -66,25 +68,21 @@ export default function Search() {
     );
   };
 
-  // 모든 축제 데이터 통합
-  const allFestivals = useMemo(() => {
-    const combined = [...topFestivals, ...mockFestivals] as Festival[];
-    return combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
-  }, []);
-
-  // 목록보기용 필터링 (취향 기준)
   const filteredList = useMemo(() => {
-    return allFestivals.filter(f => {
+    const combined = [...topFestivals, ...mockFestivals] as Festival[];
+    const uniqueFestivals = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+    
+    return uniqueFestivals.filter(f => {
+      const matchesSearch = f.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            f.location.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesRegion = selectedRegion ? f.location.includes(selectedRegion) : true;
+      
+      // 취향 필터 로직
       const matchesTaste = selectedTaste === "NEW" ? true : f.category === selectedTaste;
-      return matchesTaste;
-    });
-  }, [allFestivals, selectedTaste]);
 
-  // 지도보기용 필터링 (지역 기준)
-  const regionFestivals = useMemo(() => {
-    if (!selectedRegion) return [];
-    return allFestivals.filter(f => f.location.includes(selectedRegion));
-  }, [allFestivals, selectedRegion]);
+      return matchesSearch && matchesRegion && matchesTaste;
+    });
+  }, [searchQuery, selectedRegion, selectedTaste]);
 
   const handleScroll = (ref: React.RefObject<HTMLDivElement>, direction: "left" | "right") => {
     if (ref.current) {
@@ -108,6 +106,10 @@ export default function Search() {
     <div className="w-full bg-white text-[#111111] pb-20 font-sans overflow-x-hidden pt-6 md:pt-10 rounded-t-3xl">
       <main className="container mx-auto px-4">
         
+        <section className="mb-10 max-w-2xl mx-auto">
+          <SearchBar onSearch={(q) => setSearchQuery(q)} />
+        </section>
+
         {/* 탭 메뉴 */}
         <div className="flex gap-6 mb-10 border-b border-gray-100">
           <button onClick={() => setActiveTab("list")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "list" ? "text-[#FF3478]" : "text-gray-400 hover:text-gray-600"}`}>
@@ -134,7 +136,7 @@ export default function Search() {
 
                 <div ref={bestScrollRef} className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
                   {(topFestivals as Festival[]).map((festival, idx) => (
-                    <Link to={`/festival/${festival.id}`} key={`best-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] flex-shrink-0 snap-start group/card cursor-pointer">
+                    <Link to={`/festival/${festival.id}`} key={`best-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
                       <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50">
                         <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
                         <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-2 right-2 z-10 p-1 cursor-pointer" style={heartBtnStyle}>
@@ -161,14 +163,12 @@ export default function Search() {
                 </div>
                 <div ref={risingScrollRef} className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
                   {(mockFestivals as Festival[]).map((festival) => (
-                    <Link to={`/festival/${festival.id}`} key={`rising-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] flex-shrink-0 snap-start group/card cursor-pointer">
+                    <Link to={`/festival/${festival.id}`} key={`rising-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
                       <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50">
                         <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
                         <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-2 right-2 z-10 p-1 cursor-pointer" style={heartBtnStyle}>
                           <motion.svg whileTap={{ scale: 0.7 }} width="24" height="24" viewBox="0 0 24 24" fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} stroke="white" strokeWidth="2" className="drop-shadow-md"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" /></motion.svg>
                         </div>
-                        {/* 상태 라벨 추가 */}
-                        <div className="absolute top-2 left-2"><span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>{getStatusLabel(festival.status)}</span></div>
                       </div>
                       <div className="px-1">
                         <h3 className="font-bold text-[14.5px] line-clamp-2 leading-snug mb-2 group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
@@ -179,7 +179,7 @@ export default function Search() {
                 </div>
               </section>
 
-              {/* 섹션 3: 취향별 홀릭 */}
+              {/* 섹션 3: 취향별 홀릭 (수정된 부분: 너비 고정) */}
               <section className="mb-20 relative group">
                 <div className="mb-6"><h2 className="text-[22px] font-bold">취향에 따라 고르는 여행</h2></div>
                 <div className="flex gap-2 mb-8 overflow-x-auto no-scrollbar">
@@ -192,15 +192,11 @@ export default function Search() {
                     <Link 
                       to={`/festival/${festival.id}`} 
                       key={`holic-${festival.id}`} 
+                      // flex-shrink-0와 고정 너비를 주어 아이템이 적어도 커지지 않게 함
                       className="w-[280px] md:w-[320px] flex-shrink-0 snap-start group/card cursor-pointer"
                     >
                       <div className="relative mb-4 aspect-[1.4/1] rounded-2xl overflow-hidden shadow-md bg-gray-100">
                         <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105" />
-                        {/* 상태 라벨 추가 */}
-                        <div className="absolute top-3 left-3 flex flex-col gap-1">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white w-fit ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>{getStatusLabel(festival.status)}</span>
-                          <span className="bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded w-fit">{festival.category}</span>
-                        </div>
                       </div>
                       <h3 className="font-bold text-[17px] line-clamp-1 group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
                       <p className="text-[13px] text-gray-500 mt-1">{festival.location}</p>
@@ -237,7 +233,7 @@ export default function Search() {
                             <div className="px-6 pb-8">
                               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x">
                                 {theme.items.map((item) => (
-                                  <Link to={`/festival/${item.id}`} key={item.id} className="min-w-[160px] md:min-w-[200px] flex-shrink-0 snap-start group/item relative">
+                                  <Link to={`/festival/${item.id}`} key={item.id} className="min-w-[160px] md:min-w-[200px] snap-start group/item relative">
                                     <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-2">
                                       <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" />
                                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
@@ -258,62 +254,8 @@ export default function Search() {
 
             </motion.div>
           ) : (
-            /* --- 🔥 지도보기 레이아웃 수정: 2단 구성 (지도 + 지역 축제 리스트) --- */
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[650px]">
-               {/* 왼쪽: 지도 영역 */}
-               <div className="lg:col-span-7 bg-[#F8F9FA] rounded-[2rem] flex items-center justify-center border border-gray-100 overflow-hidden relative shadow-inner">
-                  <KoreaMap selectedRegion={selectedRegion} onRegionSelect={handleRegionSelect} />
-                  <div className="absolute bottom-6 left-8 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full border border-gray-100 shadow-sm">
-                    <p className="text-sm font-bold text-gray-500">
-                      {selectedRegion ? `📍 ${selectedRegion} 지역 탐색 중` : "📍 지도의 지역을 클릭해보세요"}
-                    </p>
-                  </div>
-               </div>
-
-               {/* 오른쪽: 지역 축제 리스트 */}
-               <div className="lg:col-span-5 flex flex-col h-[650px]">
-                  <div className="flex justify-between items-end mb-6 px-2">
-                    <h3 className="text-xl font-black text-[#111111]">
-                      {selectedRegion ? `${selectedRegion}의 축제` : "지역을 선택해주세요"}
-                    </h3>
-                    <span className="text-sm text-gray-400 font-bold">{regionFestivals.length}건</span>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto no-scrollbar pr-2 space-y-4">
-                    {selectedRegion === "" ? (
-                      <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                        <p className="text-gray-400 font-medium">지도를 클릭하면<br/>해당 지역의 축제 정보를 볼 수 있습니다.</p>
-                      </div>
-                    ) : regionFestivals.length > 0 ? (
-                      regionFestivals.map((festival) => (
-                        <Link 
-                          to={`/festival/${festival.id}`} 
-                          key={`map-list-${festival.id}`}
-                          className="group flex gap-4 bg-white p-3 rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all active:scale-[0.98]"
-                        >
-                          <div className="relative w-24 h-24 shrink-0 rounded-2xl overflow-hidden">
-                            <img src={festival.image} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                            <div className="absolute top-1 left-1">
-                              <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'}`}>
-                                {getStatusLabel(festival.status)}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="flex flex-col justify-center overflow-hidden">
-                            <span className="text-[10px] text-[#FF3478] font-bold mb-0.5">{festival.category}</span>
-                            <h4 className="font-bold text-[15px] truncate mb-1 group-hover:text-[#FF3478] transition-colors">{festival.title}</h4>
-                            <p className="text-xs text-gray-500 truncate">{festival.location}</p>
-                            <p className="text-[11px] text-gray-400 font-medium mt-1">{festival.date}</p>
-                          </div>
-                        </Link>
-                      ))
-                    ) : (
-                      <div className="h-full flex flex-col items-center justify-center text-center bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                        <p className="text-gray-400 font-medium">해당 지역에 등록된<br/>축제가 아직 없습니다.</p>
-                      </div>
-                    )}
-                  </div>
-               </div>
+            <div className="h-[650px] bg-[#F8F9FA] rounded-[2rem] flex items-center justify-center border border-gray-100 overflow-hidden relative shadow-inner">
+               <KoreaMap selectedRegion={selectedRegion} onRegionSelect={handleRegionSelect} />
             </div>
           )}
         </AnimatePresence>

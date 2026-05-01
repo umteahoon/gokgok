@@ -1,4 +1,4 @@
-// CommunityWrite.tsx (Render 백엔드 전체 주소 반영 버전)
+// CommunityWrite.tsx (백엔드 주소 은닉 및 환경 변수 적용 버전)
 import { useState, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -8,15 +8,16 @@ import { Card } from "@/components/ui/card";
 import { fadeInUp } from "@/lib/motion";
 import { getCurrentUser } from "@/lib/login";
 
-// 💡 백엔드 서버의 실제 주소를 상수로 관리합니다.
-const API_BASE_URL = "https://gokgok-8ztf.onrender.com";
+// 💡 직접적인 주소 노출을 피하기 위해 환경 변수를 사용합니다.
+// 로컬 .env 파일이나 Netlify 설정에 VITE_API_BASE_URL을 등록해두면 됩니다.
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://gokgok-8ztf.onrender.com";
 
 export default function CommunityWrite() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser(); 
 
   const [formData, setFormData] = useState({
-    festivalTitle: "", // 화면 입력용
+    festivalTitle: "", 
     category: "전통문화", 
     content: "",
   });
@@ -63,9 +64,6 @@ export default function CommunityWrite() {
     const token = localStorage.getItem('accessToken');
     const sendData = new FormData();
     
-    /**
-     * 💡 DB 스키마 컬럼명에 맞춰 데이터 추가
-     */
     sendData.append("author", currentUser?.name || "익명");
     sendData.append("author_email", currentUser?.email || ""); 
     sendData.append("title", formData.festivalTitle);         
@@ -78,20 +76,15 @@ export default function CommunityWrite() {
     });
 
     try {
-      // 💡 주소를 API_BASE_URL을 포함한 전체 경로로 수정했습니다.
       const response = await fetch(`${API_BASE_URL}/api/community`, {
         method: "POST",
         headers: {
-          // FormData 사용 시 브라우저가 boundary를 자동 설정하므로 Content-Type은 적지 않습니다.
           ...(token && { "Authorization": `Bearer ${token}` })
         },
         body: sendData
       });
 
-      // 서버가 에러 HTML을 보낼 경우를 대비해 텍스트를 먼저 확인하거나 응답 상태를 체크합니다.
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error("서버 에러 상세:", errorText);
         throw new Error("서버 응답이 올바르지 않습니다.");
       }
 
@@ -105,7 +98,7 @@ export default function CommunityWrite() {
       }
     } catch (error) {
       console.error("작성 에러:", error);
-      alert("서버 통신 중 오류가 발생했습니다. 백엔드 서버 주소를 다시 확인해주세요.");
+      alert("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -118,7 +111,8 @@ export default function CommunityWrite() {
       <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">새 게시글 작성</h1>
-          <p className="text-muted-foreground">백엔드 서버({API_BASE_URL})로 안전하게 전송합니다.</p>
+          {/* 💡 주소가 포함된 텍스트를 제거하여 깔끔하게 변경했습니다. */}
+          <p className="text-muted-foreground"></p>
         </div>
 
         <Card className="p-6 md:p-8">

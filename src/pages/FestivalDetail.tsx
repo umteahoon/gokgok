@@ -2,7 +2,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   ChevronLeft, Share2, Heart, Star, 
-  Users, Info, Clock, Ticket
+  Users, Info, Clock, Ticket, 
+  Calendar, MapPin, Phone 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { mockFestivals, topFestivals } from "@/lib/index";
@@ -22,19 +23,16 @@ export default function FestivalDetail() {
     );
   }
 
-  const menuTabs = ["공지사항", "상품상세","이용안내", "장소", "리뷰"];
+  const menuTabs = ["공지사항", "상품상세", "이용안내", "장소", "리뷰"];
 
   return (
-    <div className="min-h-screen bg-white pb-24 font-sans">
-      {/* 1. 상단 포스터 영역 (높이 축소 및 최적화) */}
+    <div className="min-h-screen bg-white pb-24 font-sans text-zinc-900">
+      {/* 1. 상단 포스터 영역 */}
       <section className="relative w-full h-[300px] md:h-[400px] overflow-hidden bg-zinc-900">
-        {/* 배경 블러 처리 */}
         <div 
           className="absolute inset-0 bg-cover bg-center blur-3xl opacity-40 scale-110"
           style={{ backgroundImage: `url(${festival.image})` }}
         />
-        
-        {/* 메인 포스터 이미지 (사이즈 최적화) */}
         <div className="relative h-full flex items-center justify-center p-4">
           <motion.img 
             initial={{ opacity: 0, scale: 0.95 }}
@@ -47,8 +45,6 @@ export default function FestivalDetail() {
             1 / 1
           </div>
         </div>
-
-        {/* 뒤로가기 버튼 */}
         <button 
           onClick={() => navigate(-1)}
           className="absolute top-4 left-4 p-2 bg-black/10 backdrop-blur-md rounded-full text-white hover:bg-black/30 transition-all"
@@ -91,7 +87,7 @@ export default function FestivalDetail() {
           ))}
         </div>
 
-        {/* 4. 정보 리스트 */}
+        {/* 4. 기본 정보 리스트 */}
         <div className="space-y-3.5 text-sm mb-10">
           <div className="flex gap-4">
             <span className="text-zinc-400 w-12 shrink-0">장소</span>
@@ -103,7 +99,7 @@ export default function FestivalDetail() {
           </div>
           <div className="flex gap-4">
             <span className="text-zinc-400 w-12 shrink-0">연령</span>
-            <span className="font-medium">14세 이상 관람가</span>
+            <span className="font-medium">전체 이용가</span>
           </div>
         </div>
 
@@ -121,12 +117,12 @@ export default function FestivalDetail() {
           </div>
           <div className="flex flex-col items-center justify-center gap-1">
             <Users className="w-5 h-5 text-emerald-600" />
-            <span className="text-[10px] font-bold text-emerald-600 text-center">청년,가족</span>
+            <span className="text-[10px] font-bold text-emerald-600 text-center">청년, 가족</span>
           </div>
         </div>
 
         {/* 6. 필수 확인 사항 */}
-        <section className="mt-8">
+        <section className="mb-12">
           <h2 className="text-lg font-bold mb-5">필수 확인 사항</h2>
           <div className="space-y-6 text-[13px] leading-relaxed text-zinc-600">
             <div className="bg-zinc-50 p-4 rounded-xl">
@@ -134,15 +130,86 @@ export default function FestivalDetail() {
               <p>본 페이지의 모든 내용을 숙지 및 동의한 것으로 간주합니다. 관람 안내 미숙지로 인한 책임은 본인에게 있으며, 취소 및 변경 규정을 반드시 확인 바랍니다.</p>
             </div>
             <div className="px-1">
-              <p className="text-blue-600 font-bold mb-2">◈ 전체 이용가</p>
-              <p>- 2013년 포함 이전 출생자 관람 가능합니다.</p>
-              <p>- 입장 시 생년월일 확인이 가능한 증빙서류(학생증, 청소년증 등)를 반드시 지참하시기 바랍니다.</p>
+              <p className="text-blue-600 font-bold mb-2">◈ 관람 안내</p>
+              <p>- 2026년 기준 입장 시 연령 확인이 필요할 수 있습니다.</p>
+              <p>- 입장 시 확인이 가능한 증빙서류(학생증, 가족관계증명서 등)를 반드시 지참하시기 바랍니다.</p>
+            </div>
+          </div>
+        </section>
+
+        {/* 7. 행사 정보 섹션 (이미지 레이아웃 반영) */}
+        <section className="mb-16 pt-10 border-t border-zinc-100">
+          <h2 className="text-lg font-bold mb-8">행사 정보</h2>
+          
+          <div className="space-y-10">
+            {/* 행사 기간 */}
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Calendar className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-bold text-[15px]">행사 기간</p>
+                <p className="text-zinc-600 text-sm leading-relaxed">
+                  {festival.date}<br />
+                  <span className="text-zinc-400 text-xs">축제 기간 내 상시 진행</span>
+                </p>
+              </div>
+            </div>
+
+            {/* 운영 시간 */}
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Clock className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-bold text-[15px]">운영 시간</p>
+                <div className="text-zinc-600 text-sm leading-relaxed">
+                  <p>평일: 09:00 ~ 18:00</p>
+                  <p>주말: 09:00 ~ 20:00</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 행사 장소 */}
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <MapPin className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-bold text-[15px]">행사 장소</p>
+                <div className="text-zinc-600 text-sm leading-relaxed">
+                  <p className="font-medium text-zinc-900">{festival.location} 일원</p>
+                  <p className="text-zinc-400 text-xs mt-0.5">상세 위치는 현장 안내 요원의 지시에 따라주세요.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* 문의 */}
+            <div className="flex gap-4">
+              <div className="mt-1">
+                <Users className="w-6 h-6 text-emerald-500" />
+              </div>
+              <div className="space-y-1">
+                <p className="font-bold text-[15px]">문의</p>
+                <div className="text-zinc-600 text-sm leading-relaxed">
+                  <p>{festival.title} 조직위원회</p>
+                  <div className="flex items-center gap-1.5 text-blue-600 font-medium mt-1">
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>041-750-2911~3</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
       </main>
 
-      
+      {/* 하단 고정 예매 버튼 (모바일 전용) */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t border-zinc-100 md:hidden z-50">
+        <Button className="w-full h-12 bg-zinc-900 text-white font-bold rounded-xl active:scale-[0.98] transition-transform">
+          축제 예매하기
+        </Button>
+      </div>
     </div>
   );
 }
