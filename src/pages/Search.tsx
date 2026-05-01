@@ -23,6 +23,9 @@ export default function Search() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedTaste, setSelectedTaste] = useState("NEW");
   
+  // 테마 섹션 개폐 상태 (기본값 0번째 펼침)
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+  
   // 찜하기 상태 관리
   const [wishlistedIds, setWishlistedIds] = useState<(string | number)[]>([]);
 
@@ -30,7 +33,23 @@ export default function Search() {
   const risingScrollRef = useRef<HTMLDivElement>(null);
   const tasteScrollRef = useRef<HTMLDivElement>(null);
 
-  const tastes = ["NEW", "축구홀릭", "레저/스포츠홀릭", "문화/공연홀릭", "트레킹홀릭", "프라이빗홀릭", "컨시어지홀릭"];
+  const tastes = ["NEW", "자연생태", "체험", "전통문화", "겨울축제", "불꽃축제", "역사문화", "음식축제"];
+
+  // 테마 데이터 구성
+  const themes = [
+    {
+      title: "자연과 함께하는 여행",
+      items: mockFestivals.slice(0, 5)
+    },
+    {
+      title: "화려한 축제, 체험을 하고 싶다면",
+      items: topFestivals.slice(0, 5) 
+    },
+    {
+      title: "역사와 전통이 함께",
+      items: [...topFestivals, ...mockFestivals].slice(5, 10)
+    }
+  ];
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -41,7 +60,6 @@ export default function Search() {
     }
   };
 
-  // 찜하기 토글 함수
   const toggleWishlist = (e: React.MouseEvent, id: string | number) => {
     e.preventDefault(); 
     e.stopPropagation(); 
@@ -52,16 +70,19 @@ export default function Search() {
 
   const filteredList = useMemo(() => {
     const combined = [...topFestivals, ...mockFestivals] as Festival[];
-    // ID 기준 중복 제거
     const uniqueFestivals = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
     
     return uniqueFestivals.filter(f => {
       const matchesSearch = f.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             f.location.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRegion = selectedRegion ? f.location.includes(selectedRegion) : true;
-      return matchesSearch && matchesRegion;
+      
+      // 취향 필터 로직
+      const matchesTaste = selectedTaste === "NEW" ? true : f.category === selectedTaste;
+
+      return matchesSearch && matchesRegion && matchesTaste;
     });
-  }, [searchQuery, selectedRegion]);
+  }, [searchQuery, selectedRegion, selectedTaste]);
 
   const handleScroll = (ref: React.RefObject<HTMLDivElement>, direction: "left" | "right") => {
     if (ref.current) {
@@ -82,11 +103,9 @@ export default function Search() {
   };
 
   return (
-    // 레이아웃과 충돌하지 않도록 불필요한 min-h-screen 최소화, 상단 여백(pt-6) 추가
     <div className="w-full bg-white text-[#111111] pb-20 font-sans overflow-x-hidden pt-6 md:pt-10 rounded-t-3xl">
       <main className="container mx-auto px-4">
         
-        {/* 검색창 영역 */}
         <section className="mb-10 max-w-2xl mx-auto">
           <SearchBar onSearch={(q) => setSearchQuery(q)} />
         </section>
@@ -120,33 +139,11 @@ export default function Search() {
                     <Link to={`/festival/${festival.id}`} key={`best-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
                       <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50">
                         <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
-                        
-                        <div 
-                          onClick={(e) => toggleWishlist(e, festival.id)}
-                          className="absolute top-2 right-2 z-10 cursor-pointer select-none outline-none"
-                          style={heartBtnStyle}
-                        >
-                          <motion.svg 
-                            whileTap={{ scale: 0.7 }}
-                            width="24" height="24" viewBox="0 0 24 24" 
-                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} 
-                            stroke="white" strokeWidth="2"
-                            className="drop-shadow-md"
-                          >
-                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" />
-                          </motion.svg>
+                        <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-2 right-2 z-10 p-1 cursor-pointer" style={heartBtnStyle}>
+                          <motion.svg whileTap={{ scale: 0.7 }} width="24" height="24" viewBox="0 0 24 24" fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} stroke="white" strokeWidth="2" className="drop-shadow-md"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" /></motion.svg>
                         </div>
-
-                        <div className="absolute top-2 left-2">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>
-                            {getStatusLabel(festival.status)}
-                          </span>
-                        </div>
-                        <div className="absolute bottom-0 left-0 leading-none pointer-events-none">
-                          <svg width="65" height="65" viewBox="0 0 100 100">
-                            <text x="12" y="92" fontSize="52" fontWeight="900" fontStyle="italic" fill="#111111">{idx + 1}</text>
-                          </svg>
-                        </div>
+                        <div className="absolute top-2 left-2"><span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>{getStatusLabel(festival.status)}</span></div>
+                        <div className="absolute bottom-0 left-0 leading-none pointer-events-none"><svg width="65" height="65" viewBox="0 0 100 100"><text x="12" y="92" fontSize="52" fontWeight="900" fontStyle="italic" fill="#111111">{idx + 1}</text></svg></div>
                       </div>
                       <div className="px-1">
                         <span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase tracking-tight">{festival.category || "전통문화"}</span>
@@ -163,44 +160,18 @@ export default function Search() {
               <section className="mb-16 relative group">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-[22px] font-extrabold">지금 인기 급상승 🔥</h2>
-                  <div className="flex gap-2">
-                    <button onClick={() => handleScroll(risingScrollRef, "left")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 18L9 12L15 6"/></svg></button>
-                    <button onClick={() => handleScroll(risingScrollRef, "right")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18l6-6-6-6"/></svg></button>
-                  </div>
                 </div>
-
                 <div ref={risingScrollRef} className="flex gap-4 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
                   {(mockFestivals as Festival[]).map((festival) => (
                     <Link to={`/festival/${festival.id}`} key={`rising-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
                       <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50">
                         <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
-                        
-                        <div 
-                          onClick={(e) => toggleWishlist(e, festival.id)}
-                          className="absolute top-2 right-2 z-10 cursor-pointer select-none"
-                          style={heartBtnStyle}
-                        >
-                          <motion.svg 
-                            whileTap={{ scale: 0.7 }}
-                            width="24" height="24" viewBox="0 0 24 24" 
-                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} 
-                            stroke="white" strokeWidth="2"
-                            className="drop-shadow-md"
-                          >
-                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" />
-                          </motion.svg>
-                        </div>
-
-                        <div className="absolute top-2 left-2">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'upcoming' ? 'bg-blue-500/90' : 'bg-orange-500/90'} backdrop-blur-sm shadow-md`}>
-                            {getStatusLabel(festival.status)}
-                          </span>
+                        <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-2 right-2 z-10 p-1 cursor-pointer" style={heartBtnStyle}>
+                          <motion.svg whileTap={{ scale: 0.7 }} width="24" height="24" viewBox="0 0 24 24" fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} stroke="white" strokeWidth="2" className="drop-shadow-md"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" /></motion.svg>
                         </div>
                       </div>
                       <div className="px-1">
-                        <span className="text-[11px] text-gray-400 font-bold mb-1 block uppercase tracking-tight">{festival.category || "자연생태계"}</span>
-                        <h3 className="font-bold text-[14.5px] line-clamp-2 leading-snug mb-2 h-[40px] group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
-                        <p className="text-[12px] text-[#555555] font-semibold mb-0.5">{festival.location}</p>
+                        <h3 className="font-bold text-[14.5px] line-clamp-2 leading-snug mb-2 group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
                         <p className="text-[12px] text-gray-400">{festival.date}</p>
                       </div>
                     </Link>
@@ -208,58 +179,77 @@ export default function Search() {
                 </div>
               </section>
 
-              {/* 섹션 3: 취향별 홀릭 */}
+              {/* 섹션 3: 취향별 홀릭 (수정된 부분: 너비 고정) */}
               <section className="mb-20 relative group">
-                <div className="mb-6">
-                  <h2 className="text-[22px] font-bold">
-                    <span className="bg-[#D6E6FF] px-1 font-extrabold">취향에 따라 고르는 여행</span>, <span className="text-[#FF3478] font-black">홀릭</span>
-                  </h2>
-                </div>
-                
+                <div className="mb-6"><h2 className="text-[22px] font-bold">취향에 따라 고르는 여행</h2></div>
                 <div className="flex gap-2 mb-8 overflow-x-auto no-scrollbar">
                   {tastes.map((taste) => (
-                    <button key={taste} onClick={() => setSelectedTaste(taste)} className={`px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${selectedTaste === taste ? "bg-[#111111] text-white border-[#111111]" : "bg-[#F5F5F5] text-[#666666] border-transparent hover:bg-gray-200"}`}>{taste}</button>
+                    <button key={taste} onClick={() => setSelectedTaste(taste)} className={`px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${selectedTaste === taste ? "bg-[#111111] text-white border-[#111111]" : "bg-[#F5F5F5] text-[#666666] border-transparent"}`}>{taste}</button>
                   ))}
                 </div>
-
                 <div ref={tasteScrollRef} className="flex gap-5 overflow-x-auto no-scrollbar snap-x snap-mandatory pb-4">
                   {filteredList.map((festival) => (
-                    <Link to={`/festival/${festival.id}`} key={`holic-${festival.id}`} className="min-w-[calc(80%-15px)] md:min-w-[calc(25%-15px)] snap-start group/card cursor-pointer">
+                    <Link 
+                      to={`/festival/${festival.id}`} 
+                      key={`holic-${festival.id}`} 
+                      // flex-shrink-0와 고정 너비를 주어 아이템이 적어도 커지지 않게 함
+                      className="w-[280px] md:w-[320px] flex-shrink-0 snap-start group/card cursor-pointer"
+                    >
                       <div className="relative mb-4 aspect-[1.4/1] rounded-2xl overflow-hidden shadow-md bg-gray-100">
                         <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105" />
-                        
-                        <div 
-                          onClick={(e) => toggleWishlist(e, festival.id)}
-                          className="absolute top-3 right-3 z-10 cursor-pointer select-none"
-                          style={heartBtnStyle}
-                        >
-                          <motion.svg 
-                            whileTap={{ scale: 0.7 }}
-                            width="28" height="28" viewBox="0 0 24 24" 
-                            fill={wishlistedIds.includes(festival.id) ? "#FF3478" : "rgba(255,255,255,0.4)"} 
-                            stroke="white" strokeWidth="2.5"
-                            className="drop-shadow-xl transition-colors"
-                          >
-                            <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.505 4.04 3 5.5l7 7Z" />
-                          </motion.svg>
-                        </div>
-
-                        <div className="absolute top-3 left-3 flex gap-1.5">
-                          <span className="bg-black/60 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded-md">{festival.category || "문화공연"}</span>
-                        </div>
                       </div>
-                      <div className="px-1">
-                        <h3 className="font-bold text-[17px] line-clamp-1 mb-1.5 group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
-                        <p className="text-[13px] text-[#555555] font-semibold mb-0.5">{festival.location}</p>
-                        <p className="text-[13px] text-gray-400 mb-2">{festival.date}</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-[#FF3478] font-extrabold text-[18px]">LIVE</span>
-                          <span className="font-black text-[18px]">축제 확인하기</span>
-                        </div>
-                      </div>
+                      <h3 className="font-bold text-[17px] line-clamp-1 group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
+                      <p className="text-[13px] text-gray-500 mt-1">{festival.location}</p>
                     </Link>
                   ))}
                 </div>
+              </section>
+
+              {/* 섹션 4: 테마 영역 */}
+              <section className="mb-20 space-y-4">
+                <h2 className="text-[22px] font-extrabold mb-6">테마 추천</h2>
+                {themes.map((theme, idx) => {
+                  const isExpanded = expandedIndex === idx;
+                  return (
+                    <div 
+                      key={idx}
+                      className={`border rounded-2xl overflow-hidden transition-all duration-300 ${
+                        isExpanded ? "border-blue-500 ring-1 ring-blue-500 shadow-md" : "border-gray-200 shadow-sm"
+                      }`}
+                    >
+                      <button
+                        onClick={() => setExpandedIndex(isExpanded ? null : idx)}
+                        className="w-full px-6 py-5 flex justify-between items-center bg-white active:bg-gray-50 transition-colors"
+                      >
+                        <span className={`text-lg font-bold ${isExpanded ? "text-gray-900" : "text-gray-500"}`}>
+                          {theme.title}
+                        </span>
+                        <svg className={`w-6 h-6 transition-transform duration-300 ${isExpanded ? "rotate-180 text-blue-500" : "text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path d="M19 9l-7 7-7-7" /></svg>
+                      </button>
+
+                      <AnimatePresence>
+                        {isExpanded && (
+                          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }}>
+                            <div className="px-6 pb-8">
+                              <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 snap-x">
+                                {theme.items.map((item) => (
+                                  <Link to={`/festival/${item.id}`} key={item.id} className="min-w-[160px] md:min-w-[200px] snap-start group/item relative">
+                                    <div className="relative aspect-[3/4] rounded-2xl overflow-hidden mb-2">
+                                      <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-4">
+                                        <p className="text-white font-bold text-sm leading-tight line-clamp-2">{item.title}</p>
+                                      </div>
+                                    </div>
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
               </section>
 
             </motion.div>

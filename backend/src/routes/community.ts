@@ -1,10 +1,14 @@
 // 2026.04.10 주환 
-import { Router, Request, Response } from 'express';
+import { Router } from 'express';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import multer from 'multer';
 
 dotenv.config();
 const router = Router();
+
+// 메모리에 파일을 임시 저장하는 multer 설정
+const upload = multer({ storage: multer.memoryStorage() });
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -12,7 +16,7 @@ const supabase = createClient(
 );
 
 // 1. [게시글 목록 불러오기] GET /api/community
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', async (req: any, res: any) => {
   try {
     const { data, error } = await supabase
       .from('community_posts')
@@ -27,31 +31,63 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 // 2. [새 게시글 작성] POST /api/community
-router.post('/', async (req: Request, res: Response) => {
+// 💡 (router.post as any)를 사용하여 multer와 express 타입 충돌을 강제로 해결했습니다.
+(router.post as any)('/', upload.array('images'), async (req: any, res: any) => {
   try {
-    // author_email 추가 추출 및 저장
-    const { author, author_email, title, content, category, images } = req.body;
+    const { author, author_email, title, content, category } = req.body;
+    
+    const files = req.files as any[]; 
+    const imageUrls: string[] = [];
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const fileName = `${Date.now()}_${file.originalname}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('community_images') 
+          .upload(fileName, file.buffer, {
+            contentType: file.mimetype,
+            upsert: true
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('community_images')
+          .getPublicUrl(fileName);
+        
+        imageUrls.push(publicUrl);
+      }
+    }
 
     const { data, error } = await supabase
       .from('community_posts')
-      .insert([{ author, author_email, title, content, category, images: images || [] }])
+      .insert([{ 
+        author, 
+        author_email, 
+        title, 
+        content, 
+        category, 
+        images: imageUrls, 
+        status: 'active' 
+      }])
       .select()
       .single();
 
     if (error) throw error;
     res.status(201).json({ success: true, post: data });
   } catch (error: any) {
+    console.error("작성 에러 상세:", error.message);
     res.status(500).json({ success: false, message: '글 작성 실패' });
   }
 });
 
 // 3. [게시글 삭제] DELETE /api/community/:id
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const { author_email } = req.body; // 검증용 이메일 받기
+    const { author_email } = req.body;
 
-    // 권한 검증: id와 author_email이 모두 일치해야만 삭제
     const { data, error } = await supabase
       .from('community_posts')
       .delete()
@@ -71,7 +107,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
 });
 
 // 4. [새 댓글 작성] POST /api/community/:postId/comments
-router.post('/:postId/comments', async (req: Request, res: Response) => {
+router.post('/:postId/comments', async (req: any, res: any) => {
   try {
     const { postId } = req.params;
     const { author, author_email, text } = req.body;
@@ -90,7 +126,7 @@ router.post('/:postId/comments', async (req: Request, res: Response) => {
 });
 
 // 5. [댓글 삭제] DELETE /api/community/:postId/comments/:commentId
-router.delete('/:postId/comments/:commentId', async (req: Request, res: Response) => {
+router.delete('/:postId/comments/:commentId', async (req: any, res: any) => {
   try {
     const { commentId } = req.params;
     const { author_email } = req.body; 
@@ -114,16 +150,30 @@ router.delete('/:postId/comments/:commentId', async (req: Request, res: Response
 });
 
 // 6. [게시글 수정] PUT /api/community/:id
-router.put('/:id', async (req: Request, res: Response) => {
+// 💡 PUT 요청도 타입 충돌 방지를 위해 any로 처리했습니다.
+(router.put as any)('/:id', upload.array('images'), async (req: any, res: any) => {
   try {
     const { id } = req.params;
-    const { author_email, title, content, images } = req.body; 
+    const { author_email, title, content } = req.body; 
+    const files = req.files as any[];
+    let finalImages = req.body.images;
+
+    if (files && files.length > 0) {
+      const newUrls: string[] = [];
+      for (const file of files) {
+        const fileName = `${Date.now()}_${file.originalname}`;
+        await supabase.storage.from('community_images').upload(fileName, file.buffer);
+        const { data: { publicUrl } } = supabase.storage.from('community_images').getPublicUrl(fileName);
+        newUrls.push(publicUrl);
+      }
+      finalImages = newUrls;
+    }
 
     const { data, error } = await supabase
       .from('community_posts')
-      .update({ title, content, images })
+      .update({ title, content, images: finalImages })
       .eq('id', id)
-      .eq('author_email', author_email) // 작성자 검증
+      .eq('author_email', author_email)
       .select()
       .single();
 

@@ -1,4 +1,4 @@
-// CommunityWrite.tsx (Render 백엔드로 실제 파일 전송 버전)
+// CommunityWrite.tsx (Render 백엔드 DB 스키마 최적화 버전)
 import { useState, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -13,15 +13,13 @@ export default function CommunityWrite() {
   const currentUser = getCurrentUser(); 
 
   const [formData, setFormData] = useState({
-    festivalTitle: "",
+    festivalTitle: "", // 화면 입력용
     category: "전통문화", 
     content: "",
   });
 
-  // 화면 표시용 미리보기 URL과 실제 서버로 보낼 File 객체를 함께 관리합니다.
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]); 
-  const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,15 +34,11 @@ export default function CommunityWrite() {
 
   const processFiles = (files: File[]) => {
     const newImageFiles = files.filter(file => file.type.startsWith("image/"));
-
     if (imageFiles.length + newImageFiles.length > 10) {
       alert("사진은 최대 10장까지 업로드할 수 있습니다.");
       return;
     }
-
-    // 미리보기 URL 생성
     const newUrls = newImageFiles.map(file => URL.createObjectURL(file));
-    
     setImagePreviews(prev => [...prev, ...newUrls]);
     setImageFiles(prev => [...prev, ...newImageFiles]);
   };
@@ -64,16 +58,20 @@ export default function CommunityWrite() {
     setIsSubmitting(true);
 
     const token = localStorage.getItem('accessToken');
-    
-    // 💡 파일을 보낼 때는 JSON이 아니라 FormData를 사용해야 합니다.
     const sendData = new FormData();
-    sendData.append("author", currentUser?.name || "나(GokGok)");
-    sendData.append("author_email", currentUser?.email || "");
-    sendData.append("title", formData.festivalTitle);
+    
+    /**
+     * 💡 DB 스키마(image_774954.png) 컬럼명에 맞춰 전송
+     * 백엔드에서 req.body.title 식으로 받을 수 있게 이름을 맞췄습니다.
+     */
+    sendData.append("author", currentUser?.name || "익명");
+    sendData.append("author_email", currentUser?.email || ""); // 스키마에 있는 필드
+    sendData.append("title", formData.festivalTitle);         // festivalTitle -> title로 변경 전송
     sendData.append("content", formData.content);
     sendData.append("category", formData.category);
+    sendData.append("status", "active");                       // 스키마의 status 기본값 부여
 
-    // 여러 개의 파일을 하나씩 추가
+    // 파일 객체들을 'images'라는 이름으로 추가
     imageFiles.forEach((file) => {
       sendData.append("images", file); 
     });
@@ -82,7 +80,7 @@ export default function CommunityWrite() {
       const response = await fetch("https://gokgok-8ztf.onrender.com/api/community", {
         method: "POST",
         headers: {
-          // 💡 FormData를 쓸 때는 Content-Type을 수동으로 적지 않아야 브라우저가 알아서 Boundary를 설정합니다.
+          // FormData를 사용할 때는 Content-Type을 명시하지 않아야 합니다.
           ...(token && { "Authorization": `Bearer ${token}` })
         },
         body: sendData
@@ -94,11 +92,12 @@ export default function CommunityWrite() {
         alert("게시글이 성공적으로 등록되었습니다.");
         navigate("/community"); 
       } else {
-        alert(`실패: ${data.message}`);
+        // 백엔드에서 보내주는 구체적인 에러 메시지를 띄웁니다.
+        alert(`실패: ${data.message || '서버 내부 오류가 발생했습니다.'}`);
       }
     } catch (error) {
       console.error("작성 에러:", error);
-      alert("서버 통신 중 오류가 발생했습니다.");
+      alert("서버 통신 중 오류가 발생했습니다. 네트워크 상태를 확인해주세요.");
     } finally {
       setIsSubmitting(false);
     }
@@ -111,7 +110,7 @@ export default function CommunityWrite() {
       <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="max-w-3xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground mb-2">새 게시글 작성</h1>
-          <p className="text-muted-foreground">축제의 생생한 후기를 백엔드 서버로 전송합니다.</p>
+          <p className="text-muted-foreground">백엔드 DB 규격에 맞춰 안전하게 전송합니다.</p>
         </div>
 
         <Card className="p-6 md:p-8">
@@ -119,33 +118,39 @@ export default function CommunityWrite() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 space-y-2">
                 <label className="text-sm font-medium">축제 이름</label>
-                <input name="festivalTitle" type="text" required value={formData.festivalTitle} onChange={handleChange} className="w-full px-4 py-2 bg-background border border-input rounded-md" />
+                <input name="festivalTitle" type="text" required value={formData.festivalTitle} onChange={handleChange} placeholder="축제명을 입력하세요" className="w-full px-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-primary" />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">카테고리</label>
                 <select name="category" value={formData.category} onChange={handleChange} className="w-full px-4 py-2 bg-background border border-input rounded-md">
-                  <option value="전통문화">전통문화</option><option value="불꽃축제">불꽃축제</option><option value="기타">기타</option>
+                  <option value="전통문화">전통문화</option>
+                  <option value="불꽃축제">불꽃축제</option>
+                  <option value="겨울축제">겨울축제</option>
+                  <option value="체험">체험</option>
+                  <option value="기타">기타</option>
                 </select>
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-sm font-medium">내용</label>
-              <textarea name="content" required value={formData.content} onChange={handleChange} className="w-full px-4 py-3 h-48 bg-background border border-input rounded-md" />
+              <textarea name="content" required value={formData.content} onChange={handleChange} placeholder="생생한 후기를 작성해주세요." className="w-full px-4 py-3 h-48 bg-background border border-input rounded-md resize-none" />
             </div>
 
             <div className="space-y-2">
-              <span className="text-sm font-medium">사진 첨부 ({imagePreviews.length}/10)</span>
+              <span className="text-sm font-medium text-foreground">사진 첨부 ({imagePreviews.length}/10)</span>
               <input type="file" multiple accept="image/*" ref={fileInputRef} onChange={handleImageUpload} className="hidden" />
               <div className="flex gap-4 overflow-x-auto p-4 border-2 border-dashed rounded-lg bg-muted/20">
-                <div onClick={handleImageClick} className="w-24 h-24 shrink-0 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer bg-background">
-                  <ImagePlus className="w-6 h-6 mb-1" />
-                  <span className="text-[10px]">추가</span>
+                <div onClick={handleImageClick} className="w-24 h-24 shrink-0 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer bg-background hover:bg-muted/50 transition-colors">
+                  <ImagePlus className="w-6 h-6 mb-1 text-muted-foreground" />
+                  <span className="text-[10px] text-muted-foreground">추가</span>
                 </div>
                 {imagePreviews.map((url, idx) => (
                   <div key={idx} className="relative w-24 h-24 shrink-0">
-                    <img src={url} className="w-full h-full object-cover rounded-lg" />
-                    <button type="button" onClick={() => handleRemoveImage(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"><X className="w-3 h-3" /></button>
+                    <img src={url} alt="preview" className="w-full h-full object-cover rounded-lg border border-border" />
+                    <button type="button" onClick={() => handleRemoveImage(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600">
+                      <X className="w-3 h-3" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -154,7 +159,7 @@ export default function CommunityWrite() {
             <div className="flex justify-end gap-4 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => navigate(-1)}>취소</Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "서버 전송 중..." : "등록하기"}
+                {isSubmitting ? "전송 중..." : "등록하기"}
               </Button>
             </div>
           </form>
