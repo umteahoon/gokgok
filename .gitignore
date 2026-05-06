@@ -100,3 +100,4 @@ Thumbs.db
 uploaded_files/
 .env
 .env.local
+.env*
