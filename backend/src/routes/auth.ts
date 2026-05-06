@@ -19,7 +19,7 @@ const supabase = createClient(
  */
 router.post('/signup', async (req: Request, res: Response) => {
   try {
-    const { email, password, name } = req.body;
+    const { id, email, password, name } = req.body;
 
     // 1. 비밀번호 암호화 (보안 필수!)
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -29,6 +29,7 @@ router.post('/signup', async (req: Request, res: Response) => {
       .from('profiles')
       .insert([
         { 
+          id,
           email, 
           password: hashedPassword, 
           name, 
@@ -57,13 +58,13 @@ router.post('/signup', async (req: Request, res: Response) => {
  */
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { id, password } = req.body;
 
     // 1. DB에서 해당 이메일 사용자 찾기
     const { data: user, error } = await supabase
       .from('profiles')
       .select('*')
-      .eq('email', email)
+      .eq('id', id)
       .single();
 
     if (error || !user) {

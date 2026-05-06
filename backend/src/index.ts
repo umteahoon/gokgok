@@ -14,7 +14,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // 라우터 임포트
 import favoritesRouter from "./routes/favorites"; 
-import reviewRouter from './routes/reviews ';           
+import reviewRouter from './routes/reviews '; 
 import adminRouter from './routes/admin';
 import communityRouter from './routes/community'; 
 import contactRouter from './routes/contact'; // 문의사항 라우터
@@ -82,7 +82,7 @@ app.use('/api/community', communityRouter);
  */
 app.post('/api/auth/signup', async (req: Request, res: Response) => {
   try {
-    const { email, password, name } = req.body;
+    const { id, email, password, name } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const adminEmails = ['am2869@naver.com', 'qwe@qwe.com', 'juhwan@test.com', 'qwer@1234.com','phj03@naver.com'];
@@ -90,7 +90,7 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
 
     const { error } = await supabase
       .from('profiles')
-      .insert([{ email, password: hashedPassword, name, role: isAdmin ? 'ADMIN' : 'USER' }]);
+      .insert([{ id, email, password: hashedPassword, name, role: isAdmin ? 'ADMIN' : 'USER' }]);
 
     if (error) throw error;
     res.status(201).json({ success: true, message: '회원가입 완료' });
@@ -104,8 +104,8 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
  */
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
-    const { data: user, error } = await supabase.from('profiles').select('*').eq('email', email).single();
+    const { id, password } = req.body;
+    const { data: user, error } = await supabase.from('profiles').select('*').eq('id', id).single();
 
     if (error || !user) return res.status(400).json({ success: false, message: '등록되지 않은 유저' });
 

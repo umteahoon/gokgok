@@ -46,12 +46,12 @@ const emitAuthChange = () => {
  * 1. 회원가입
  * @path POST /api/auth/signup
  */
-export const signup = async (email: string, password: string, name: string): Promise<{ success: boolean; message: string }> => {
+export const signup = async (id:string, email: string, password: string, name: string): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await fetch(`${API_URL}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name }),
+      body: JSON.stringify({ id, email, password, name }),
     });
     
     const data = await response.json();
@@ -66,12 +66,12 @@ export const signup = async (email: string, password: string, name: string): Pro
  * 2. 로그인
  * @path POST /api/auth/login
  */
-export const login = async (email: string, password: string): Promise<{ success: boolean; message: string; user?: User }> => {
+export const login = async (id: string, password: string): Promise<{ success: boolean; message: string; user?: User }> => {
   try {
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ id, password }),
     });
 
     const data = await response.json();
