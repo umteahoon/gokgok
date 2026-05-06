@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, User, LogIn, UserPlus, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,12 +17,13 @@ interface AuthDialogProps {
 
 export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
   const navigate = useNavigate();
-  // 탭 대신 현재 모드를 관리하는 state (login | signup)
   const [mode, setMode] = useState<"login" | "signup">("login");
 
   const [loginEmail, setLoginEmail] = useState('');
+  const [loginId, setLoginId] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
+  const [signupId, setSignupId] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
   const [error, setError] = useState('');
@@ -35,7 +36,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
     setError('');
     setSuccess('');
 
-    const result = await login(loginEmail, loginPassword);
+    const result = await login(loginId, loginPassword);
 
     if (result.success) {
       setSuccess(result.message);
@@ -56,19 +57,25 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
     setError('');
     setSuccess('');
 
-    const result = await signup(signupEmail, signupPassword, signupName);
+    const result = await signup(signupEmail, signupId, signupPassword, signupName);
 
     if (result.success) {
       setSuccess("회원가입이 완료되었습니다!\n잠시 후 로그인창으로 이동합니다.");
 
       setTimeout(() => {
         setSuccess("");
-        setMode("login"); // 가입 성공 시 로그인 모드로 전환
+        setMode("login");
         setLoginEmail(signupEmail);
         setLoginPassword("");
       }, 3000);
     } else {
-      setError(result.message);
+      // 💡 [수정 포인트] 에러 메시지에 중복 제약 조건 키워드가 포함되어 있는지 체크
+      const rawError = result.message || "";
+      if (rawError.includes("profiles_email_key") || rawError.includes("duplicate key value")) {
+        setError("이미 회원가입이 된 이메일입니다.");
+      } else {
+        setError(rawError);
+      }
     }
   };
 
@@ -102,7 +109,6 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
             </Button>
 
             <CardHeader className="text-center pb-4 pt-8">
-              
               <CardTitle className="text-2xl tracking-tight">
                 {mode === "login" ? "곡곡에 오신 것을 환영합니다" : "새로운 시작을 함께해요"}
               </CardTitle>
@@ -127,7 +133,6 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                 </motion.div>
               )}
 
-              {/* 로그인 / 회원가입 폼 조건부 렌더링 */}
               <AnimatePresence mode="wait">
                 {mode === "login" ? (
                   <motion.form
@@ -139,16 +144,16 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                     className="space-y-4"
                   >
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">이메일</Label>
+                      <Label htmlFor="login-id">아이디</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
-                          id="login-email"
-                          type="email"
-                          placeholder="example@gokgok.com"
+                          id="login-id"
+                          type="id"
+                          placeholder="GokGok!!"
                           className="pl-10"
-                          value={loginEmail}
-                          onChange={(e) => setLoginEmail(e.target.value)}
+                          value={loginId}
+                          onChange={(e) => setLoginId(e.target.value)}
                           required
                         />
                       </div>
@@ -230,6 +235,22 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                           className="pl-10"
                           value={signupEmail}
                           onChange={(e) => setSignupEmail(e.target.value)}
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-email">아이디</Label>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="signup-id"
+                          type="id"
+                          placeholder="GokGok1234"
+                          className="pl-10"
+                          value={signupId}
+                          onChange={(e) => setSignupId(e.target.value)}
                           required
                         />
                       </div>
