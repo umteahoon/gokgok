@@ -39,11 +39,10 @@ export default function MyPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editImages, setEditImages] = useState<FileList | null>(null);
-  
 
   const allFestivals = [...topFestivals, ...mockFestivals];
 
-  // ✅ 데이터 로드 함수 (실시간 하트 개수 및 게시글 동기화를 위해 통합)
+  // ✅ 데이터 로드 함수
   const loadUserData = async () => {
     const user = getCurrentUser();
     if (!user) {
@@ -52,17 +51,14 @@ export default function MyPage() {
     }
     setCurrentUser(user);
 
-    // 1. 관심 목록(찜) 로드
     const savedIds = JSON.parse(localStorage.getItem("gokgok_wishlist") || "[]");
     const filtered = allFestivals.filter(f => savedIds.includes(String(f.id)));
     setSavedFestivals(filtered);
 
     try {
-      // 2. 수다방 게시글 및 실시간 하트 개수 로드
       const postRes = await fetch(`${API_BASE_URL}/api/community`);
       const postData = await postRes.json();
       if (postData.success) {
-        // 내 이메일로 작성된 글만 필터링 (좋아요 수 포함됨)
         const userPosts = postData.posts.filter((p: any) => p.author_email === user.email);
         setMyPosts(userPosts);
       }
@@ -75,7 +71,6 @@ export default function MyPage() {
 
   useEffect(() => {
     loadUserData();
-    // ✅ 다른 탭에서 하트를 누르고 돌아왔을 때 실시간 연동을 위해 window focus 이벤트 사용
     window.addEventListener('focus', loadUserData);
     return () => window.removeEventListener('focus', loadUserData);
   }, []);
@@ -97,6 +92,7 @@ export default function MyPage() {
     }
   };
 
+  // --- 게시글 수정 모달 열기 ---
   const openEditModal = (post: any) => {
     setEditingPost(post);
     setEditTitle(post.title);
@@ -104,6 +100,7 @@ export default function MyPage() {
     setEditImages(null);
   };
 
+  // --- 게시글 수정 제출 ---
   const handleEditSubmit = async () => {
     if (!editingPost || !currentUser) return;
     try {
@@ -126,6 +123,26 @@ export default function MyPage() {
       }
     } catch (e) {
       alert("수정 중 오류가 발생했습니다.");
+    }
+  };
+
+  // ✅ 추가: 게시글 삭제 함수
+  const handleDeletePost = async (postId: number) => {
+    if (!confirm("정말 이 게시글을 삭제하시겠습니까?")) return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/community/${postId}`, {
+        method: "DELETE",
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert("게시글이 삭제되었습니다.");
+        loadUserData(); // 삭제 후 목록 새로고침
+      } else {
+        alert("삭제에 실패했습니다.");
+      }
+    } catch (e) {
+      console.error("삭제 오류:", e);
+      alert("삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -212,10 +229,9 @@ export default function MyPage() {
 
         <Tabs defaultValue="saved" className="w-full">
           <TabsList className="flex w-full border-b border-gray-100 dark:border-zinc-800 bg-transparent h-auto p-0 mb-10 gap-8 md:gap-12">
-            {/* 배경 및 테두리 완전히 제거된 탭 디자인 */}
-            <TabsTrigger value="saved" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent">관심 목록</TabsTrigger>
-            <TabsTrigger value="posts" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent">작성한 글</TabsTrigger>
-            <TabsTrigger value="settings" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent">계정 설정</TabsTrigger>
+            <TabsTrigger value="saved" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none">관심 목록</TabsTrigger>
+            <TabsTrigger value="posts" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none">작성한 글</TabsTrigger>
+            <TabsTrigger value="settings" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none">계정 설정</TabsTrigger>
           </TabsList>
 
           <TabsContent value="saved" className="outline-none">
@@ -223,7 +239,6 @@ export default function MyPage() {
               <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {savedFestivals.map((f) => (
                   <motion.div key={f.id} variants={staggerItem}>
-                    {/* ✅ 관심 목록 클릭 시 상세페이지로만 이동 */}
                     <Link to={`/festival/${f.id}`} className="block h-full hover:scale-[1.02] transition-transform">
                       <FestivalCard festival={f} />
                     </Link>
@@ -241,7 +256,6 @@ export default function MyPage() {
             <div className="grid grid-cols-1 gap-6">
               {myPosts.length > 0 ? myPosts.map((post) => (
                 <div key={post.id} className="p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] relative group hover:border-[#FF3478]/30 transition-all flex flex-col md:flex-row gap-8">
-                  {/* ✅ 수다 사진 연동 및 동기화 */}
                   {post.images && post.images.length > 0 && (
                     <div className="w-full md:w-48 h-48 shrink-0 rounded-3xl overflow-hidden bg-gray-50 shadow-inner">
                       <img src={`${STORAGE_URL}${post.images[0]}`} className="w-full h-full object-cover" alt="post" />
@@ -251,10 +265,17 @@ export default function MyPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-[20px] font-black truncate">{post.title}</h3>
-                      <button onClick={() => openEditModal(post)} className="p-2 text-gray-300 hover:text-[#FF3478] transition-colors"><Pencil size={18} /></button>
+                      {/* ✅ 수정 및 삭제 버튼 그룹 */}
+                      <div className="flex gap-1">
+                        <button onClick={() => openEditModal(post)} className="p-2 text-gray-300 hover:text-[#FF3478] transition-colors">
+                          <Pencil size={18} />
+                        </button>
+                        <button onClick={() => handleDeletePost(post.id)} className="p-2 text-gray-300 hover:text-red-500 transition-colors">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* ✅ 좋아요(하트) 개수 실시간 연동 표시 */}
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FF3478]/5 rounded-full text-[#FF3478]">
                         <Heart size={14} fill="#FF3478" />

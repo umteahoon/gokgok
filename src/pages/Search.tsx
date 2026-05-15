@@ -18,7 +18,7 @@ export default function Search() {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
   const [wishlistedIds, setWishlistedIds] = useState<string[]>([]);
   
-  // ✅ 검색 관련 상태 추가
+  // 검색 관련 상태
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -34,7 +34,7 @@ export default function Search() {
   const tastes = ["NEW", "자연생태", "체험", "전통문화", "겨울축제", "불꽃축제", "역사문화", "음식축제"];
   const themes = [ { title: "자연과 함께하는 여행", items: mockFestivals.slice(0, 5) }, { title: "화려한 축제, 체험을 하고 싶다면", items: topFestivals.slice(0, 5) }, { title: "역사와 전통이 함께", items: [...topFestivals, ...mockFestivals].slice(5, 10) } ];
 
-  // ✅ 실시간 검색 로직
+  // 실시간 검색 로직
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const combined = [...topFestivals, ...mockFestivals] as Festival[];
@@ -96,7 +96,7 @@ export default function Search() {
   return (
     <div className="w-full bg-white dark:bg-[#111111] text-[#111111] dark:text-white pb-20 font-sans overflow-x-hidden pt-10 rounded-t-3xl transition-colors">
       <main className="container mx-auto">
-        {/* 히어로 슬라이더 (건드리지 않음) */}
+        {/* 히어로 슬라이더 (너비 고정: w-[calc(100%-2rem)]) */}
         <section className="relative w-[calc(100%-2rem)] mx-auto h-[220px] md:h-[320px] mb-16 bg-black overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] shadow-xl">
           <AnimatePresence mode="popLayout">
             <motion.div key={currentSlide} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} className="absolute inset-0">
@@ -115,23 +115,24 @@ export default function Search() {
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center bg-black/40 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/5"><div className="text-white text-[10px] font-bold tracking-widest">{String(currentSlide + 1).padStart(2, '0')} / {String(heroItems.length).padStart(2, '0')}</div></div>
         </section>
 
-        <div className="px-4 max-w-[1200px] mx-auto">
-          {/* ✅ 탭 및 검색 아이콘 버튼 */}
+        {/* 하단 섹션 컨테이너 (너비를 히어로 슬라이더와 동일하게 w-[calc(100%-2rem)]로 설정) */}
+        <div className="w-[calc(100%-2rem)] mx-auto">
+          {/* 탭 및 검색 아이콘 */}
           <div className="flex items-center justify-between mb-10 border-b border-gray-100 dark:border-gray-800 relative">
             <div className="flex gap-6">
-              <button onClick={() => setActiveTab("list")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "list" ? "text-[#FF3478]" : "text-gray-400"}`}>목록보기 {activeTab === "list" && <motion.div layoutId="t-line" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}</button>
-              <button onClick={() => setActiveTab("map")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "map" ? "text-[#FF3478]" : "text-gray-400"}`}>지도보기 {activeTab === "map" && <motion.div layoutId="t-line" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}</button>
+              <button onClick={() => setActiveTab("list")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "list" ? "text-[#FF3478]" : "text-gray-400"}`}>목록보기 {activeTab === "list" && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}</button>
+              <button onClick={() => setActiveTab("map")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "map" ? "text-[#FF3478]" : "text-gray-400"}`}>지도보기 {activeTab === "map" && <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}</button>
             </div>
             <button onClick={() => { setIsSearchOpen(!isSearchOpen); if(isSearchOpen) setSearchQuery(""); }} className={`pb-3 px-2 transition-colors ${isSearchOpen ? "text-[#FF3478]" : "text-gray-400"}`}>
               {isSearchOpen ? <X size={26} strokeWidth={2.5} /> : <SearchIcon size={26} strokeWidth={2.5} />}
             </button>
           </div>
 
-          {/* ✅ 실시간 검색 입력창 */}
+          {/* 실시간 검색창 */}
           <AnimatePresence>
             {isSearchOpen && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-12">
-                <div className="relative max-w-3xl mx-auto">
+                <div className="relative w-full">
                   <input autoFocus type="text" placeholder="축제 이름이나 키워드를 입력하세요" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full px-8 py-5 bg-[#F8F9FA] dark:bg-[#1a1a1a] rounded-[2rem] border-2 border-transparent focus:border-[#FF3478]/30 outline-none font-bold text-lg shadow-inner" />
                   <SearchIcon className="absolute right-8 top-1/2 -translate-y-1/2 text-[#FF3478]" size={24} />
@@ -144,18 +145,18 @@ export default function Search() {
             {activeTab === "list" ? (
               <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 
-                {/* ✅ 검색 결과 섹션 */}
+                {/* 검색 결과 */}
                 {searchQuery && (
                   <section className="mb-16">
                     <h2 className="text-xl font-black mb-8 px-2">검색 결과 <span className="text-[#FF3478]">{searchResults.length}</span></h2>
                     {searchResults.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {searchResults.map((f) => (
                           <Link key={f.id} to={`/festival/${f.id}`} className="group flex gap-4 bg-white dark:bg-[#222] p-3 rounded-[1.5rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all">
                             <div className="w-20 h-20 md:w-24 md:h-24 shrink-0 rounded-xl overflow-hidden bg-gray-50"><img src={f.image} className="w-full h-full object-cover" alt="" /></div>
                             <div className="flex flex-col justify-center overflow-hidden">
                               <span className="text-[10px] text-[#FF3478] font-black mb-1 uppercase tracking-tighter">{f.category}</span>
-                              <h4 className="font-bold text-[16px] text-gray-900 dark:text-white truncate">{f.title}</h4>
+                              <h4 className="font-bold text-[16px] text-gray-900 dark:text-white truncate group-hover:text-[#FF3478]">{f.title}</h4>
                               <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">{f.location}</p>
                             </div>
                           </Link>
@@ -170,15 +171,13 @@ export default function Search() {
                 {/* 섹션 1: TOP! 베스트 축제 */}
                 <section className="mb-16 relative group">
                   <div className="flex justify-between items-center mb-6"><h2 className="text-[22px] font-extrabold italic underline decoration-[#FF3478]/20 underline-offset-8 text-gray-900 dark:text-white">TOP! 베스트 축제</h2><div className="flex gap-2"><button onClick={() => handleScroll(bestScrollRef, "left")} className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center bg-white dark:bg-[#222] shadow-sm hover:bg-gray-50 dark:hover:bg-[#333] transition-all"><ChevronLeft size={18} /></button><button onClick={() => handleScroll(bestScrollRef, "right")} className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center bg-white dark:bg-[#222] shadow-sm hover:bg-gray-50 dark:hover:bg-[#333] transition-all"><ChevronRight size={18} /></button></div></div>
-                  {/* ✅ 스크롤바 제거 스타일 추가 */}
                   <div ref={bestScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory pb-4">
                     {topFestivals.map((festival, idx) => (
-                      <Link to={`/festival/${festival.id}`} key={`best-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
+                      <Link to={`/festival/${festival.id}`} key={`best-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(25%-12px)] lg:min-w-[calc(20%-12px)] snap-start group/card cursor-pointer">
                         <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50 dark:bg-[#222222]">
                           <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
                           <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-2 right-2 z-10 p-1 cursor-pointer" style={heartBtnStyle}><motion.div whileTap={{ scale: 0.7 }}><Heart className={`w-6 h-6 drop-shadow-md transition-colors ${wishlistedIds.includes(String(festival.id)) ? "fill-[#FF3478] text-[#FF3478]" : "text-white/70 hover:text-white"}`} /></motion.div></div>
                           <div className="absolute top-2 left-2"><span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>{getStatusLabel(festival.status || "")}</span></div>
-                          {/* ✅ 숫자 색깔 하얀색 변경 및 그림자 추가 */}
                           <div className="absolute bottom-0 left-0 leading-none pointer-events-none text-white font-black italic text-5xl opacity-90 px-2 drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">{idx + 1}</div>
                         </div>
                         <div className="px-1"><span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase tracking-tight">{festival.category}</span><h3 className="font-bold text-[14.5px] line-clamp-2 h-[40px] text-gray-900 dark:text-white group-hover/card:text-[#FF3478]">{festival.title}</h3><p className="text-[12px] text-[#555555] dark:text-gray-400 font-semibold mb-0.5">{festival.location}</p></div>
@@ -192,7 +191,7 @@ export default function Search() {
                   <div className="flex justify-between items-center mb-6"><h2 className="text-[22px] font-extrabold text-gray-900 dark:text-white">지금 인기 급상승 🔥</h2><div className="flex gap-2"><button onClick={() => handleScroll(risingScrollRef, "left")} className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center bg-white dark:bg-[#222] shadow-sm hover:bg-gray-50 dark:hover:bg-[#333] transition-all"><ChevronLeft size={18} /></button><button onClick={() => handleScroll(risingScrollRef, "right")} className="w-9 h-9 rounded-full border border-gray-200 dark:border-gray-700 flex items-center justify-center bg-white dark:bg-[#222] shadow-sm hover:bg-gray-50 dark:hover:bg-[#333] transition-all"><ChevronRight size={18} /></button></div></div>
                   <div ref={risingScrollRef} className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory pb-4">
                     {mockFestivals.map((festival) => (
-                      <Link to={`/festival/${festival.id}`} key={`rising-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(20%-12.8px)] snap-start group/card cursor-pointer">
+                      <Link to={`/festival/${festival.id}`} key={`rising-${festival.id}`} className="min-w-[calc(50%-10px)] md:min-w-[calc(25%-12px)] lg:min-w-[calc(20%-12px)] snap-start group/card cursor-pointer">
                         <div className="relative mb-3 aspect-[4/5] rounded-xl overflow-hidden shadow-sm bg-gray-50 dark:bg-[#222222]">
                           <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
                           <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-2 right-2 z-10 p-1 cursor-pointer" style={heartBtnStyle}><motion.div whileTap={{ scale: 0.7 }}><Heart className={`w-6 h-6 drop-shadow-md transition-colors ${wishlistedIds.includes(String(festival.id)) ? "fill-[#FF3478] text-[#FF3478]" : "text-white/70 hover:text-white"}`} /></motion.div></div>
@@ -209,7 +208,7 @@ export default function Search() {
                   <div className="flex gap-2 mb-8 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">{tastes.map((taste) => (<button key={taste} onClick={() => setSelectedTaste(taste)} className={`px-4 py-2 rounded-full text-sm font-bold border transition-all shrink-0 ${selectedTaste === taste ? "bg-[#111111] dark:bg-white text-white dark:text-[#111111] border-[#111111] dark:border-white" : "bg-[#F5F5F5] dark:bg-[#222222] text-[#666666] border-transparent"}`}>{taste}</button>))}</div>
                   <div ref={tasteScrollRef} className="flex gap-5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory pb-4">
                     {filteredList.map((festival) => (
-                      <Link to={`/festival/${festival.id}`} key={`holic-${festival.id}`} className="w-[280px] md:w-[320px] flex-shrink-0 snap-start group/card cursor-pointer">
+                      <Link to={`/festival/${festival.id}`} key={`holic-${festival.id}`} className="w-[280px] md:w-[340px] flex-shrink-0 snap-start group/card cursor-pointer">
                         <div className="relative mb-4 aspect-[1.4/1] rounded-2xl overflow-hidden shadow-md bg-gray-100 dark:bg-[#222222]"><img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105" /></div>
                         <h3 className="font-bold text-[17px] line-clamp-1 text-gray-900 dark:text-white group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
                         <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1">{festival.location}</p>
@@ -232,7 +231,7 @@ export default function Search() {
                               <div className="px-6 pb-8">
                                 <div className="flex gap-4 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] pb-2 snap-x">
                                   {theme.items.map((item) => (
-                                    <Link to={`/festival/${item.id}`} key={item.id} className="min-w-[160px] md:min-w-[200px] snap-start group/item relative">
+                                    <Link to={`/festival/${item.id}`} key={item.id} className="min-w-[160px] md:min-w-[220px] snap-start group/item relative">
                                       <div className="aspect-[3/4] rounded-2xl overflow-hidden mb-2 shadow-sm"><img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/item:scale-110" /></div>
                                       <p className="text-gray-900 dark:text-white font-bold text-sm leading-tight line-clamp-2">{item.title}</p>
                                     </Link>
@@ -255,8 +254,8 @@ export default function Search() {
                 </div>
                 <div className="lg:col-span-5 flex flex-col">
                    {selectedRegion ? (
-                     <div className="flex flex-col h-full">
-                       <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-6 px-2">{REGION_NAME_MAP[selectedRegion]} 축제</h3>
+                     <div className="flex flex-col h-full px-2">
+                       <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-6">{REGION_NAME_MAP[selectedRegion]} 축제</h3>
                        <div className="flex-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] space-y-4 pr-2">
                          {regionFestivals.map((festival) => (
                            <Link to={`/festival/${festival.id}`} key={`map-item-${festival.id}`} className="group flex gap-4 bg-white dark:bg-[#222] p-3 rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all active:scale-[0.98]">
