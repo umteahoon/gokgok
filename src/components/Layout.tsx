@@ -148,21 +148,23 @@ export function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans transition-colors duration-300">
-      <header className="sticky top-0 z-50 w-full border-b border-foreground/10 bg-background/80 backdrop-blur-md py-4 transition-colors duration-300">
-        <div className="relative w-full max-w-[1400px] mx-auto pl-4 pr-2 md:pl-8 md:pr-2 flex items-center justify-between h-8">
+      {/* py-4 제거, 상단바 전체 높이를 유지하면서 로고를 더 크게 만들기 위한 조치 */}
+      <header className="sticky top-0 z-50 w-full border-b border-foreground/10 bg-white dark:bg-background transition-colors duration-300">
+        {/* h-8에서 h-16으로 변경하여 로고가 더 크게 보이도록 조정함 */}
+        <div className="relative w-full max-w-[1400px] mx-auto pl-4 pr-2 md:pl-8 md:pr-2 flex items-center justify-between h-16">
 
-          {/* ▼▼▼ 로고 수정된 부분 ▼▼▼ */}
+          {/* 로고 영역, h-8 md:h-10에서 h-12 md:h-16으로 크게 변경함 */}
           <div className="flex-shrink-0 z-10">
             <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group flex items-center">
               <img 
                 src="/gokgok_logo.svg" 
                 alt="곡곡 로고" 
-                className="h-8 md:h-10 w-auto object-contain transition-opacity hover:opacity-80" 
+                className="h-12 md:h-16 w-auto object-contain transition-opacity hover:opacity-80" 
               />
             </NavLink>
           </div>
-          {/* ▲▲▲ 로고 수정된 부분 ▲▲▲ */}
 
+          {/* 중앙 네비게이션 */}
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (
               <NavLink
@@ -188,6 +190,7 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
+          {/* 우측 유틸리티 영역 */}
           <div className="hidden md:flex items-center justify-end gap-8 z-10">
             <div className="flex items-center gap-2">
               {currentUser && (
@@ -241,6 +244,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </div>
 
+          {/* 모바일 메뉴 영역 */}
           <div className="md:hidden flex items-center gap-2 z-10">
             {currentUser && (
               <span className="text-[10px] font-mono font-bold bg-foreground/5 px-2 py-1 rounded-full border border-foreground/10">
