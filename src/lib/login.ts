@@ -123,12 +123,12 @@ export const findUserId = async (email: string): Promise<{ success: boolean; use
  * @param email 사용자 이메일
  * @param newPassword 새로 설정할 비밀번호
  */
-export const resetPassword = async (id: string, email: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+export const resetPassword = async (id: string, email: string, currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await fetch(`${API_URL}/api/auth/reset-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, email, newPassword }),
+      body: JSON.stringify({ id, email, currentPassword, newPassword }),
     });
     return await response.json();
   } catch (error) {

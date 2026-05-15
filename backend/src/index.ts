@@ -134,25 +134,42 @@ app.post('/api/auth/find-id', async (req: Request, res: Response) => {
 });
 
 /**
- * 4. 비밀번호 재설정 (Reset Password)
+ * 4. 비밀번호 재설정 API (현재 비밀번호 확인 포함)
  */
 app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
   try {
-    const { id, email, newPassword } = req.body;
+    const { id, email, currentPassword, newPassword } = req.body;
 
+    // 1. 유저 정보 및 기존 비밀번호(해시) 가져오기
     const { data: user, error: userError } = await supabase
-      .from('profiles').select('id').eq('id', id).eq('email', email).maybeSingle();
+      .from('profiles')
+      .select('id, password')
+      .eq('id', id)
+      .eq('email', email)
+      .maybeSingle();
 
-    if (userError || !user) return res.status(404).json({ success: false, message: '일치하는 사용자 정보를 찾을 수 없습니다.' });
+    if (userError || !user) {
+      return res.status(404).json({ success: false, message: '사용자 정보를 찾을 수 없습니다.' });
+    }
 
+    // 2. 현재 비밀번호 일치 여부 확인
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: '현재 비밀번호가 일치하지 않습니다.' });
+    }
+
+    // 3. 새 비밀번호 암호화 및 업데이트
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const { error: updateError } = await supabase
-      .from('profiles').update({ password: hashedPassword }).eq('id', id);
+      .from('profiles')
+      .update({ password: hashedPassword })
+      .eq('id', id);
 
     if (updateError) throw updateError;
+
     res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
-  } catch (err) {
-    res.status(500).json({ success: false, message: '비밀번호 변경 중 오류가 발생했습니다.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
   }
 });
 
