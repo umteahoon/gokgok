@@ -17,14 +17,7 @@ router.get('/favorites/:userEmail', async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase
       .from('user_favorite_festivals')
-      .select(`
-        id,
-        user_email,
-        festival_id,
-        created_at,
-        festivals ,
-        festivals (*) 
-      `)
+      .select('id, user_email, festival_id, created_at') // 🚩 중복된 festivals 호출과 오타를 싹 정리했습니다.
       .eq('user_email', userEmail)
       .order('created_at', { ascending: false });
 

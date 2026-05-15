@@ -19,16 +19,8 @@ router.get('/festival/:festivalId', async (req: Request, res: Response) => {
   try {
     const { data, error } = await supabase
       .from('reviews')
-      .select(`
-        id,
-        user_email,
-        festival_id,
-        rating,
-        content,
-        created_at,
-        updated_at,
-        profiles (name, profile_photo)
-      `)
+      .select('id, user_email, festival_id, rating, content, created_at, profiles(name, profilePhoto)') 
+      // 🚩 profile_photo -> profilePhoto (DB 컬럼명 확인 필요)
       .eq('festival_id', festivalId)
       .order('created_at', { ascending: false });
 

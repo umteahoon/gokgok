@@ -142,7 +142,7 @@ export default function FestivalDetail() {
               </div>
             ))}
           </motion.section>
-        ) : activeTab === "상품상세" ? (
+        ) : activeTab === "축제상세" ? (
           <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             <div className="flex flex-col gap-0 -mx-5 md:-mx-0"> 
               {detailImages.map((src, index) => (<img key={index} src={src} alt="상세이미지" className="w-full h-auto display-block" />))}
