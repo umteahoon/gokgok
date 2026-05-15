@@ -68,6 +68,7 @@ app.use('/api', contactRouter);
 // 2. 관리자 관련 (문의 목록조회 /api/admin/contacts 등 처리)
 app.use('/api/admin', contactRouter); 
 app.use('/api/admin', adminRouter);
+app.use('/api/user/contact', contactRouter);
 
 // 3. 기타 기능
 app.use('/api/interactions', favoritesRouter); 

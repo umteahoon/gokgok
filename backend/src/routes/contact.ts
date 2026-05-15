@@ -27,6 +27,8 @@ const verifyUserSelf = (req: Request, res: Response, next: any) => {
   }
 };
 
+
+
 /**
  * [사용자 영역]
  */
@@ -68,9 +70,13 @@ router.get('/contact/search/:email', verifyUserSelf, async (req, res) => {
  */
 
 // 3. 전체 목록 조회: GET /api/admin/contacts/all
-router.get('/contacts/all', async (req, res) => {
+router.get('/all', async (req, res) => {
   try {
-    const { data, error } = await supabase.from('contacts').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
     if (error) throw error;
     res.json({ success: true, data });
   } catch (error: any) {
