@@ -155,7 +155,7 @@ export function Layout({ children }: LayoutProps) {
           <div className="flex-shrink-0 z-10">
             <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group flex items-center">
               <img 
-                src="/favicon.ico" 
+                src="/gokgok_logo.svg" 
                 alt="곡곡 로고" 
                 className="h-8 md:h-10 w-auto object-contain transition-opacity hover:opacity-80" 
               />

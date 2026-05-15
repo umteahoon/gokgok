@@ -21,9 +21,9 @@ router.get('/favorites/:userEmail', async (req: Request, res: Response) => {
         id,
         user_email,
         festival_id,
-        created_at
-        /* festivals 테이블이 실제 DB에 있을 때만 아래 줄 주석 해제 */
-        /* , festivals (*) */
+        created_at,
+        festivals ,
+        festivals (*) 
       `)
       .eq('user_email', userEmail)
       .order('created_at', { ascending: false });

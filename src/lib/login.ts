@@ -142,6 +142,34 @@ export const deleteAccount = async (email: string): Promise<{ success: boolean; 
   }
 };
 
+// 아이디 찾기
+export const findUserId = async (email: string): Promise<{ success: boolean; userId?: string; message?: string }> => {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/find-id`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    return await response.json();
+  } catch (error) {
+    return { success: false, message: '서버 통신 오류' };
+  }
+};
+
+// 비밀번호 재설정
+export const resetPassword = async (id: string, email: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, email, newPassword }),
+    });
+    return await response.json();
+  } catch (error) {
+    return { success: false, message: '서버 통신 오류' };
+  }
+};
+
 export const updateProfilePhoto = async (photoBase64: string): Promise<User | null> => {
   const user = getCurrentUser();
   if (!user) return null;

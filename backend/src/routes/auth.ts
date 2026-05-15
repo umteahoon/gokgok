@@ -75,4 +75,58 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
+// [아이디 찾기] 이메일로 가입된 아이디(id) 조회
+router.post('/find-id', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (error || !data) {
+      return res.status(404).json({ success: false, message: '해당 이메일로 가입된 아이디가 없습니다.' });
+    }
+
+    res.json({ success: true, userId: data.id });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+  }
+});
+
+// [비밀번호 변경] 아이디와 이메일이 일치하는 유저의 비밀번호를 새로 덮어씌움
+router.post('/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { id, email, newPassword } = req.body;
+
+    // 1. 해당 아이디와 이메일을 가진 유저가 있는지 먼저 확인
+    const { data: user, error: userError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', id)
+      .eq('email', email)
+      .maybeSingle();
+
+    if (userError || !user) {
+      return res.status(404).json({ success: false, message: '일치하는 사용자 정보를 찾을 수 없습니다.' });
+    }
+
+    // 2. 새 비밀번호 암호화
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 3. 비밀번호 업데이트
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ password: hashedPassword })
+      .eq('id', id);
+
+    if (updateError) throw updateError;
+
+    res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: '비밀번호 변경 중 오류가 발생했습니다.' });
+  }
+});
+
 export default router;
