@@ -39,6 +39,7 @@ export default function MyPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editImages, setEditImages] = useState<FileList | null>(null);
+  
 
   const allFestivals = [...topFestivals, ...mockFestivals];
 
