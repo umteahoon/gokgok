@@ -125,21 +125,19 @@ export function Layout({ children }: LayoutProps) {
       <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#111111] transition-colors duration-300">
         <div className="relative w-full max-w-[1400px] mx-auto px-4 md:px-8 flex items-center justify-between h-16">
           
-          {/* 로고 영역 */}
           <div className="flex-shrink-0 z-10">
             <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group flex items-center">
               <img src="/gokgok_logo.svg" alt="곡곡 로고" className="h-12 md:h-16 w-auto object-contain transition-opacity hover:opacity-80 dark:invert" />
             </NavLink>
           </div>
 
-          {/* ✅ 중앙 네비게이션: items-stretch와 h-full로 높이를 꽉 채움 */}
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 h-full items-stretch space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (
               <NavLink 
                 key={item.label} 
                 to={item.path}
                 className={({ isActive }) =>
-                  `flex items-center text-[15px] lg:text-base transition-all whitespace-nowrap relative ${
+                  `flex items-center text-[15px] lg:text-base transition-all whitespace-nowrap ${
                     isActive 
                       ? 'font-bold text-gray-900 dark:text-white' 
                       : 'font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
@@ -147,19 +145,18 @@ export function Layout({ children }: LayoutProps) {
                 }
               >
                 {({ isActive }) => (
-                  <>
+                  <span className="relative">
                     {item.label}
-                    {/* ✅ 강조선: bottom-0으로 설정하여 헤더 박스 안쪽 하단에 고정 */}
+                    {/* ✅ 강조선: 텍스트 바로 밑(-bottom-1)에 위치하도록 수정 */}
                     {isActive && (
-                      <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478] rounded-t-full" />
+                      <span className="absolute -bottom-1.5 left-0 right-0 h-[3px] bg-[#FF3478] rounded-full" />
                     )}
-                  </>
+                  </span>
                 )}
               </NavLink>
             ))}
           </nav>
 
-          {/* 우측 유틸리티 영역 */}
           <div className="hidden md:flex items-center justify-end gap-6 z-10">
             {currentUser && (
               <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">

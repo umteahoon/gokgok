@@ -59,7 +59,7 @@ export default function AdminDashboard() {
         fetch(`${API_BASE_URL}/users`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/posts`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/security-logs`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_BASE_URL}/contacts/all`, { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API_BASE_URL}/admin/contacts/all`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       setStats(await statsRes.json());

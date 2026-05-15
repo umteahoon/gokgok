@@ -1,3 +1,4 @@
+// 주환 - 2026.05.15: Search 페이지 (축제 메인 배너 줌인 현상 해결, 카운터 + 제거 적용 완료)
 import { useState, useRef, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom"; 
@@ -22,7 +23,6 @@ export default function Search() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // ✅ 각 섹션의 스크롤 제어를 위한 Ref 추가
   const bestScrollRef = useRef<HTMLDivElement>(null);
   const risingScrollRef = useRef<HTMLDivElement>(null);
   const tasteScrollRef = useRef<HTMLDivElement>(null);
@@ -82,11 +82,10 @@ export default function Search() {
     setWishlistedIds(updated.map((id: string | number) => String(id)));
   };
 
-  // ✅ 버튼 클릭 시 스크롤 함수
   const handleScroll = (ref: React.RefObject<HTMLDivElement>, direction: "left" | "right") => {
     if (ref.current) {
       const { scrollLeft, clientWidth } = ref.current;
-      const moveAmount = clientWidth * 0.8; // 화면 너비의 80%만큼 이동
+      const moveAmount = clientWidth * 0.8; 
       ref.current.scrollTo({
         left: direction === "left" ? scrollLeft - moveAmount : scrollLeft + moveAmount,
         behavior: "smooth"
@@ -101,8 +100,8 @@ export default function Search() {
     <div className="w-full bg-white dark:bg-[#111111] text-[#111111] dark:text-white pb-20 font-sans overflow-x-hidden pt-10 rounded-t-3xl transition-colors">
       <main className="container mx-auto">
         
-        {/* 상단 히어로 배너 */}
-        <section className="relative w-[calc(100%-2rem)] mx-auto h-[250px] md:h-[380px] mb-16 bg-black overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] shadow-xl">
+        {/* ✅ 배너 높이를 380px/480px로 키워서 이미지가 너무 확대되어 잘리는 현상 방지 */}
+        <section className="relative w-[calc(100%-2rem)] mx-auto h-[380px] md:h-[480px] mb-16 bg-black overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] shadow-xl">
           <AnimatePresence mode="wait">
             <motion.div key={currentSlide} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }} className="absolute inset-0">
               <Link to={`/festival/${heroItems[currentSlide].id}`} className="relative block h-full w-full">
@@ -123,7 +122,8 @@ export default function Search() {
             <button onClick={() => setIsPaused(!isPaused)} className="mr-4 hover:scale-110 transition-transform">
               {isPaused ? <Play size={14} fill="white" /> : <Pause size={14} fill="white" />}
             </button>
-            <span className="text-xs font-bold tracking-[0.2em] font-mono">{String(currentSlide + 1).padStart(2, '0')} / {String(heroItems.length).padStart(2, '0')}+</span>
+            {/* ✅ 카운터 뒤에 있던 '+' 기호 제거 완료 */}
+            <span className="text-xs font-bold tracking-[0.2em] font-mono">{String(currentSlide + 1).padStart(2, '0')} / {String(heroItems.length).padStart(2, '0')}</span>
           </div>
         </section>
 
@@ -193,7 +193,7 @@ export default function Search() {
                         <div className="relative mb-3 aspect-[4/5] rounded-2xl overflow-hidden shadow-sm bg-gray-50 dark:bg-[#222]">
                           <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
                           <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-3 right-3 z-10 p-1 cursor-pointer"><Heart className={`w-6 h-6 drop-shadow-md transition-colors ${wishlistedIds.includes(String(festival.id)) ? "fill-[#FF3478] text-[#FF3478]" : "text-white/70"}`} /></div>
-                          <div className="absolute top-3 left-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-white bg-[#FF3478]/90 backdrop-blur-sm shadow-md">{getStatusLabel(festival.status)}</span></div>
+                          <div className="absolute top-3 left-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold text-white bg-[#FF3478]/90 backdrop-blur-sm shadow-md">{getStatusLabel(festival.status || "")}</span></div>
                           <div className="absolute bottom-0 left-0 leading-none text-white font-black italic text-5xl opacity-80 px-2 drop-shadow-lg">{idx + 1}</div>
                         </div>
                         <div className="px-1"><h3 className="font-bold text-[15px] line-clamp-1 text-gray-900 dark:text-white group-hover/card:text-[#FF3478]">{festival.title}</h3><p className="text-[12px] text-gray-500 mt-1">{festival.location}</p></div>
@@ -239,7 +239,7 @@ export default function Search() {
                   <div ref={tasteScrollRef} className="flex gap-6 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory pb-4">
                     {filteredList.map((festival) => (
                       <Link to={`/festival/${festival.id}`} key={`holic-${festival.id}`} className="min-w-[280px] md:min-w-[350px] snap-start group/card cursor-pointer">
-                        <div className="relative mb-4 aspect-[16/9] rounded-3xl overflow-hidden shadow-md bg-gray-100 dark:bg-[#222]"><img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105" /></div>
+                        <div className="relative mb-4 aspect-[16/9] rounded-3xl overflow-hidden shadow-md bg-gray-100 dark:bg-[#222]"><img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105" /><div className="absolute top-3 left-3 flex flex-col gap-1"><span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white w-fit ${festival.status === 'ended' ? 'bg-gray-500/80' : 'bg-[#FF3478]/90'} backdrop-blur-sm shadow-md`}>{getStatusLabel(festival.status || "")}</span></div></div>
                         <h3 className="font-bold text-[18px] text-gray-900 dark:text-white group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
                         <p className="text-[13px] text-gray-500 dark:text-gray-400 mt-1">{festival.location}</p>
                       </Link>
@@ -274,7 +274,7 @@ export default function Search() {
                 </section>
               </motion.div>
             ) : (
-              /* 지도보기 탭 (기존 로직 유지) */
+              /* 지도보기 탭 */
               <motion.div key="map-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[650px]">
                 <div className="lg:col-span-7 bg-[#F8F9FA] dark:bg-[#1a1a1a] rounded-[3rem] flex items-center justify-center border border-gray-100 dark:border-[#333] overflow-hidden relative shadow-inner p-4"><KoreaMap selectedRegion={selectedRegion} onRegionSelect={(id: any) => setSelectedRegion(id === selectedRegion ? "" : id)} /><div className="absolute bottom-6 left-8 bg-white/80 dark:bg-black/80 backdrop-blur-md px-5 py-2.5 rounded-full shadow-sm flex items-center gap-2"><MapPin size={16} className="text-[#FF3478]" /><p className="text-sm font-bold text-gray-600 dark:text-gray-300">{selectedRegion ? `${REGION_NAME_MAP[selectedRegion]} 지역 탐색 중` : "지도의 지역을 클릭해보세요"}</p></div></div>
                 <div className="lg:col-span-5 flex flex-col">

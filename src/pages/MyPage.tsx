@@ -2,12 +2,12 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   User, Camera, LogOut, Key, UserX, Heart, 
-  ChevronRight, Settings, MessageSquare, FileText, Pencil, Trash2, X, ImagePlus
+  ChevronRight, Settings, MessageSquare, FileText, Pencil, Trash2, X, ImagePlus, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { mockFestivals, topFestivals } from "@/lib/index";
@@ -34,7 +34,6 @@ export default function MyPage() {
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 수정 모달 관련 상태
   const [editingPost, setEditingPost] = useState<any | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
@@ -43,6 +42,7 @@ export default function MyPage() {
   const allFestivals = [...topFestivals, ...mockFestivals];
 
   const loadUserData = async () => {
+    // 뒤로가기 시 하얀 화면 방지를 위해 로딩 시작 시점에 유저 체크를 먼저 함
     const user = getCurrentUser();
     if (!user) {
       setIsLoading(false);
@@ -60,7 +60,6 @@ export default function MyPage() {
       const postRes = await fetch(`${API_BASE_URL}/api/community`);
       const postData = await postRes.json();
       if (postData.success) {
-        // 내가 작성한 글 필터링
         const userPosts = postData.posts.filter((p: any) => p.author_email === user.email);
         setMyPosts(userPosts);
       }
@@ -78,7 +77,7 @@ export default function MyPage() {
     return () => window.removeEventListener('focus', loadUserData);
   }, []);
 
-  // --- 프로필 사진 수정 로직 ---
+  // --- 프로필 사진 수정 ---
   const handleProfilePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && currentUser) {
@@ -95,7 +94,6 @@ export default function MyPage() {
     }
   };
 
-  // --- 게시글 수정 로직 (이미지 포함) ---
   const openEditModal = (post: any) => {
     setEditingPost(post);
     setEditTitle(post.title);
@@ -105,29 +103,23 @@ export default function MyPage() {
 
   const handleEditSubmit = async () => {
     if (!editingPost || !currentUser) return;
-    
     try {
       const formData = new FormData();
       formData.append("author_email", currentUser.email);
       formData.append("title", editTitle);
       formData.append("content", editContent);
-      
       if (editImages && editImages.length > 0) {
         Array.from(editImages).forEach(file => formData.append("images", file));
       }
-
       const response = await fetch(`${API_BASE_URL}/api/community/${editingPost.id}`, {
         method: "PUT",
         body: formData 
       });
-      
       const data = await response.json();
       if (data.success) {
-        alert("글과 이미지가 성공적으로 수정되었습니다.");
+        alert("글과 이미지가 수정되었습니다.");
         setEditingPost(null);
         loadUserData();
-      } else {
-        alert(data.message || "수정 권한이 없습니다.");
       }
     } catch (e) {
       alert("수정 중 오류가 발생했습니다.");
@@ -160,10 +152,34 @@ export default function MyPage() {
     }
   };
 
-  if (!currentUser) return null;
+  // ✅ 뒤로가기 시 하얀 화면 방지: 로딩 중에도 배경색 유지
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#111111] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#FF3478]" />
+      </div>
+    );
+  }
+
+  // 로그인 안된 상태 UI
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#111111] flex items-center justify-center">
+        <div className="text-center px-6">
+          <div className="w-20 h-20 bg-gray-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-6"><User className="w-10 h-10 text-gray-300" /></div>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">로그인이 필요해요</h2>
+          <Button className="w-full max-w-[280px] h-14 bg-[#FF3478] text-white font-bold rounded-2xl shadow-lg mt-8" onClick={() => navigate("/notmypage")}>로그인 / 회원가입</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#111111] font-sans text-gray-900 dark:text-zinc-100 transition-colors">
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      className="min-h-screen bg-white dark:bg-[#111111] font-sans text-gray-900 dark:text-zinc-100 transition-colors"
+    >
       <main className="max-w-[1000px] mx-auto pt-12 pb-24 px-5">
         
         <header className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-12">
@@ -195,14 +211,14 @@ export default function MyPage() {
                 <div className="w-10 h-10 rounded-xl bg-[#FF3478]/10 flex items-center justify-center"><Heart size={18} className="text-[#FF3478]" fill="#FF3478" /></div>
                 <div className="flex flex-col">
                   <span className="text-[11px] font-bold text-gray-400 uppercase">관심 목록</span>
-                  <span className="text-xl font-black">{isLoading ? '...' : savedFestivals.length}</span>
+                  <span className="text-xl font-black">{savedFestivals.length}</span>
                 </div>
               </div>
               <div className="px-5 py-4 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl flex items-center gap-4 min-w-[150px]">
                 <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-zinc-800 flex items-center justify-center"><FileText size={18} className="text-gray-500" /></div>
                 <div className="flex flex-col">
                   <span className="text-[11px] font-bold text-gray-400 uppercase">작성한 글</span>
-                  <span className="text-xl font-black">{isLoading ? '...' : myPosts.length}</span>
+                  <span className="text-xl font-black">{myPosts.length}</span>
                 </div>
               </div>
             </div>
@@ -211,30 +227,21 @@ export default function MyPage() {
 
         <Tabs defaultValue="saved" className="w-full">
           <TabsList className="flex w-full border-b border-gray-100 dark:border-zinc-800 bg-transparent h-auto p-0 mb-10 gap-8 md:gap-12">
-            <TabsTrigger 
-              value="saved" 
-              className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent"
-            >
-              관심 목록
-            </TabsTrigger>
-            <TabsTrigger 
-              value="posts" 
-              className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent"
-            >
-              작성한 글
-            </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
-              className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent"
-            >
-              계정 설정
-            </TabsTrigger>
+            <TabsTrigger value="saved" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent">관심 목록</TabsTrigger>
+            <TabsTrigger value="posts" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent">작성한 글</TabsTrigger>
+            <TabsTrigger value="settings" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent">계정 설정</TabsTrigger>
           </TabsList>
 
           <TabsContent value="saved" className="outline-none">
             {savedFestivals.length > 0 ? (
               <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {savedFestivals.map((f) => (<motion.div key={f.id} variants={staggerItem}><FestivalCard festival={f} /></motion.div>))}
+                {savedFestivals.map((f) => (
+                  <motion.div key={f.id} variants={staggerItem}>
+                    <Link to={`/festival/${f.id}`} className="block h-full cursor-pointer">
+                      <FestivalCard festival={f} />
+                    </Link>
+                  </motion.div>
+                ))}
               </motion.div>
             ) : (
               <div className="text-center py-24 bg-gray-50 dark:bg-zinc-900/50 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-zinc-800">
@@ -254,13 +261,25 @@ export default function MyPage() {
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex justify-between items-start mb-2">
                       <h3 className="text-[20px] font-black truncate">{post.title}</h3>
                       <button onClick={() => openEditModal(post)} className="p-2 text-gray-300 hover:text-[#FF3478] transition-colors"><Pencil size={18} /></button>
                     </div>
+                    
+                    {/* ✅ 좋아요(하트) 개수 표시 추가 */}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex items-center gap-1 text-[#FF3478]">
+                        <Heart size={14} fill="#FF3478" />
+                        <span className="text-xs font-bold">{post.likes_count || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-gray-400">
+                        <MessageSquare size={14} />
+                        <span className="text-xs font-bold">{post.commentsList?.length || 0}</span>
+                      </div>
+                    </div>
+
                     <p className="text-[15px] text-gray-500 dark:text-zinc-400 leading-relaxed mb-6">{post.content}</p>
                     
-                    {/* ✅ 댓글 섹션: 최대 높이 고정 및 스크롤 적용 */}
                     <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-2xl p-5">
                       <p className="text-[13px] font-bold text-gray-400 mb-4 flex items-center gap-2">
                         <MessageSquare size={14} /> 댓글 {post.commentsList?.length || 0}개
@@ -291,8 +310,8 @@ export default function MyPage() {
               <section>
                 <h3 className="text-xl font-black mb-6 flex items-center gap-2"><User size={20} className="text-[#FF3478]" /> 개인정보 관리</h3>
                 <div className="space-y-4">
-                  <div className="space-y-1"><Label className="ml-1">이름</Label><Input value={currentUser.name} disabled className="h-14 rounded-2xl bg-gray-50 border-none font-bold" /></div>
-                  <div className="space-y-1"><Label className="ml-1">이메일 계정</Label><Input value={currentUser.email} disabled className="h-14 rounded-2xl bg-gray-50 border-none font-bold" /></div>
+                  <div className="space-y-1"><Label className="ml-1">이름</Label><Input value={currentUser.name} disabled className="h-14 rounded-2xl bg-gray-50 dark:bg-zinc-900 border-none font-bold" /></div>
+                  <div className="space-y-1"><Label className="ml-1">이메일 계정</Label><Input value={currentUser.email} disabled className="h-14 rounded-2xl bg-gray-50 dark:bg-zinc-900 border-none font-bold" /></div>
                 </div>
               </section>
               <section className="pt-10 border-t border-gray-100 dark:border-zinc-800">
@@ -317,7 +336,7 @@ export default function MyPage() {
         </Tabs>
       </main>
 
-      {/* --- 수정 모달 --- */}
+      {/* 수정 모달 */}
       <AnimatePresence>
         {editingPost && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
@@ -335,12 +354,8 @@ export default function MyPage() {
                   <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">내용</label>
                   <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="w-full h-32 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-zinc-700 rounded-2xl p-4 font-medium outline-none focus:ring-2 focus:ring-[#FF3478]/20 resize-none transition-all" />
                 </div>
-
-                {/* ✅ 이미지 수정 영역: 기존 사진 표시 및 새 사진 선택 기능 */}
                 <div>
                   <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">사진 수정 (기존 또는 새 이미지)</label>
-                  
-                  {/* 기존 사진 또는 선택한 사진 미리보기 */}
                   <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
                     {editImages ? (
                       Array.from(editImages).map((file, i) => (
@@ -357,7 +372,6 @@ export default function MyPage() {
                       ))
                     )}
                   </div>
-
                   <div 
                     onClick={() => postFileInputRef.current?.click()}
                     className="w-full h-20 border-2 border-dashed border-gray-200 dark:border-zinc-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all text-gray-400"
@@ -376,6 +390,6 @@ export default function MyPage() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   );
 }

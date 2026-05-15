@@ -79,9 +79,7 @@ export default function Contact() {
 
     try {
       // 🚩 수정: 쿼리스트링(?email=) 대신 경로(/이메일) 방식으로 호출
-      const response = await fetch(
-        `${API_BASE_URL}/api/contact/${encodeURIComponent(lookupEmail.trim())}`
-      );
+      const response = await fetch(`${API_BASE_URL}/api/contact/search/${encodeURIComponent(lookupEmail)}`);
 
       // 서버 응답이 OK가 아닐 경우 (404 등) HTML 에러 페이지가 올 수 있으므로 미리 체크
       if (!response.ok) {
