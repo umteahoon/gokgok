@@ -156,7 +156,7 @@ export default function Community() {
           {/* Header (NOL Blue 테마 적용) */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-blue-50 pb-8">
             <div className="text-left">
-              <h1 className="text-4xl font-black text-gray-900 mb-3 tracking-tighter">수다 <span className="text-blue-600">.</span></h1>
+              <h1 className="text-4xl font-black text-gray-900 mb-3 tracking-tighter">수다<span className="text-blue-600"></span></h1>
               <p className="text-gray-400 font-bold text-sm uppercase tracking-widest">Festival Stories</p>
             </div>
             <Button 

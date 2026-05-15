@@ -22,7 +22,6 @@ router.get('/favorites/:userEmail', async (req: Request, res: Response) => {
         user_email,
         festival_id,
         created_at,
-        festivals ,
         festivals (*) 
       `)
       .eq('user_email', userEmail)
