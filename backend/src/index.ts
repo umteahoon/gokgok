@@ -17,6 +17,7 @@ import reviewRouter from './routes/reviews ';
 import adminRouter from './routes/admin';
 import communityRouter from './routes/community'; 
 import contactRouter from './routes/contact'; 
+import festivalRouter from './routes/festivals';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -72,6 +73,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/interactions', favoritesRouter); 
 app.use('/api/reviews', reviewRouter);          
 app.use('/api/community', communityRouter);   
+app.use('/api/festivals', festivalRouter);
 
 // --- [인증 및 계정 관리 API] ---
 
