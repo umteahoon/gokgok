@@ -121,7 +121,7 @@ export function Layout({ children }: LayoutProps) {
     { label: '마당', path: ROUTE_PATHS?.HOME || '/' },
     { label: '축제', path: ROUTE_PATHS?.SEARCH || '/search' },
     { label: '수다', path: ROUTE_PATHS?.COMMUNITY || '/community' },
-    { label: '내 정보', path: ROUTE_PATHS?.MYPAGE || '/mypage' },,
+    { label: '내 정보', path: ROUTE_PATHS?.MYPAGE || '/mypage' }
   ];
 
   const handleLogout = () => {
@@ -151,16 +151,17 @@ export function Layout({ children }: LayoutProps) {
       <header className="sticky top-0 z-50 w-full border-b border-foreground/10 bg-background/80 backdrop-blur-md py-4 transition-colors duration-300">
         <div className="relative w-full max-w-[1400px] mx-auto pl-4 pr-2 md:pl-8 md:pr-2 flex items-center justify-between h-8">
 
+          {/* ▼▼▼ 로고 수정된 부분 ▼▼▼ */}
           <div className="flex-shrink-0 z-10">
-            <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group">
-              <span
-                className="text-2xl md:text-3xl font-bold text-foreground transition-colors"
-                style={{ fontFamily: 'GmarketSansBold' }}
-              >
-                곡곡
-              </span>
+            <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group flex items-center">
+              <img 
+                src="/favicon.ico" 
+                alt="곡곡 로고" 
+                className="h-8 md:h-10 w-auto object-contain transition-opacity hover:opacity-80" 
+              />
             </NavLink>
           </div>
+          {/* ▲▲▲ 로고 수정된 부분 ▲▲▲ */}
 
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (

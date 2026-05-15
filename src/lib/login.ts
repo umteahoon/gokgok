@@ -44,14 +44,21 @@ const emitAuthChange = () => {
 
 /**
  * 1. 회원가입
+ * 데이터 전송 시 키 값을 명시적으로 지정하여 순서 꼬임을 방지했습니다.
  * @path POST /api/auth/signup
  */
-export const signup = async (id:string, email: string, password: string, name: string): Promise<{ success: boolean; message: string }> => {
+export const signup = async (email: string, id: string, password: string, name: string): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await fetch(`${API_URL}/api/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, email, password, name }),
+      // 🚩 키(Key)를 명시적으로 매칭하여 백엔드 req.body 구조와 일치시킴
+      body: JSON.stringify({ 
+        id: id,       // 사용자가 입력한 아이디
+        email: email, // 사용자가 입력한 이메일
+        password: password, 
+        name: name 
+      }),
     });
     
     const data = await response.json();
@@ -77,7 +84,6 @@ export const login = async (id: string, password: string): Promise<{ success: bo
     const data = await response.json();
 
     if (data.success) {
-      // 서버에서 받은 JWT 토큰과 유저 정보를 로컬 스토리지에 저장
       localStorage.setItem(TOKEN_KEY, data.token);
       localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(data.user));
       
@@ -103,60 +109,43 @@ export const logout = () => {
 
 // --- 상태 확인 및 권한 함수 ---
 
-/**
- * 로그인 여부 확인
- */
 export const isLoggedIn = (): boolean => {
   return getToken() !== null;
 };
 
-/**
- * 관리자 권한 여부 확인
- */
 export const isAdmin = (): boolean => {
   const user = getCurrentUser();
   return user?.role === 'ADMIN';
 };
 
-// --- 페이지 연동용 추가 함수 (임시 구현) ---
+// --- 기타 함수들 ---
 
-/**
- * 비밀번호 변경
- */
 export const changePassword = async (email: string, currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> => {
-  // TODO: 백엔드 /api/auth/change-password 구현 필요
   return { success: false, message: '비밀번호 변경 기능은 현재 준비 중입니다.' };
 };
 
-// 회원 탈퇴 실제 구현
 export const deleteAccount = async (email: string): Promise<{ success: boolean; message: string }> => {
   try {
     const response = await fetch(`${API_URL}/api/auth/delete`, {
-      method: 'DELETE', // 삭제는 DELETE 메소드를 사용합니다.
+      method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email }),
     });
 
     const data = await response.json();
-    
     if (data.success) {
-      logout(); // 탈퇴 성공 시 로컬 정보도 지워줍니다.
+      logout();
     }
-    
     return { success: data.success, message: data.message };
   } catch (error) {
     return { success: false, message: '서버 통신 오류가 발생했습니다.' };
   }
 };
 
-/**
- * 프로필 사진 업데이트
- */
 export const updateProfilePhoto = async (photoBase64: string): Promise<User | null> => {
   const user = getCurrentUser();
   if (!user) return null;
   
-  // 현재는 로컬 정보만 업데이트하며, 실제 구현 시 백엔드 API 연동이 필요합니다.
   const updatedUser = { ...user, profilePhoto: photoBase64 };
   localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(updatedUser));
   emitAuthChange();
