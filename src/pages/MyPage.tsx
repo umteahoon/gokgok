@@ -118,7 +118,7 @@ export default function MyPage() {
 
       const response = await fetch(`${API_BASE_URL}/api/community/${editingPost.id}`, {
         method: "PUT",
-        body: formData // 이미지가 포함될 수 있으므로 JSON 대신 FormData 사용
+        body: formData 
       });
       
       const data = await response.json();
@@ -160,23 +160,12 @@ export default function MyPage() {
     }
   };
 
-  if (!currentUser) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center px-6">
-          <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6"><User className="w-10 h-10 text-gray-300" /></div>
-          <h2 className="text-2xl font-black text-gray-900 mb-2">로그인이 필요해요</h2>
-          <Button className="w-full max-w-[280px] h-14 bg-[#FF3478] text-white font-bold rounded-2xl shadow-lg mt-8" onClick={() => navigate("/notmypage")}>로그인 / 회원가입</Button>
-        </div>
-      </div>
-    );
-  }
+  if (!currentUser) return null;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#111111] font-sans text-gray-900 dark:text-zinc-100 transition-colors">
       <main className="max-w-[1000px] mx-auto pt-12 pb-24 px-5">
         
-        {/* --- 프로필 영역 --- */}
         <header className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-12">
           <div className="relative group shrink-0">
             <div className="relative">
@@ -222,7 +211,6 @@ export default function MyPage() {
 
         <Tabs defaultValue="saved" className="w-full">
           <TabsList className="flex w-full border-b border-gray-100 dark:border-zinc-800 bg-transparent h-auto p-0 mb-10 gap-8 md:gap-12">
-            {/* ✅ 배경색, 테두리, 포커스 링 모두 제거된 깔끔한 탭 스타일 */}
             <TabsTrigger 
               value="saved" 
               className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none data-[state=active]:bg-transparent"
@@ -255,31 +243,29 @@ export default function MyPage() {
             )}
           </TabsContent>
 
-          {/* ✅ 작성한 글: 이미지 수정 및 댓글 확인 기능 포함 */}
           <TabsContent value="posts" className="outline-none">
             <div className="grid grid-cols-1 gap-6">
               {myPosts.length > 0 ? myPosts.map((post) => (
                 <div key={post.id} className="p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] relative group hover:border-[#FF3478]/30 transition-all flex flex-col md:flex-row gap-8">
-                  {/* 게시글 이미지 (있을 경우) */}
                   {post.images && post.images.length > 0 && (
                     <div className="w-full md:w-48 h-48 shrink-0 rounded-3xl overflow-hidden bg-gray-50">
                       <img src={`https://ofslnmgvaiycywllsosc.supabase.co/storage/v1/object/public/community_images/${post.images[0]}`} className="w-full h-full object-cover" alt="post" />
                     </div>
                   )}
 
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-[20px] font-black">{post.title}</h3>
+                      <h3 className="text-[20px] font-black truncate">{post.title}</h3>
                       <button onClick={() => openEditModal(post)} className="p-2 text-gray-300 hover:text-[#FF3478] transition-colors"><Pencil size={18} /></button>
                     </div>
                     <p className="text-[15px] text-gray-500 dark:text-zinc-400 leading-relaxed mb-6">{post.content}</p>
                     
-                    {/* ✅ 상대방 댓글 확인 섹션 */}
+                    {/* ✅ 댓글 섹션: 최대 높이 고정 및 스크롤 적용 */}
                     <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-2xl p-5">
                       <p className="text-[13px] font-bold text-gray-400 mb-4 flex items-center gap-2">
                         <MessageSquare size={14} /> 댓글 {post.commentsList?.length || 0}개
                       </p>
-                      <div className="space-y-4">
+                      <div className="space-y-4 max-h-[160px] overflow-y-auto pr-2 no-scrollbar">
                         {post.commentsList && post.commentsList.length > 0 ? post.commentsList.map((comment: any) => (
                           <div key={comment.id} className="text-[14px] border-b border-gray-100 dark:border-zinc-800 last:border-0 pb-3">
                             <span className="font-black mr-2">{comment.author}</span>
@@ -331,7 +317,7 @@ export default function MyPage() {
         </Tabs>
       </main>
 
-      {/* --- 수정 모달 (이미지 수정 추가) --- */}
+      {/* --- 수정 모달 --- */}
       <AnimatePresence>
         {editingPost && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
@@ -349,15 +335,35 @@ export default function MyPage() {
                   <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">내용</label>
                   <textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="w-full h-32 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-zinc-700 rounded-2xl p-4 font-medium outline-none focus:ring-2 focus:ring-[#FF3478]/20 resize-none transition-all" />
                 </div>
-                {/* ✅ 게시글 이미지 수정 필드 추가 */}
+
+                {/* ✅ 이미지 수정 영역: 기존 사진 표시 및 새 사진 선택 기능 */}
                 <div>
-                  <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">이미지 변경</label>
+                  <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">사진 수정 (기존 또는 새 이미지)</label>
+                  
+                  {/* 기존 사진 또는 선택한 사진 미리보기 */}
+                  <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
+                    {editImages ? (
+                      Array.from(editImages).map((file, i) => (
+                        <div key={i} className="relative w-20 h-20 shrink-0">
+                          <img src={URL.createObjectURL(file)} className="w-full h-full object-cover rounded-xl border border-[#FF3478]" alt="new-preview" />
+                          <div className="absolute top-1 left-1 bg-[#FF3478] text-white text-[8px] px-1 rounded">NEW</div>
+                        </div>
+                      ))
+                    ) : (
+                      editingPost.images?.map((img: string, i: number) => (
+                        <div key={i} className="w-20 h-20 shrink-0">
+                          <img src={`https://ofslnmgvaiycywllsosc.supabase.co/storage/v1/object/public/community_images/${img}`} className="w-full h-full object-cover rounded-xl opacity-60" alt="existing" />
+                        </div>
+                      ))
+                    )}
+                  </div>
+
                   <div 
                     onClick={() => postFileInputRef.current?.click()}
-                    className="w-full h-24 border-2 border-dashed border-gray-200 dark:border-zinc-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all text-gray-400"
+                    className="w-full h-20 border-2 border-dashed border-gray-200 dark:border-zinc-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all text-gray-400"
                   >
-                    <ImagePlus size={24} />
-                    <span className="text-[12px] mt-1">{editImages ? `${editImages.length}개의 파일 선택됨` : "새 이미지를 선택하세요"}</span>
+                    <ImagePlus size={20} />
+                    <span className="text-[11px] mt-1">{editImages ? `${editImages.length}개의 새 파일 선택됨` : "사진 변경하기 (기존 사진 대체)"}</span>
                   </div>
                   <input type="file" ref={postFileInputRef} className="hidden" multiple accept="image/*" onChange={(e) => setEditImages(e.target.files)} />
                 </div>
