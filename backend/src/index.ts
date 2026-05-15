@@ -1,10 +1,9 @@
 /**
- * 곡곡 백엔드 메인 서버 - 엄태훈 최종 통합본
- * 주요 기능: 회원가입, 로그인, 아이디/비번 찾기, 회원탈퇴, 보안 로그 등
+ * 곡곡 백엔드 메인 서버 - 엄태훈 최종 통합본 (경로 최적화 버전)
  */
 
 import dotenv from 'dotenv'; 
-dotenv.config(); // 최상단에서 환경변수 로드
+dotenv.config();
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
@@ -14,7 +13,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // 라우터 임포트
 import favoritesRouter from "./routes/favorites"; 
-import reviewRouter from './routes/reviews '
+import reviewRouter from './routes/reviews '; 
 import adminRouter from './routes/admin';
 import communityRouter from './routes/community'; 
 import contactRouter from './routes/contact'; 
@@ -22,16 +21,13 @@ import contactRouter from './routes/contact';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// [보안] 필수 환경변수 체크
 const secretKey = process.env.JWT_SECRET || 'gokgok-secret-key';
 
-// Supabase 클라이언트 초기화
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// CORS 설정
 app.use(cors({
   origin: [
     'https://capstone-gokgok.netlify.app', 
@@ -62,14 +58,20 @@ const verifyAdminInternal = (req: Request, res: Response, next: any) => {
   }
 };
 
-// --- [API 경로 매핑] ---
-app.use('/api', contactRouter);
-app.use('/api/admin', contactRouter);
+// --- [API 경로 매핑 - 순서 중요!] ---
+
+// 1. 문의사항 관련 (중복 선언 제거 및 하나로 통합)
+// /api/contact, /api/contact/:email 등을 처리합니다.
+app.use('/api', contactRouter); 
+
+// 2. 관리자 관련 (문의 목록조회 /api/admin/contacts 등 처리)
+app.use('/api/admin', contactRouter); 
+app.use('/api/admin', adminRouter);
+
+// 3. 기타 기능
 app.use('/api/interactions', favoritesRouter); 
 app.use('/api/reviews', reviewRouter);          
-app.use('/api/admin', adminRouter);             
-app.use('/api/community', communityRouter);  
-app.use('/api', contactRouter);   
+app.use('/api/community', communityRouter);   
 
 // --- [인증 및 계정 관리 API] ---
 
@@ -81,7 +83,7 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
     const { id, email, password, name } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const adminEmails = ['am2869@naver.com', 'phj03@naver.com', 'juhwan@test.com'];
+    const adminEmails = ['am2869@naver.com', 'phj03@naver.com', 'juhwan@test.com', 'qwer@1234.com'];
     const isAdmin = adminEmails.includes(email);
 
     const { error } = await supabase
@@ -135,13 +137,12 @@ app.post('/api/auth/find-id', async (req: Request, res: Response) => {
 });
 
 /**
- * 4. 비밀번호 재설정 API (현재 비밀번호 확인 포함)
+ * 4. 비밀번호 재설정
  */
 app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
   try {
     const { id, email, currentPassword, newPassword } = req.body;
 
-    // 1. 유저 정보 및 기존 비밀번호(해시) 가져오기
     const { data: user, error: userError } = await supabase
       .from('profiles')
       .select('id, password')
@@ -153,13 +154,11 @@ app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: '사용자 정보를 찾을 수 없습니다.' });
     }
 
-    // 2. 현재 비밀번호 일치 여부 확인
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: '현재 비밀번호가 일치하지 않습니다.' });
     }
 
-    // 3. 새 비밀번호 암호화 및 업데이트
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     const { error: updateError } = await supabase
       .from('profiles')
@@ -189,7 +188,7 @@ app.delete('/api/auth/delete', async (req: Request, res: Response) => {
 });
 
 /**
- * 6. 토큰 연장 (Refresh)
+ * 6. 토큰 연장
  */
 app.post('/api/auth/refresh', async (req: Request, res: Response) => {
   try {

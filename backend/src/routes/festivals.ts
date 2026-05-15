@@ -2,29 +2,36 @@ import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
 
 const router = Router();
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
-// 모든 축제 리스트 가져오기 (검색 및 필터 포함)
+/**
+ * [축제 리스트 조회 API]
+ * GET /api/festivals?query=진주&category=전통문화&is_top=true
+ */
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { query, category, is_top } = req.query;
 
     let dbQuery = supabase.from('festivals').select('*');
 
-    // 1. 검색어 필터링
+    // 1. 검색어 필터링 (제목 또는 지역에 검색어가 포함된 경우)
     if (query) {
-      dbQuery = dbQuery.ilike('title', `%${query}%`);
+      dbQuery = dbQuery.or(`title.ilike.%${query}%,location.ilike.%${query}%`);
     }
 
-    // 2. 카테고리 필터링
+    // 2. 카테고리 필터링 (카테고리가 '전체'가 아닐 때만)
     if (category && category !== '전체') {
       dbQuery = dbQuery.eq('category', category);
     }
 
-    // 3. 베스트 축제만 보기
+    // 3. 베스트 축제(TOP!) 필터링
     if (is_top === 'true') {
       dbQuery = dbQuery.eq('is_top', true).order('rank', { ascending: true });
     } else {
+      // 일반 리스트는 최신순 정렬
       dbQuery = dbQuery.order('created_at', { ascending: false });
     }
 
@@ -34,6 +41,26 @@ router.get('/', async (req: Request, res: Response) => {
     res.json({ success: true, data });
   } catch (err: any) {
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+/**
+ * [축제 상세 조회 API]
+ * GET /api/festivals/:id
+ */
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { data, error } = await supabase
+      .from('festivals')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err: any) {
+    res.status(404).json({ success: false, message: "축제 정보를 찾을 수 없습니다." });
   }
 });
 
