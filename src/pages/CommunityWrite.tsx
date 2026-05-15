@@ -1,4 +1,4 @@
-// 주환 - 2026.05.06: CommunityWrite (JPG, PNG 확장자 제한 및 안정성 개선)
+// 주환 - 2026.05.06: CommunityWrite (화이트 테마 및 다크모드 대응, UI 일체화)
 import { useState, useRef } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import { fadeInUp } from "@/lib/motion";
 import { getCurrentUser } from "@/lib/login";
 
-// 직접적인 주소 노출을 피하기 위해 환경 변수를 사용합니다.
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://gokgok-8ztf.onrender.com";
 
 export default function CommunityWrite() {
@@ -35,14 +34,11 @@ export default function CommunityWrite() {
     fileInputRef.current?.click();
   };
 
-  // 자바스크립트 레벨에서 MIME 타입 검사
   const processFiles = (files: File[]) => {
-    // 오직 jpeg(.jpg, .jpeg)와 png만 허용합니다.
     const validImageFiles = files.filter(file => 
       file.type === "image/jpeg" || file.type === "image/png"
     );
 
-    // 필터링 후 개수가 달라졌다면, 허용되지 않은 파일이 섞여 있었다는 뜻입니다.
     if (validImageFiles.length !== files.length) {
       alert("JPG 및 PNG 이미지 파일만 업로드할 수 있습니다.");
     }
@@ -67,7 +63,6 @@ export default function CommunityWrite() {
     setImageFiles(prev => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // 드래그 앤 드롭 방어 로직 추가
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
@@ -129,23 +124,39 @@ export default function CommunityWrite() {
   if (!currentUser) return <Navigate to="/notmypage" replace />;
 
   return (
-    <div className="min-h-screen bg-background py-12 px-4">
+    // ✅ 바깥쪽 배경을 bg-white로 변경 및 다크모드 대응
+    <div className="min-h-screen bg-white dark:bg-[#111111] transition-colors py-12 px-4 font-sans">
       <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="max-w-3xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2">새 게시글 작성</h1>
-          <p className="text-muted-foreground"></p>
+          <h1 className="text-[32px] font-black text-gray-900 dark:text-white mb-2 tracking-tight">새 게시글 작성</h1>
+          <p className="text-gray-400 font-medium">나만의 특별한 축제 후기를 공유해주세요.</p>
         </div>
 
-        <Card className="p-6 md:p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* ✅ Card 컴포넌트 스타일 수정 (하얀색 바탕, 둥근 모서리, 은은한 그림자) */}
+        <Card className="p-6 md:p-8 rounded-[2rem] border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] shadow-sm">
+          <form onSubmit={handleSubmit} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2 space-y-2">
-                <label className="text-sm font-medium">축제 이름</label>
-                <input name="festivalTitle" type="text" required value={formData.festivalTitle} onChange={handleChange} placeholder="축제명을 입력하세요" className="w-full px-4 py-2 bg-background border border-input rounded-md focus:ring-2 focus:ring-primary outline-none" />
+              <div className="md:col-span-2 space-y-3">
+                <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 block">축제 이름</label>
+                <input 
+                  name="festivalTitle" 
+                  type="text" 
+                  required 
+                  value={formData.festivalTitle} 
+                  onChange={handleChange} 
+                  placeholder="축제명을 입력하세요" 
+                  // ✅ 회색 둥근 배경 스타일의 입력창
+                  className="w-full px-5 py-4 bg-[#F5F5F5] dark:bg-[#222222] text-[#111111] dark:text-white border-none rounded-xl focus:ring-2 focus:ring-[#111111]/20 dark:focus:ring-white/20 outline-none font-medium placeholder:text-gray-400 transition-all" 
+                />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">카테고리</label>
-                <select name="category" value={formData.category} onChange={handleChange} className="w-full px-4 py-2 bg-background border border-input rounded-md outline-none">
+              <div className="space-y-3">
+                <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 block">카테고리</label>
+                <select 
+                  name="category" 
+                  value={formData.category} 
+                  onChange={handleChange} 
+                  className="w-full px-5 py-4 bg-[#F5F5F5] dark:bg-[#222222] text-[#111111] dark:text-white border-none rounded-xl focus:ring-2 focus:ring-[#111111]/20 dark:focus:ring-white/20 outline-none font-medium transition-all"
+                >
                   <option value="전통문화">전통문화</option>
                   <option value="불꽃축제">불꽃축제</option>
                   <option value="겨울축제">겨울축제</option>
@@ -155,16 +166,24 @@ export default function CommunityWrite() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">내용</label>
-              <textarea name="content" required value={formData.content} onChange={handleChange} placeholder="생생한 후기를 작성해주세요." className="w-full px-4 py-3 h-48 bg-background border border-input rounded-md resize-none outline-none" />
+            <div className="space-y-3">
+              <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 block">내용</label>
+              <textarea 
+                name="content" 
+                required 
+                value={formData.content} 
+                onChange={handleChange} 
+                placeholder="생생한 후기를 작성해주세요." 
+                className="w-full px-5 py-4 h-48 bg-[#F5F5F5] dark:bg-[#222222] text-[#111111] dark:text-white border-none rounded-xl resize-none outline-none focus:ring-2 focus:ring-[#111111]/20 dark:focus:ring-white/20 font-medium placeholder:text-gray-400 transition-all" 
+              />
             </div>
 
-            <div className="space-y-2">
-              <span className="text-sm font-medium text-foreground">사진 첨부 ({imagePreviews.length}/10)</span>
-              <p className="text-xs text-muted-foreground mb-2">※ JPG, PNG 파일만 업로드 가능합니다.</p>
+            <div className="space-y-3">
+              <div className="flex items-end justify-between">
+                <span className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200">사진 첨부 ({imagePreviews.length}/10)</span>
+                <p className="text-[11px] font-bold text-gray-400">※ JPG, PNG 파일만 업로드 가능합니다.</p>
+              </div>
               
-              {/* 1차 방어선: accept 속성으로 파일 선택 창에서 제한 */}
               <input 
                 type="file" 
                 multiple 
@@ -175,28 +194,30 @@ export default function CommunityWrite() {
               />
               
               <div 
-                className="flex gap-4 overflow-x-auto p-4 border-2 border-dashed rounded-lg bg-muted/20"
+                className="flex gap-4 overflow-x-auto p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-[#111]"
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
-                <div onClick={handleImageClick} className="w-24 h-24 shrink-0 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer bg-background hover:bg-muted/50 transition-colors">
-                  <ImagePlus className="w-6 h-6 mb-1 text-muted-foreground" />
-                  <span className="text-[10px] text-muted-foreground">추가</span>
+                <div onClick={handleImageClick} className="w-24 h-24 shrink-0 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center cursor-pointer bg-white dark:bg-[#222] hover:bg-gray-50 dark:hover:bg-[#333] transition-colors">
+                  <ImagePlus className="w-6 h-6 mb-1 text-gray-400" />
+                  <span className="text-[11px] font-bold text-gray-400">사진 추가</span>
                 </div>
                 {imagePreviews.map((url, idx) => (
                   <div key={idx} className="relative w-24 h-24 shrink-0">
-                    <img src={url} alt="preview" className="w-full h-full object-cover rounded-lg border border-border" />
-                    <button type="button" onClick={() => handleRemoveImage(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600">
-                      <X className="w-3 h-3" />
+                    <img src={url} alt="preview" className="w-full h-full object-cover rounded-xl shadow-sm" />
+                    <button type="button" onClick={() => handleRemoveImage(idx)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1.5 shadow-md hover:bg-red-600 transition-colors">
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex justify-end gap-4 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => navigate(-1)}>취소</Button>
-              <Button type="submit" disabled={isSubmitting}>
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-800">
+              <Button type="button" variant="outline" className="font-bold text-gray-500 hover:text-gray-900 dark:hover:text-white border-transparent rounded-full px-6" onClick={() => navigate(-1)}>
+                취소
+              </Button>
+              <Button type="submit" disabled={isSubmitting} className="bg-[#111111] dark:bg-white hover:bg-black dark:hover:bg-gray-200 text-white dark:text-black font-bold px-8 rounded-full shadow-md transition-all">
                 {isSubmitting ? "전송 중..." : "등록하기"}
               </Button>
             </div>

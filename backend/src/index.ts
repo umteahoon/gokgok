@@ -1,6 +1,6 @@
 /**
- * 곡곡 백엔드 메인 서버 - 엄태훈 최종 수정본
- * 주요 기능: 회원가입, 로그인, 세션 연장, 보안 위협 로그 기록 및 문의사항 시스템 통합
+ * 곡곡 백엔드 메인 서버 - 엄태훈 최종 통합본
+ * 주요 기능: 회원가입, 로그인, 아이디/비번 찾기, 회원탈퇴, 보안 로그 등
  */
 
 import dotenv from 'dotenv'; 
@@ -14,19 +14,16 @@ import { createClient } from '@supabase/supabase-js';
 
 // 라우터 임포트
 import favoritesRouter from "./routes/favorites"; 
-import reviewRouter from './routes/reviews '; 
+import reviewRouter from './routes/reviews '
 import adminRouter from './routes/admin';
 import communityRouter from './routes/community'; 
-import contactRouter from './routes/contact'; // 문의사항 라우터
+import contactRouter from './routes/contact'; 
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // [보안] 필수 환경변수 체크
-const secretKey = process.env.JWT_SECRET;
-if (!secretKey) {
-  console.error("❌ Critical Error: JWT_SECRET 환경변수가 설정되지 않았습니다!");
-}
+const secretKey = process.env.JWT_SECRET || 'gokgok-secret-key';
 
 // Supabase 클라이언트 초기화
 const supabase = createClient(
@@ -50,7 +47,7 @@ app.use(cors({
 app.use(express.json());
 
 /**
- * 관리자 인증 미들웨어 (내부 API 보안용)
+ * 관리자 인증 미들웨어
  */
 const verifyAdminInternal = (req: Request, res: Response, next: any) => {
   const token = req.headers.authorization?.split(' ')[1];
@@ -65,27 +62,25 @@ const verifyAdminInternal = (req: Request, res: Response, next: any) => {
   }
 };
 
-// --- API 경로 매핑 ---
-
-// 1. 문의사항 관련 (프론트엔드 호출 경로와 일치시킴)
-app.use('/api', contactRouter);      // 사용자 문의 접수용 (POST /api/contact)
-app.use('/api/admin', contactRouter); // 관리자 문의 조회용 (GET /api/admin/contacts)
-
-// 2. 기타 기능 관련
+// --- [API 경로 매핑] ---
+app.use('/api', contactRouter);
+app.use('/api/admin', contactRouter);
 app.use('/api/interactions', favoritesRouter); 
 app.use('/api/reviews', reviewRouter);          
 app.use('/api/admin', adminRouter);             
 app.use('/api/community', communityRouter);     
 
+// --- [인증 및 계정 관리 API] ---
+
 /**
- * 1. 회원가입 API
+ * 1. 회원가입
  */
 app.post('/api/auth/signup', async (req: Request, res: Response) => {
   try {
     const { id, email, password, name } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const adminEmails = ['am2869@naver.com', 'qwe@qwe.com', 'juhwan@test.com', 'qwer@1234.com','phj03@naver.com'];
+    const adminEmails = ['am2869@naver.com', 'phj03@naver.com', 'juhwan@test.com'];
     const isAdmin = adminEmails.includes(email);
 
     const { error } = await supabase
@@ -95,32 +90,88 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
     if (error) throw error;
     res.status(201).json({ success: true, message: '회원가입 완료' });
   } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message });
+    res.status(400).json({ success: false, message: '이미 존재하는 아이디이거나 중복된 이메일입니다.' });
   }
 });
 
 /**
- * 2. 로그인 API
+ * 2. 로그인
  */
 app.post('/api/auth/login', async (req: Request, res: Response) => {
   try {
     const { id, password } = req.body;
     const { data: user, error } = await supabase.from('profiles').select('*').eq('id', id).single();
 
-    if (error || !user) return res.status(400).json({ success: false, message: '등록되지 않은 유저' });
+    if (error || !user) return res.status(400).json({ success: false, message: '등록되지 않은 아이디입니다.' });
 
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-    if (!isPasswordMatch) return res.status(400).json({ success: false, message: '비밀번호 불일치' });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ success: false, message: '비밀번호가 일치하지 않습니다.' });
 
     const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, secretKey!, { expiresIn: '1h' });
-    res.json({ success: true, token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    res.json({ 
+      success: true, 
+      token, 
+      user: { id: user.id, name: user.name, email: user.email, role: user.role } 
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, message: '서버 오류' });
   }
 });
 
 /**
- * 3. 토큰 연장 API (Refresh)
+ * 3. 아이디 찾기
+ */
+app.post('/api/auth/find-id', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+    const { data, error } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle();
+
+    if (error || !data) return res.status(404).json({ success: false, message: '해당 이메일로 가입된 아이디가 없습니다.' });
+    res.json({ success: true, userId: data.id });
+  } catch (err) {
+    res.status(500).json({ success: false, message: '서버 오류' });
+  }
+});
+
+/**
+ * 4. 비밀번호 재설정 (Reset Password)
+ */
+app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
+  try {
+    const { id, email, newPassword } = req.body;
+
+    const { data: user, error: userError } = await supabase
+      .from('profiles').select('id').eq('id', id).eq('email', email).maybeSingle();
+
+    if (userError || !user) return res.status(404).json({ success: false, message: '일치하는 사용자 정보를 찾을 수 없습니다.' });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const { error: updateError } = await supabase
+      .from('profiles').update({ password: hashedPassword }).eq('id', id);
+
+    if (updateError) throw updateError;
+    res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: '비밀번호 변경 중 오류가 발생했습니다.' });
+  }
+});
+
+/**
+ * 5. 회원 탈퇴
+ */
+app.delete('/api/auth/delete', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.body;
+    const { error } = await supabase.from('profiles').delete().eq('id', id);
+    if (error) throw error;
+    res.json({ success: true, message: '회원 탈퇴가 완료되었습니다.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: '탈퇴 처리 중 오류 발생' });
+  }
+});
+
+/**
+ * 6. 토큰 연장 (Refresh)
  */
 app.post('/api/auth/refresh', async (req: Request, res: Response) => {
   try {
@@ -132,50 +183,29 @@ app.post('/api/auth/refresh', async (req: Request, res: Response) => {
     const newToken = jwt.sign({ id: decoded.id, email: decoded.email, role: decoded.role }, secretKey!, { expiresIn: '1h' });
 
     res.json({ success: true, token: newToken });
-  } catch (err: any) {
+  } catch (err) {
     res.status(401).json({ success: false, message: "인증 만료" });
   }
 });
 
-/**
- * 4. 보안 위협 로그 기록 API
- */
+// --- [관리자 보안 기능] ---
+
 app.post('/api/admin/report-threat', async (req: Request, res: Response) => {
   try {
     const { email, violationType, count } = req.body;
-
-    const { error } = await supabase
-      .from('security_logs')
-      .insert([
-        { 
-          user_email: email || 'Anonymous', 
-          violation_type: violationType, 
-          request_count: count 
-        }
-      ]);
-
-    if (error) throw error;
-    res.json({ success: true, message: "Security log recorded" });
-  } catch (err: any) {
-    console.error("Log Error:", err.message);
-    res.status(500).json({ message: "Failed to record log" });
+    await supabase.from('security_logs').insert([{ user_email: email || 'Anonymous', violation_type: violationType, request_count: count }]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: "Log Error" });
   }
 });
 
-/**
- * 5. 보안 위협 로그 조회 API (관리자 전용)
- */
 app.get('/api/admin/security-logs', verifyAdminInternal, async (req: Request, res: Response) => {
   try {
-    const { data, error } = await supabase
-      .from('security_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(20);
-
+    const { data, error } = await supabase.from('security_logs').select('*').order('created_at', { ascending: false }).limit(20);
     if (error) throw error;
     res.json(data);
-  } catch (err: any) {
+  } catch (err) {
     res.status(500).json({ error: "로그 조회 실패" });
   }
 });
