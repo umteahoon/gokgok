@@ -28,10 +28,10 @@ interface InquiryAnswer {
   id: number;
   category: string;
   message: string;
-  status: "pending" | "answered";
+  status: "pending" | "answered" | "completed"; // 백엔드 status와 맞춤
   reply_content?: string;
   created_at: string;
-  answered_at?: string;
+  replied_at?: string; // 백엔드 컬럼명과 맞춤
 }
 
 export default function Contact() {
@@ -63,6 +63,10 @@ export default function Contact() {
     setLookupEmail(formData.email || "");
   };
 
+  /**
+   * ✅ 답변 조회 함수 수정
+   * 백엔드 경로: GET /api/contact/:email
+   */
   const fetchAnswers = async () => {
     if (!lookupEmail.trim()) {
       setAnswerError("이메일을 입력해주세요.");
@@ -74,14 +78,23 @@ export default function Contact() {
     setAnswerError("");
 
     try {
+      // 🚩 수정: 쿼리스트링(?email=) 대신 경로(/이메일) 방식으로 호출
       const response = await fetch(
-        `${API_BASE_URL}/api/contact?email=${encodeURIComponent(lookupEmail)}`
+        `${API_BASE_URL}/api/contact/${encodeURIComponent(lookupEmail.trim())}`
       );
+
+      // 서버 응답이 OK가 아닐 경우 (404 등) HTML 에러 페이지가 올 수 있으므로 미리 체크
+      if (!response.ok) {
+        throw new Error("문의 내역이 없거나 서버에 문제가 발생했습니다.");
+      }
 
       const result = await response.json();
 
       if (result.success) {
         setAnswers(result.data || []);
+        if (result.data.length === 0) {
+          setAnswerError("해당 이메일로 접수된 문의 내역이 없습니다.");
+        }
       } else {
         setAnswers([]);
         setAnswerError(result.message || "답변 내역을 불러오지 못했습니다.");
@@ -89,7 +102,7 @@ export default function Contact() {
     } catch (error) {
       console.error("Answer Fetch Error:", error);
       setAnswers([]);
-      setAnswerError("서버와 통신 중 오류가 발생했습니다.");
+      setAnswerError("문의 내역을 찾을 수 없거나 서버 통신 오류가 발생했습니다.");
     } finally {
       setIsLoadingAnswers(false);
     }
@@ -183,27 +196,13 @@ export default function Contact() {
 
               {answerError && (
                 <Card className="p-4 rounded-2xl border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 shadow-none">
-                  <p className="text-sm text-red-600 dark:text-red-300">
+                  <p className="text-sm text-red-600 dark:text-red-300 font-bold">
                     {answerError}
                   </p>
                 </Card>
               )}
 
-              {!isLoadingAnswers && !answerError && answers.length === 0 && (
-                <Card className="p-6 rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#222] shadow-none">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
-                      안내
-                    </p>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                    이메일을 입력한 뒤 조회 버튼을 누르면 문의 내역과 답변을 확인할 수 있습니다.
-                  </p>
-                </Card>
-              )}
-
-              {answers.map((item) => (
+              {answers.length > 0 && answers.map((item) => (
                 <Card
                   key={item.id}
                   className="p-6 rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#222] shadow-none"
@@ -220,12 +219,12 @@ export default function Contact() {
 
                     <div
                       className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
-                        item.status === "answered"
+                        item.status === "completed" || item.status === "answered"
                           ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
                           : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
                       }`}
                     >
-                      {item.status === "answered" ? (
+                      {item.status === "completed" || item.status === "answered" ? (
                         <>
                           <CheckCircle2 className="w-4 h-4" />
                           답변 완료
@@ -257,11 +256,6 @@ export default function Contact() {
                         ? item.reply_content
                         : "아직 답변이 등록되지 않았습니다."}
                     </div>
-                    {item.answered_at && (
-                      <p className="mt-2 text-xs text-gray-400">
-                        답변일: {new Date(item.answered_at).toLocaleString("ko-KR")}
-                      </p>
-                    )}
                   </div>
                 </Card>
               ))}
