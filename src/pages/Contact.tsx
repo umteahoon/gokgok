@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { fadeInUp } from "@/lib/motion";
+import { useNavigate, Navigate } from "react-router-dom";
 import {
   Sheet,
   SheetContent,
@@ -20,6 +21,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { getCurrentUser } from "@/lib/login";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://gokgok-8ztf.onrender.com";
@@ -41,6 +43,7 @@ export default function Contact() {
   const [answerError, setAnswerError] = useState("");
   const [answers, setAnswers] = useState<InquiryAnswer[]>([]);
   const [lookupEmail, setLookupEmail] = useState("");
+  const currentUser = getCurrentUser(); 
 
   const [formData, setFormData] = useState({
     name: "",
@@ -68,43 +71,55 @@ export default function Contact() {
    * 백엔드 경로: GET /api/contact/:email
    */
   const fetchAnswers = async () => {
-    if (!lookupEmail.trim()) {
-      setAnswerError("이메일을 입력해주세요.");
-      setAnswers([]);
+  if (!lookupEmail.trim()) {
+    setAnswerError("이메일을 입력해주세요.");
+    return;
+  }
+
+  setIsLoadingAnswers(true);
+  setAnswerError("");
+
+  try {
+    // 1. 로컬 스토리지에서 토큰 가져오기
+    const token = localStorage.getItem("accessToken");
+
+    // 🚩 토큰이 없으면 로그인을 먼저 유도해야 합니다.
+    if (!token) {
+      setAnswerError("로그인이 필요한 서비스입니다.");
+      setIsLoadingAnswers(false);
       return;
     }
 
-    setIsLoadingAnswers(true);
-    setAnswerError("");
-
-    try {
-      // 🚩 수정: 쿼리스트링(?email=) 대신 경로(/이메일) 방식으로 호출
-      const response = await fetch(`${API_BASE_URL}/api/contact/search/${encodeURIComponent(lookupEmail)}`);
-
-      // 서버 응답이 OK가 아닐 경우 (404 등) HTML 에러 페이지가 올 수 있으므로 미리 체크
-      if (!response.ok) {
-        throw new Error("문의 내역이 없거나 서버에 문제가 발생했습니다.");
+    const response = await fetch(
+      `${API_BASE_URL}/api/contact/search/${encodeURIComponent(lookupEmail.trim())}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          // 2. ✅ 헤더에 Authorization 추가 (Bearer 방식)
+          "Authorization": `Bearer ${token}` 
+        },
       }
+    );
 
-      const result = await response.json();
+    const result = await response.json();
 
-      if (result.success) {
-        setAnswers(result.data || []);
-        if (result.data.length === 0) {
-          setAnswerError("해당 이메일로 접수된 문의 내역이 없습니다.");
-        }
-      } else {
-        setAnswers([]);
-        setAnswerError(result.message || "답변 내역을 불러오지 못했습니다.");
+    if (result.success) {
+      setAnswers(result.data || []);
+      if (result.data.length === 0) {
+        setAnswerError("문의 내역이 없습니다.");
       }
-    } catch (error) {
-      console.error("Answer Fetch Error:", error);
-      setAnswers([]);
-      setAnswerError("문의 내역을 찾을 수 없거나 서버 통신 오류가 발생했습니다.");
-    } finally {
-      setIsLoadingAnswers(false);
+    } else {
+      // 🚩 백엔드에서 보낸 에러 메시지(예: "본인의 내역만 조회 가능") 출력
+      setAnswerError(result.message || "조회에 실패했습니다.");
     }
-  };
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    setAnswerError("서버와 통신 중 오류가 발생했습니다.");
+  } finally {
+    setIsLoadingAnswers(false);
+  }
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,6 +160,7 @@ export default function Contact() {
       setIsSubmitting(false);
     }
   };
+    if (!currentUser) return <Navigate to="/notmypage" replace />;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#111111] transition-colors py-12 px-4 font-sans text-[#111111] dark:text-white">
