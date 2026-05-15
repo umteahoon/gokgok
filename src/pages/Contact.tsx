@@ -1,6 +1,14 @@
-// 주환 - 2026.05.15: Contact 페이지 (화이트 테마, 다크모드 최적화 및 프리미엄 UI 적용)
 import { useState } from "react";
-import { Mail, MessageSquare, User, Send, Inbox, X } from "lucide-react";
+import {
+  Mail,
+  MessageSquare,
+  User,
+  Send,
+  Inbox,
+  Search,
+  Clock3,
+  CheckCircle2,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -13,11 +21,27 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://gokgok-8ztf.onrender.com";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://gokgok-8ztf.onrender.com";
+
+interface InquiryAnswer {
+  id: number;
+  category: string;
+  message: string;
+  status: "pending" | "answered";
+  reply_content?: string;
+  created_at: string;
+  answered_at?: string;
+}
 
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAnswerOpen, setIsAnswerOpen] = useState(false);
+  const [isLoadingAnswers, setIsLoadingAnswers] = useState(false);
+  const [answerError, setAnswerError] = useState("");
+  const [answers, setAnswers] = useState<InquiryAnswer[]>([]);
+  const [lookupEmail, setLookupEmail] = useState("");
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -30,6 +54,45 @@ export default function Contact() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const openAnswerSheet = () => {
+    setIsAnswerOpen(true);
+    setAnswerError("");
+    setAnswers([]);
+    setLookupEmail(formData.email || "");
+  };
+
+  const fetchAnswers = async () => {
+    if (!lookupEmail.trim()) {
+      setAnswerError("이메일을 입력해주세요.");
+      setAnswers([]);
+      return;
+    }
+
+    setIsLoadingAnswers(true);
+    setAnswerError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/contact?email=${encodeURIComponent(lookupEmail)}`
+      );
+
+      const result = await response.json();
+
+      if (result.success) {
+        setAnswers(result.data || []);
+      } else {
+        setAnswers([]);
+        setAnswerError(result.message || "답변 내역을 불러오지 못했습니다.");
+      }
+    } catch (error) {
+      console.error("Answer Fetch Error:", error);
+      setAnswers([]);
+      setAnswerError("서버와 통신 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoadingAnswers(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,36 +136,145 @@ export default function Contact() {
   };
 
   return (
-    // ✅ 전체 배경을 bg-white로 통일하고 다크모드 대응을 추가했습니다.
     <div className="min-h-screen bg-white dark:bg-[#111111] transition-colors py-12 px-4 font-sans text-[#111111] dark:text-white">
       <div className="max-w-4xl mx-auto">
-        
-        {/* 답변 확인 사이드 시트 스타일 개선 */}
         <Sheet open={isAnswerOpen} onOpenChange={setIsAnswerOpen}>
-          <SheetContent side="right" className="w-full sm:max-w-lg bg-white dark:bg-[#1a1a1a] border-l border-gray-100 dark:border-gray-800 overflow-y-auto">
+          <SheetContent
+            side="right"
+            className="w-full sm:max-w-lg bg-white dark:bg-[#1a1a1a] border-l border-gray-100 dark:border-gray-800 overflow-y-auto"
+          >
             <SheetHeader className="mb-8">
-              <SheetTitle className="text-2xl font-black text-gray-900 dark:text-white">답변 확인</SheetTitle>
+              <SheetTitle className="text-2xl font-black text-gray-900 dark:text-white">
+                답변 확인
+              </SheetTitle>
               <SheetDescription className="text-gray-400 font-medium">
-                문의하신 내용에 대한 관리자 답변을 확인할 수 있습니다.
+                문의하신 이메일을 입력하면 관리자 답변을 확인할 수 있습니다.
               </SheetDescription>
             </SheetHeader>
 
-            <div className="space-y-4">
-              <Card className="p-6 rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#222] shadow-none">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">시스템 안내</p>
+            <div className="space-y-5">
+              <Card className="p-5 rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#222] shadow-none">
+                <div className="space-y-3">
+                  <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 ml-1 block">
+                    답변 조회용 이메일
+                  </label>
+                  <div className="group flex items-center bg-white dark:bg-[#181818] rounded-2xl px-4 py-3 border border-gray-100 dark:border-gray-800 focus-within:ring-2 focus-within:ring-gray-200 dark:focus-within:ring-gray-700 transition-all">
+                    <Mail className="w-5 h-5 text-gray-400 mr-3 group-focus-within:text-[#FF3478] transition-colors" />
+                    <input
+                      type="email"
+                      value={lookupEmail}
+                      onChange={(e) => setLookupEmail(e.target.value)}
+                      placeholder="문의 접수에 사용한 이메일을 입력하세요"
+                      className="w-full bg-transparent outline-none text-[15px] font-medium text-gray-900 dark:text-white placeholder:text-gray-400"
+                    />
+                  </div>
+
+                  <Button
+                    type="button"
+                    onClick={fetchAnswers}
+                    disabled={isLoadingAnswers}
+                    className="w-full bg-[#111111] dark:bg-white hover:bg-black dark:hover:bg-gray-200 text-white dark:text-[#111111] rounded-full py-6 font-black"
+                  >
+                    <Search className={`w-4 h-4 mr-2 ${isLoadingAnswers ? "animate-pulse" : ""}`} />
+                    {isLoadingAnswers ? "조회 중..." : "답변 조회하기"}
+                  </Button>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                  아직 연결된 답변 데이터가 없습니다. 문의 접수 후 1~3일 이내에 답변이 등록됩니다.
-                </p>
               </Card>
+
+              {answerError && (
+                <Card className="p-4 rounded-2xl border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/30 shadow-none">
+                  <p className="text-sm text-red-600 dark:text-red-300">
+                    {answerError}
+                  </p>
+                </Card>
+              )}
+
+              {!isLoadingAnswers && !answerError && answers.length === 0 && (
+                <Card className="p-6 rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#222] shadow-none">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      안내
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                    이메일을 입력한 뒤 조회 버튼을 누르면 문의 내역과 답변을 확인할 수 있습니다.
+                  </p>
+                </Card>
+              )}
+
+              {answers.map((item) => (
+                <Card
+                  key={item.id}
+                  className="p-6 rounded-2xl border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-[#222] shadow-none"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                        {item.category}
+                      </p>
+                      <p className="text-xs text-gray-400 mt-1">
+                        문의일: {new Date(item.created_at).toLocaleString("ko-KR")}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
+                        item.status === "answered"
+                          ? "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300"
+                          : "bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                      }`}
+                    >
+                      {item.status === "answered" ? (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          답변 완료
+                        </>
+                      ) : (
+                        <>
+                          <Clock3 className="w-4 h-4" />
+                          답변 대기
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-xs font-extrabold text-gray-500 dark:text-gray-400 mb-2">
+                      문의 내용
+                    </p>
+                    <div className="rounded-xl bg-white dark:bg-[#181818] px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
+                      {item.message}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-extrabold text-gray-500 dark:text-gray-400 mb-2">
+                      관리자 답변
+                    </p>
+                    <div className="rounded-xl bg-white dark:bg-[#181818] px-4 py-3 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line leading-relaxed">
+                      {item.reply_content?.trim()
+                        ? item.reply_content
+                        : "아직 답변이 등록되지 않았습니다."}
+                    </div>
+                    {item.answered_at && (
+                      <p className="mt-2 text-xs text-gray-400">
+                        답변일: {new Date(item.answered_at).toLocaleString("ko-KR")}
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              ))}
             </div>
           </SheetContent>
         </Sheet>
 
-        {/* 헤더 섹션: 수다방과 일관성 있는 스타일 */}
-        <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="mb-12 flex flex-col md:flex-row items-center md:items-end justify-between gap-6 px-2">
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          className="mb-12 flex flex-col md:flex-row items-center md:items-end justify-between gap-6 px-2"
+        >
           <div className="text-center md:text-left">
             <h1 className="text-[36px] md:text-[42px] font-black text-gray-900 dark:text-white mb-2 tracking-tight">
               문의사항
@@ -116,19 +288,22 @@ export default function Contact() {
             type="button"
             variant="outline"
             className="rounded-full px-6 py-6 h-auto bg-white dark:bg-[#1a1a1a] border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 font-bold hover:bg-gray-50 dark:hover:bg-[#222] shadow-sm flex items-center gap-2 transition-all active:scale-95"
-            onClick={() => setIsAnswerOpen(true)}
+            onClick={openAnswerSheet}
           >
             <Inbox className="w-5 h-5 text-[#FF3478]" />
             답변 확인하기
           </Button>
         </motion.div>
 
-        {/* ✅ 문의 폼 카드: 둥근 모서리, 은은한 경계선 적용 */}
-        <motion.div variants={fadeInUp} initial="hidden" animate="visible" transition={{ delay: 0.1 }}>
+        <motion.div
+          variants={fadeInUp}
+          initial="hidden"
+          animate="visible"
+          transition={{ delay: 0.1 }}
+        >
           <Card className="p-8 md:p-12 rounded-[2.5rem] border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] shadow-sm">
             <form onSubmit={handleSubmit} className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* 이름 입력 */}
                 <div className="space-y-3">
                   <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 ml-1 block">
                     작성자 성함
@@ -147,7 +322,6 @@ export default function Contact() {
                   </div>
                 </div>
 
-                {/* 이메일 입력 */}
                 <div className="space-y-3">
                   <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 ml-1 block">
                     답변받을 이메일
@@ -167,7 +341,6 @@ export default function Contact() {
                 </div>
               </div>
 
-              {/* 문의 유형 선택 */}
               <div className="space-y-3">
                 <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 ml-1 block">
                   문의 유형
@@ -185,10 +358,9 @@ export default function Contact() {
                     <option value="오류 제보">오류 제보</option>
                     <option value="기타">기타</option>
                   </select>
-                </div >
+                </div>
               </div>
 
-              {/* 문의 내용 입력 */}
               <div className="space-y-3">
                 <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 ml-1 block">
                   문의 내용
@@ -203,7 +375,6 @@ export default function Contact() {
                 />
               </div>
 
-              {/* 제출 버튼 */}
               <div className="flex justify-end pt-4">
                 <Button
                   type="submit"

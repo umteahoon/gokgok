@@ -63,4 +63,21 @@ router.put('/contacts/:id/reply', async (req, res) => {
   }
 });
 
+// routes/contact.ts 예시
+router.get('/contacts/:email', async (req, res) => {
+  const { email } = req.params;
+  try {
+    const { data, error } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('email', email)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "조회 실패" });
+  }
+});
+
 export default router;

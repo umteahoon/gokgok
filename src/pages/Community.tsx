@@ -1,4 +1,4 @@
-// 주환 - 2026.05.06: 커뮤니티 페이지 (2단 그리드 레이아웃 및 모던 화이트 카드 UI 최적화)
+// 주환 - 2026.05.15: 커뮤니티 페이지 (4단 그리드 레이아웃 유지 + 상단 헤더/검색창 크기 안정화)
 import { useState, useEffect } from "react"; 
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -69,7 +69,7 @@ export default function Community() {
   
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
-  const [visibleCount, setVisibleCount] = useState(10); 
+  const [visibleCount, setVisibleCount] = useState(12);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
   const [commentText, setCommentText] = useState("");
@@ -247,11 +247,14 @@ export default function Community() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#111111] transition-colors relative font-sans text-[#111111] dark:text-white pb-20">
-      <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="w-full pt-12 pb-16 px-4">
-        <div className="max-w-[1000px] mx-auto">
+      {/* ✅ md:px-10 추가하여 모바일 외 환경에서도 안정적인 여백 제공 */}
+      <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="w-full pt-12 pb-16 px-4 md:px-10">
+        
+        {/* ✅ max-w를 1200px로 조절하여 마당 페이지와 통일감 형성 & 상단 버튼 찢어짐 방지 */}
+        <div className="max-w-[1200px] mx-auto">
           
           {/* 헤더 영역 */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
             <div className="text-left">
               <h1 className="text-[32px] font-black text-gray-900 dark:text-white mb-2 tracking-tight">수다</h1>
               <p className="text-gray-400 font-medium text-sm tracking-wide">여행의 즐거움을 함께 나누세요.</p>
@@ -260,6 +263,7 @@ export default function Community() {
 
           {/* 검색 및 글쓰기 영역 */}
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-10">
+            {/* ✅ 검색창 폭을 다시 원래의 보기 좋은 비율(lg:w-1/2)로 복구 */}
             <div className="relative w-full md:w-2/3 lg:w-1/2 group">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[#111111] dark:group-focus-within:text-white transition-colors" />
               <input 
@@ -277,71 +281,76 @@ export default function Community() {
             </Button>
           </div>
 
-          {/* 게시글 목록 (2단 그리드 레이아웃 적용) */}
-          {/* ✅ grid-cols-1 md:grid-cols-2 로 한 줄에 2개씩 나오게 변경 */}
-          <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+          {/* 게시글 목록 (4단 그리드 레이아웃) */}
+          <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
             {filteredPosts.slice(0, visibleCount).map((post) => (
               <motion.div key={post.id} variants={staggerItem}>
                 <div 
-                  className="group bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-6 md:p-7 shadow-sm hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-700 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full" 
+                  className="group bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-700 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col h-full" 
                   onClick={() => setSelectedPost(post)}
                 >
                   <div className="flex flex-col flex-1">
+                    {/* 카드 중앙: 이미지 썸네일 */}
+                    <div className="w-full aspect-[4/3] shrink-0 mb-4">
+                      {post.images.length > 0 ? (
+                        <PostThumbnail images={post.images} />
+                      ) : (
+                        <div className="w-full h-full bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center border border-gray-100 dark:border-gray-700">
+                          <span className="text-gray-300 dark:text-gray-600 font-bold text-sm">No Photo</span>
+                        </div>
+                      )}
+                    </div>
+
                     {/* 카드 상단: 작성자 및 카테고리 정보 */}
-                    <div className="flex items-center justify-between mb-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-[13px] font-extrabold text-gray-700 dark:text-gray-200 uppercase">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-[10px] font-extrabold text-gray-700 dark:text-gray-200 uppercase">
                           {post.author[0]}
                         </div>
                         <div className="flex flex-col">
-                          <span className="text-[14px] font-extrabold text-gray-900 dark:text-white">{post.author}</span>
-                          <span className="text-[12px] text-gray-400 font-medium">{getTimeAgo(post.date)}</span>
+                          <span className="text-[12px] font-extrabold text-gray-900 dark:text-white line-clamp-1">{post.author}</span>
+                          <span className="text-[10px] text-gray-400 font-medium">{getTimeAgo(post.date)}</span>
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-3">
-                        <Badge variant="outline" className="border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-[11px] px-3 py-1 rounded-full">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 font-bold text-[10px] px-2 py-0.5 rounded-full">
                           {post.category}
                         </Badge>
                         
                         {/* 내 글일 때만 보이는 수정/삭제 버튼 */}
                         {currentUser?.email === post.author_email && (
-                          <div className="flex items-center gap-2 border-l border-gray-100 dark:border-gray-800 pl-3">
-                            <button onClick={(e) => { e.stopPropagation(); openEditModal(post); }} className="text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors p-1"><Pencil className="w-4 h-4" /></button>
-                            <button onClick={(e) => { e.stopPropagation(); handleDelete(post.id); }} className="text-gray-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-4 h-4" /></button>
+                          <div className="flex items-center gap-1.5 border-l border-gray-100 dark:border-gray-800 pl-2">
+                            <button onClick={(e) => { e.stopPropagation(); openEditModal(post); }} className="text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors p-1"><Pencil className="w-3.5 h-3.5" /></button>
+                            <button onClick={(e) => { e.stopPropagation(); handleDelete(post.id); }} className="text-gray-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-3.5 h-3.5" /></button>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    {/* 카드 중단: 제목 및 내용 */}
-                    <h3 className="text-[19px] font-extrabold text-gray-900 dark:text-white mb-2 group-hover:text-[#FF3478] dark:group-hover:text-[#FF3478] transition-colors line-clamp-1 tracking-tight">
+                    {/* 카드 하단: 제목 및 내용 */}
+                    <h3 className="text-[16px] font-extrabold text-gray-900 dark:text-white mb-1.5 group-hover:text-[#FF3478] dark:group-hover:text-[#FF3478] transition-colors line-clamp-1 tracking-tight">
                       {post.Title}
                     </h3>
-                    <p className="text-[14.5px] text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2 font-medium mb-5">
+                    <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed line-clamp-2 font-medium mb-4">
                       {post.content}
                     </p>
-
-                    {/* 카드 중앙: 이미지 썸네일 (비율에 맞춰 꽉 차게 변경) */}
-                    {post.images.length > 0 && (
-                      <div className="w-full aspect-[16/9] shrink-0 mb-6 mt-auto">
-                        <PostThumbnail images={post.images} />
-                      </div>
-                    )}
                   </div>
                   
-                  {/* 카드 하단: 좋아요 및 댓글 수 */}
-                  <div className="flex items-center gap-6 pt-4 border-t border-gray-100 dark:border-gray-800 mt-auto">
-                    <button 
-                      onClick={(e) => handleLike(e, post.id)} 
-                      className={`flex items-center gap-1.5 transition-all active:scale-75 ${likedIds.has(post.id) ? "text-[#FF3478]" : "text-gray-400 hover:text-[#FF3478]"}`}
-                    >
-                      <Heart className="w-[18px] h-[18px]" fill={likedIds.has(post.id) ? "currentColor" : "none"} strokeWidth={2.5} />
-                      <span className="text-[14px] font-bold">{post.likes}</span>
-                    </button>
-                    <div className="flex items-center gap-1.5 text-gray-400">
-                      <MessageCircle className="w-[18px] h-[18px]" strokeWidth={2.5} />
-                      <span className="text-[14px] font-bold">{post.comments}</span>
+                  {/* 카드 맨 아래: 좋아요 및 댓글 수 */}
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800 mt-auto">
+                    <div className="flex items-center gap-4">
+                      <button 
+                        onClick={(e) => handleLike(e, post.id)} 
+                        className={`flex items-center gap-1.5 transition-all active:scale-75 ${likedIds.has(post.id) ? "text-[#FF3478]" : "text-gray-400 hover:text-[#FF3478]"}`}
+                      >
+                        <Heart className="w-4 h-4" fill={likedIds.has(post.id) ? "currentColor" : "none"} strokeWidth={2.5} />
+                        <span className="text-[12px] font-bold">{post.likes}</span>
+                      </button>
+                      <div className="flex items-center gap-1.5 text-gray-400">
+                        <MessageCircle className="w-4 h-4" strokeWidth={2.5} />
+                        <span className="text-[12px] font-bold">{post.comments}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -352,7 +361,7 @@ export default function Community() {
           {/* 더보기 버튼 */}
           {visibleCount < filteredPosts.length && (
             <div className="mt-12 text-center">
-              <Button variant="outline" className="rounded-full px-8 py-6 text-gray-900 dark:text-white font-bold border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#222] bg-white dark:bg-[#1a1a1a] shadow-sm transition-all text-sm" onClick={() => setVisibleCount(v => v + 10)}>
+              <Button variant="outline" className="rounded-full px-8 py-6 text-gray-900 dark:text-white font-bold border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#222] bg-white dark:bg-[#1a1a1a] shadow-sm transition-all text-sm" onClick={() => setVisibleCount(v => v + 12)}>
                 게시글 더보기 <Plus className="ml-2 w-4 h-4" />
               </Button>
             </div>

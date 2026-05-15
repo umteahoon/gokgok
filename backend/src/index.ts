@@ -68,7 +68,8 @@ app.use('/api/admin', contactRouter);
 app.use('/api/interactions', favoritesRouter); 
 app.use('/api/reviews', reviewRouter);          
 app.use('/api/admin', adminRouter);             
-app.use('/api/community', communityRouter);     
+app.use('/api/community', communityRouter);  
+app.use('/api', contactRouter);   
 
 // --- [인증 및 계정 관리 API] ---
 
