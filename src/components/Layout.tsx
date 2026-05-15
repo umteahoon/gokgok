@@ -123,69 +123,78 @@ export function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-[#111111] font-sans transition-colors duration-300">
       <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#111111] transition-colors duration-300">
-        <div className="relative w-full max-w-[1400px] mx-auto pl-4 pr-2 md:pl-8 md:pr-2 flex items-center justify-between h-16">
+        <div className="relative w-full max-w-[1400px] mx-auto px-4 md:px-8 flex items-center justify-between h-16">
+          
+          {/* 로고 영역 */}
           <div className="flex-shrink-0 z-10">
             <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group flex items-center">
-              {/* ✅ dark:invert 추가로 다크모드 시 로고가 흰색으로 반전됩니다 */}
               <img src="/gokgok_logo.svg" alt="곡곡 로고" className="h-12 md:h-16 w-auto object-contain transition-opacity hover:opacity-80 dark:invert" />
             </NavLink>
           </div>
 
-          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-10 lg:space-x-14">
+          {/* ✅ 중앙 네비게이션: items-stretch와 h-full로 높이를 꽉 채움 */}
+          <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 h-full items-stretch space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (
-              <NavLink key={item.label} to={item.path}
+              <NavLink 
+                key={item.label} 
+                to={item.path}
                 className={({ isActive }) =>
-                  `py-1 text-[15px] lg:text-base transition-all whitespace-nowrap relative ${
-                    isActive ? 'font-bold text-gray-900 dark:text-white' : 'font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                  `flex items-center text-[15px] lg:text-base transition-all whitespace-nowrap relative ${
+                    isActive 
+                      ? 'font-bold text-gray-900 dark:text-white' 
+                      : 'font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
                     {item.label}
-                    {isActive && <span className="absolute -bottom-[21px] left-0 right-0 h-[2.5px] bg-[#E3051B] dark:bg-[#FF3478]" />}
+                    {/* ✅ 강조선: bottom-0으로 설정하여 헤더 박스 안쪽 하단에 고정 */}
+                    {isActive && (
+                      <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478] rounded-t-full" />
+                    )}
                   </>
                 )}
               </NavLink>
             ))}
           </nav>
 
-          <div className="hidden md:flex items-center justify-end gap-8 z-10">
-            <div className="flex items-center gap-2">
-              {currentUser && (
-                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shrink-0">
-                  <div className="flex items-center gap-1.5 text-[12px] font-mono font-bold text-gray-800 dark:text-gray-200">
-                    <Clock className="w-3.5 h-3.5 text-[#E3051B] dark:text-[#FF3478]" />
-                    <span>{formatTime(timeLeft)}</span>
-                  </div>
-                  <div className="h-3 w-[1px] bg-gray-300 dark:bg-gray-600 mx-1" />
-                  <button onClick={handleExtend} className="text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-[#E3051B] dark:hover:text-[#FF3478] transition-colors">연장</button>
+          {/* 우측 유틸리티 영역 */}
+          <div className="hidden md:flex items-center justify-end gap-6 z-10">
+            {currentUser && (
+              <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-1.5 text-[12px] font-mono font-bold text-gray-800 dark:text-gray-200">
+                  <Clock className="w-3.5 h-3.5 text-[#FF3478]" />
+                  <span>{formatTime(timeLeft)}</span>
                 </div>
-              )}
+                <div className="h-3 w-[1px] bg-gray-300 dark:bg-gray-600 mx-1" />
+                <button onClick={handleExtend} className="text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-[#FF3478] transition-colors">연장</button>
+              </div>
+            )}
 
+            <div className="flex items-center gap-3">
               {currentUser ? (
-                <button onClick={handleLogout} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all shrink-0">
+                <button onClick={handleLogout} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
                   로그아웃
                 </button>
               ) : (
-                <NavLink to={ROUTE_PATHS?.NOTMYPAGE || '/login'} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all shrink-0">
+                <NavLink to={ROUTE_PATHS?.NOTMYPAGE || '/login'} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
                   로그인
                 </NavLink>
               )}
-            </div>
 
-            <div className="flex items-center gap-3">
-              <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors shrink-0" aria-label="테마 변경">
+              <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors" aria-label="테마 변경">
                 {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
               </button>
-              <button onClick={() => navigate('/contact')} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all shrink-0">
+              
+              <button onClick={() => navigate('/contact')} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
                 문의사항
               </button>
             </div>
           </div>
         </div>
       </header>
-      <main className="flex-1 w-full px-2">{children}</main>
+      <main className="flex-1 w-full">{children}</main>
     </div>
   );
 }

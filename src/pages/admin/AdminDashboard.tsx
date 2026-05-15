@@ -1,10 +1,6 @@
 /**
  * 곡곡 관리자 시스템 대시보드 (통합 관제 시스템 최종본)
- * 작성자: 엄태훈 (2026-04-24)
- * 주요기능: 
- * 1. 실시간 통계 및 유저/게시글 관리
- * 2. 실시간 침입 탐지 시스템 (IDS) 및 보안 로그 출력
- * 3. 사용자 문의사항(Contact) 관리 및 직접 답변(Reply) 기능
+ * 작성자: 엄태훈 (2026-05-15 업데이트)
  */
 
 import { useState, useEffect } from "react";
@@ -22,7 +18,7 @@ import {
   MessageSquare,
   Clock,
   CheckCircle2,
-  Send // 💡 답변 전송용 아이콘 추가
+  Send 
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,7 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { fadeInUp } from "@/lib/motion";
 import { Input } from "@/components/ui/input";
 
-// 데이터 인터페이스 정의
+// 데이터 인터페이스
 interface UserData { id: string; email: string; username: string; role: string; created_at: string; }
 interface PostData { id: string; title: string; author: string; category: string; created_at: string; }
 interface SecurityLog { id: string; user_email: string; violation_type: string; request_count: number; created_at: string; }
@@ -51,39 +47,32 @@ export default function AdminDashboard() {
   const [searchPosts, setSearchPosts] = useState("");
 
   const API_BASE_URL = "https://gokgok-8ztf.onrender.com/api/admin";
-  const PUBLIC_API_URL = "https://gokgok-8ztf.onrender.com/api";
 
   const loadAdminData = async () => {
     setLoading(true);
     const token = localStorage.getItem("accessToken"); 
 
     try {
+      // ✅ 문의사항 목록 조회를 /contacts/all 로 명확히 호출하여 500 에러 방지
       const [statsRes, usersRes, postsRes, logsRes, contactRes] = await Promise.all([
         fetch(`${API_BASE_URL}/stats`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/users`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/posts`, { headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_BASE_URL}/security-logs`, { headers: { Authorization: `Bearer ${token}` } }),
-        // fetch(`${PUBLIC_API_URL}/contact`, { headers: { Authorization: `Bearer ${token}` } })
-        fetch(`${PUBLIC_API_URL}/admin/contacts`, {
-        headers: { Authorization: `Bearer ${token}` }
-        })
+        fetch(`${API_BASE_URL}/contacts/all`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
-
-      if (!statsRes.ok || !usersRes.ok) throw new Error("인증 실패");
 
       setStats(await statsRes.json());
       setUsers(await usersRes.json());
       setPosts(postsRes.ok ? await postsRes.json() : []);
       setDbLogs(logsRes.ok ? await logsRes.json() : []);
       
-      // const contactData = await contactRes.json();
-      // setContacts(contactData.success ? contactData.data : []);
       if (contactRes.ok) {
         const contactData = await contactRes.json();
         setContacts(contactData.success ? contactData.data : []);
       } else {
         setContacts([]);
-}
+      }
 
     } catch (error: any) {
       console.error("데이터 로드 중 오류 발생:", error);
@@ -99,13 +88,16 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // 💡 관리자 답변 처리 함수
+  /**
+   * ✅ 관리자 답변 처리 핸들러 수정
+   * 경로: PUT /api/admin/contacts/:id/reply
+   */
   const handleReply = async (id: string, name: string) => {
     const reply = prompt(`${name}님에게 보낼 답변 내용을 입력하세요.`);
     if (!reply) return;
 
     try {
-      const res = await fetch(`${PUBLIC_API_URL}/admin/contact/${id}/reply`, {
+      const res = await fetch(`${API_BASE_URL}/contacts/${id}/reply`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -118,6 +110,8 @@ export default function AdminDashboard() {
       if (result.success) {
         toast({ title: "답변 전송 완료", description: "사용자에게 답변이 전달되었습니다." });
         loadAdminData(); 
+      } else {
+        throw new Error(result.message);
       }
     } catch (err) {
       toast({ variant: "destructive", title: "오류 발생", description: "답변 처리 중 문제가 발생했습니다." });
