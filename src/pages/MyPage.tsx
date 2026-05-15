@@ -114,7 +114,7 @@ export default function MyPage() {
           <h2 className="text-2xl font-black text-gray-900 mb-2">로그인이 필요해요</h2>
           <p className="text-gray-500 mb-8 font-medium">곡곡의 다양한 축제 정보를 찜해보세요!</p>
           <Button 
-            className="w-full max-w-[280px] h-14 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl shadow-lg shadow-blue-600/20" 
+            className="w-full max-w-[280px] h-14 bg-[#FF3478] hover:bg-[#E62E6C] text-white font-bold rounded-2xl shadow-lg shadow-[#FF3478]/20" 
             onClick={() => navigate("/notmypage")}
           >
             로그인 / 회원가입
@@ -133,7 +133,8 @@ export default function MyPage() {
           <div className="relative group">
             <Avatar className="w-32 h-32 md:w-40 md:h-40 border-[6px] border-gray-50 shadow-sm">
               <AvatarImage src={currentUser.profilePhoto} className="object-cover" />
-              <AvatarFallback className="bg-blue-50 text-blue-600 text-5xl font-black">{currentUser.name.charAt(0)}</AvatarFallback>
+              {/* ✅ 아바타 폴백 배경 핑크 적용 */}
+              <AvatarFallback className="bg-[#FF3478]/10 text-[#FF3478] text-5xl font-black">{currentUser.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <button 
               onClick={() => fileInputRef.current?.click()}
@@ -147,15 +148,16 @@ export default function MyPage() {
           <div className="flex-1 text-center md:text-left pt-4">
             <div className="flex flex-col md:flex-row items-center gap-3 mb-2">
               <h1 className="text-3xl font-black tracking-tight">{currentUser.name}님</h1>
-              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-lg">GENERAL MEMBER</span>
+              {/* ✅ 멤버십 텍스트 유지 (파란색 유지) */}
+              <span className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-lg uppercase tracking-wider">General Member</span>
             </div>
             <p className="text-gray-400 font-medium text-lg mb-6">{currentUser.email}</p>
             
-            {/* 활동 요약 수치 (NOL 스타일) */}
+            {/* 활동 요약 수치 (핑크 적용) */}
             <div className="flex justify-center md:justify-start gap-12 border-t border-gray-50 pt-6">
               <div className="flex flex-col gap-1">
                 <span className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Saved</span>
-                <span className="text-2xl font-black text-blue-600">{isLoading ? '...' : savedFestivals.length}</span>
+                <span className="text-2xl font-black text-[#FF3478]">{isLoading ? '...' : savedFestivals.length}</span>
               </div>
               <div className="flex flex-col gap-1">
                 <span className="text-[12px] font-bold text-gray-400 uppercase tracking-wider">Reviews</span>
@@ -170,13 +172,13 @@ export default function MyPage() {
           <TabsList className="flex w-full border-b border-gray-100 bg-transparent h-auto p-0 mb-10 gap-10">
             <TabsTrigger 
               value="saved" 
-              className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none shadow-none bg-transparent text-lg font-black text-gray-300 transition-all"
+              className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] rounded-none shadow-none bg-transparent text-lg font-black text-gray-300 transition-all"
             >
               찜한 축제
             </TabsTrigger>
             <TabsTrigger 
               value="settings" 
-              className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 rounded-none shadow-none bg-transparent text-lg font-black text-gray-300 transition-all"
+              className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] rounded-none shadow-none bg-transparent text-lg font-black text-gray-300 transition-all"
             >
               계정 설정
             </TabsTrigger>
@@ -197,7 +199,7 @@ export default function MyPage() {
               <div className="text-center py-24 bg-gray-50 rounded-[2.5rem] border-2 border-dashed border-gray-200">
                 <Heart className="w-12 h-12 text-gray-200 mx-auto mb-4" />
                 <p className="text-gray-400 font-bold">아직 찜한 축제가 없습니다.</p>
-                <Button variant="link" onClick={() => navigate('/search')} className="text-blue-600 font-bold mt-2">축제 구경가기</Button>
+                <Button variant="link" onClick={() => navigate('/search')} className="text-[#FF3478] font-bold mt-2">축제 구경가기</Button>
               </div>
             )}
           </TabsContent>
@@ -206,7 +208,7 @@ export default function MyPage() {
             <div className="max-w-xl space-y-10">
               <section>
                 <h3 className="text-xl font-black mb-6 flex items-center gap-2">
-                  <User size={20} className="text-blue-600" /> 개인정보 관리
+                  <User size={20} className="text-[#FF3478]" /> 개인정보 관리
                 </h3>
                 <div className="space-y-6">
                   <div className="space-y-2">
@@ -227,10 +229,10 @@ export default function MyPage() {
                 <div className="flex flex-col gap-3">
                   <button 
                     onClick={handleChangePassword}
-                    className="w-full flex items-center justify-between p-5 rounded-2xl bg-white border border-gray-100 hover:border-blue-200 hover:bg-blue-50/30 transition-all group"
+                    className="w-full flex items-center justify-between p-5 rounded-2xl bg-white border border-gray-100 hover:border-[#FF3478]/30 hover:bg-[#FF3478]/5 transition-all group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-blue-100"><Key size={18} className="text-gray-400 group-hover:text-blue-600" /></div>
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-[#FF3478]/10"><Key size={18} className="text-gray-400 group-hover:text-[#FF3478]" /></div>
                       <span className="font-bold text-gray-700">비밀번호 변경</span>
                     </div>
                     <ChevronRight size={18} className="text-gray-300" />
