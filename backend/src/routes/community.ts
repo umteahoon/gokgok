@@ -38,6 +38,28 @@ router.get('/', async (req: any, res: any) => {
 
 });
 
+// [내 좋아요 목록 불러오기 API] POST /api/community/my-likes
+router.post('/my-likes', async (req: any, res: any) => {
+  try {
+    const { user_email } = req.body;
+    
+    if (!user_email) {
+      return res.json({ success: true, likes: [] });
+    }
+
+    const { data, error } = await supabase
+      .from('post_likes')
+      .select('post_id')
+      .eq('user_email', user_email);
+
+    if (error) throw error;
+
+    return res.json({ success: true, likes: data });
+  } catch (error: any) {
+    return res.status(500).json({ success: false, message: '좋아요 목록 조회 실패' });
+  }
+});
+
 
 
 // [좋아요 토글 API] POST /api/community/:id/like

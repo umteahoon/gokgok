@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { Menu, X, Sun, Moon, Clock } from 'lucide-react';
-import { SiFacebook, SiInstagram, SiYoutube } from 'react-icons/si';
 import { ROUTE_PATHS } from '@/lib/index';
 import { Button } from '@/components/ui/button';
 import { getCurrentUser, logout } from "@/lib/login";
@@ -43,43 +42,28 @@ export function Layout({ children }: LayoutProps) {
     setCurrentUser(null);
     setTimeLeft(0);
     navigate(ROUTE_PATHS?.HOME || '/');
-    toast({
-      variant: "destructive",
-      title: "⏰ 세션 만료",
-      description: "로그인 시간이 만료되어 자동 로그아웃되었습니다."
-    });
+    toast({ variant: "destructive", title: "⏰ 세션 만료", description: "로그인 시간이 만료되어 자동 로그아웃되었습니다." });
   };
 
   useEffect(() => {
     updateUserStatus();
-
     const initialTime = calculateTimeLeft();
     setTimeLeft(Math.max(0, initialTime));
 
-    if (localStorage.getItem("accessToken") && initialTime < -5) {
-      forceLogout();
-    }
+    if (localStorage.getItem("accessToken") && initialTime < -5) forceLogout();
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         const currentToken = localStorage.getItem("accessToken");
         if (!currentToken) return 0;
-
-        if (prev <= 1) {
-          clearInterval(timer);
-          forceLogout();
-          return 0;
-        }
+        if (prev <= 1) { clearInterval(timer); forceLogout(); return 0; }
         return prev - 1;
       });
     }, 1000);
 
     window.addEventListener('hashchange', updateUserStatus);
     window.addEventListener('auth-change', updateUserStatus);
-
-    if (document.documentElement.classList.contains('dark')) {
-      setIsDarkMode(true);
-    }
+    if (document.documentElement.classList.contains('dark')) setIsDarkMode(true);
 
     return () => {
       clearInterval(timer);
@@ -100,11 +84,7 @@ export function Layout({ children }: LayoutProps) {
     const token = localStorage.getItem("accessToken");
     try {
       const res = await fetch("https://gokgok-8ztf.onrender.com/api/auth/refresh", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        }
+        method: "POST", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
       });
       if (res.ok) {
         const data = await res.json();
@@ -126,10 +106,7 @@ export function Layout({ children }: LayoutProps) {
 
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
-      logout();
-      updateUserStatus();
-      navigate(ROUTE_PATHS?.HOME || '/');
-      setMobileMenuOpen(false);
+      logout(); updateUserStatus(); navigate(ROUTE_PATHS?.HOME || '/'); setMobileMenuOpen(false);
       toast({ title: "로그아웃 완료", description: "정상적으로 로그아웃 되었습니다." });
     }
   };
@@ -137,138 +114,77 @@ export function Layout({ children }: LayoutProps) {
   const toggleTheme = () => {
     setIsDarkMode((prev) => {
       const newTheme = !prev;
-      if (newTheme) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+      if (newTheme) document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
       return newTheme;
     });
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background font-sans transition-colors duration-300">
-      {/* py-4 제거, 상단바 전체 높이를 유지하면서 로고를 더 크게 만들기 위한 조치 */}
-      <header className="sticky top-0 z-50 w-full border-b border-foreground/10 bg-white dark:bg-background transition-colors duration-300">
-        {/* h-8에서 h-16으로 변경하여 로고가 더 크게 보이도록 조정함 */}
+    <div className="min-h-screen flex flex-col bg-white dark:bg-[#111111] font-sans transition-colors duration-300">
+      <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#111111] transition-colors duration-300">
         <div className="relative w-full max-w-[1400px] mx-auto pl-4 pr-2 md:pl-8 md:pr-2 flex items-center justify-between h-16">
-
-          {/* 로고 영역, h-8 md:h-10에서 h-12 md:h-16으로 크게 변경함 */}
           <div className="flex-shrink-0 z-10">
             <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group flex items-center">
-              <img 
-                src="/gokgok_logo.svg" 
-                alt="곡곡 로고" 
-                className="h-12 md:h-16 w-auto object-contain transition-opacity hover:opacity-80" 
-              />
+              {/* ✅ dark:invert 추가로 다크모드 시 로고가 흰색으로 반전됩니다 */}
+              <img src="/gokgok_logo.svg" alt="곡곡 로고" className="h-12 md:h-16 w-auto object-contain transition-opacity hover:opacity-80 dark:invert" />
             </NavLink>
           </div>
 
-          {/* 중앙 네비게이션 */}
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (
-              <NavLink
-                key={item.label}
-                to={item.path}
+              <NavLink key={item.label} to={item.path}
                 className={({ isActive }) =>
                   `py-1 text-[15px] lg:text-base transition-all whitespace-nowrap relative ${
-                    isActive
-                      ? 'font-bold text-foreground'
-                      : 'font-medium text-muted-foreground hover:text-foreground'
+                    isActive ? 'font-bold text-gray-900 dark:text-white' : 'font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
                     {item.label}
-                    {isActive && (
-                      <span className="absolute -bottom-[21px] left-0 right-0 h-[2.5px] bg-[#E3051B] dark:bg-primary" />
-                    )}
+                    {isActive && <span className="absolute -bottom-[21px] left-0 right-0 h-[2.5px] bg-[#E3051B] dark:bg-[#FF3478]" />}
                   </>
                 )}
               </NavLink>
             ))}
           </nav>
 
-          {/* 우측 유틸리티 영역 */}
           <div className="hidden md:flex items-center justify-end gap-8 z-10">
             <div className="flex items-center gap-2">
               {currentUser && (
-                <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-full border border-foreground/10 shrink-0">
-                  <div className="flex items-center gap-1.5 text-[12px] font-mono font-bold text-foreground/80">
-                    <Clock className="w-3.5 h-3.5 text-primary" />
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700 shrink-0">
+                  <div className="flex items-center gap-1.5 text-[12px] font-mono font-bold text-gray-800 dark:text-gray-200">
+                    <Clock className="w-3.5 h-3.5 text-[#E3051B] dark:text-[#FF3478]" />
                     <span>{formatTime(timeLeft)}</span>
                   </div>
-                  <div className="h-3 w-[1px] bg-foreground/20 mx-1" />
-                  <button
-                    onClick={handleExtend}
-                    className="text-[11px] font-bold text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    연장
-                  </button>
+                  <div className="h-3 w-[1px] bg-gray-300 dark:bg-gray-600 mx-1" />
+                  <button onClick={handleExtend} className="text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-[#E3051B] dark:hover:text-[#FF3478] transition-colors">연장</button>
                 </div>
               )}
 
               {currentUser ? (
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
-                >
+                <button onClick={handleLogout} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all shrink-0">
                   로그아웃
                 </button>
               ) : (
-                <NavLink
-                  to={ROUTE_PATHS?.NOTMYPAGE || '/login'}
-                  className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
-                >
+                <NavLink to={ROUTE_PATHS?.NOTMYPAGE || '/login'} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all shrink-0">
                   로그인
                 </NavLink>
               )}
             </div>
 
             <div className="flex items-center gap-3">
-              <button
-                onClick={toggleTheme}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-foreground/5 rounded-full transition-colors shrink-0"
-                aria-label="테마 변경"
-              >
+              <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors shrink-0" aria-label="테마 변경">
                 {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
               </button>
-
-              <button
-                onClick={() => navigate('/contact')}
-                className="px-4 py-2 text-xs font-bold text-foreground border border-foreground/20 rounded-full hover:bg-foreground hover:text-background transition-all shrink-0"
-              >
+              <button onClick={() => navigate('/contact')} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all shrink-0">
                 문의사항
               </button>
             </div>
           </div>
-
-          {/* 모바일 메뉴 영역 */}
-          <div className="md:hidden flex items-center gap-2 z-10">
-            {currentUser && (
-              <span className="text-[10px] font-mono font-bold bg-foreground/5 px-2 py-1 rounded-full border border-foreground/10">
-                {formatTime(timeLeft)}
-              </span>
-            )}
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 text-foreground hover:bg-foreground/10 rounded-full transition-colors"
-            >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-foreground"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-5 w-5" />}
-            </Button>
-          </div>
         </div>
       </header>
-
       <main className="flex-1 w-full px-2">{children}</main>
     </div>
   );

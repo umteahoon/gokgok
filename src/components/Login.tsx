@@ -57,6 +57,11 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
     setError('');
     setSuccess('');
 
+    if (signupPassword.length < 6) {
+    setError("비밀번호는 최소 6자 이상이어야 합니다."); // 5/15
+    return;
+  }
+
     const result = await signup(signupEmail, signupId, signupPassword, signupName);
 
     if (result.success) {
@@ -154,6 +159,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                           className="pl-10"
                           value={loginId}
                           onChange={(e) => setLoginId(e.target.value)}
+                          minLength={6} // 5/15
                           required
                         />
                       </div>
