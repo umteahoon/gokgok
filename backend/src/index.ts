@@ -61,20 +61,16 @@ const verifyAdminInternal = (req: Request, res: Response, next: any) => {
 
 // --- [API 경로 매핑 - 순서 중요!] ---
 
-// 1. 문의사항 관련 (중복 선언 제거 및 하나로 통합)
-// /api/contact, /api/contact/:email 등을 처리합니다.
-app.use('/api', contactRouter); 
+// 1. 문의사항 관련 통합 (사용자용 & 관리자용 모두 이 라우터에서 처리)
+// 이렇게 설정하면 contactRouter 내부의 모든 경로는 자동으로 /api/contact 뒤에 붙습니다.
+app.use('/api/contact', contactRouter); 
 
-// 2. 관리자 관련 (문의 목록조회 /api/admin/contacts 등 처리)
-app.use('/api/admin', contactRouter); 
-app.use('/api/admin', adminRouter);
-app.use('/api/user/contact', contactRouter);
-
-// 3. 기타 기능
-app.use('/api/interactions', favoritesRouter); 
-app.use('/api/reviews', reviewRouter);          
-app.use('/api/community', communityRouter);   
+// 2. 기타 라우터들
 app.use('/api/festivals', festivalRouter);
+app.use('/api/interactions', favoritesRouter);
+app.use('/api/reviews', reviewRouter);
+app.use('/api/community', communityRouter);
+app.use('/api/admin', adminRouter); // 통계나 유저관리용
 
 // --- [인증 및 계정 관리 API] ---
 
