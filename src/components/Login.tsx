@@ -241,7 +241,7 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="signup-email">아이디</Label>
+                      <Label htmlFor="signup-id">아이디</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input

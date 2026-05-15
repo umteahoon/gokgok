@@ -6,7 +6,6 @@ import { KoreaMap } from "@/components/KoreaMap";
 import { ChevronLeft, ChevronRight, Heart, MapPin, Search as SearchIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Festival 인터페이스 정의
 interface Festival {
   id: string | number;
   title: string;
@@ -18,25 +17,11 @@ interface Festival {
   description?: string;
 }
 
-// 지도 ID와 데이터 매칭을 위한 매핑 객체
 const REGION_NAME_MAP: Record<string, string> = {
-  Seoul: "서울",
-  Gyeonggi: "경기",
-  Incheon: "인천",
-  Gangwon: "강원",
-  Chungnam: "충남",
-  Chungbuk: "충북",
-  Daejeon: "대전",
-  Sejong: "세종",
-  Jeonbuk: "전북",
-  Jeonnam: "전남",
-  Gwangju: "광주",
-  Gyeongbuk: "경북",
-  Gyeongnam: "경남",
-  Daegu: "대구",
-  Busan: "부산",
-  Ulsan: "울산",
-  Jeju: "제주",
+  Seoul: "서울", Gyeonggi: "경기", Incheon: "인천", Gangwon: "강원",
+  Chungnam: "충남", Chungbuk: "충북", Daejeon: "대전", Sejong: "세종",
+  Jeonbuk: "전북", Jeonnam: "전남", Gwangju: "광주", Gyeongbuk: "경북",
+  Gyeongnam: "경남", Daegu: "대구", Busan: "부산", Ulsan: "울산", Jeju: "제주",
 };
 
 export default function Search() {  
@@ -44,36 +29,36 @@ export default function Search() {
   const [activeTab, setActiveTab] = useState<"list" | "map">("list");
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [selectedTaste, setSelectedTaste] = useState("NEW");
-  
-  // 히어로 슬라이더 상태
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
+  const [wishlistedIds, setWishlistedIds] = useState<string[]>([]);
+
   const heroItems = topFestivals.slice(0, 5);
 
-  // 테마 섹션 개폐 상태
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
-  
-  // 찜하기 상태 관리
-  const [wishlistedIds, setWishlistedIds] = useState<string[]>([]);
+  // --- [수정] 이미지 프리로딩 로직 추가 ---
+  useEffect(() => {
+    heroItems.forEach((item) => {
+      const img = new Image();
+      img.src = item.image;
+    });
+  }, [heroItems]);
 
   useEffect(() => {
     const savedWishlist = JSON.parse(localStorage.getItem("gokgok_wishlist") || "[]");
     setWishlistedIds(savedWishlist.map((id: string | number) => String(id)));
   }, []);
 
-  // 각 섹션별 스크롤 Ref
   const bestScrollRef = useRef<HTMLDivElement>(null);
   const risingScrollRef = useRef<HTMLDivElement>(null);
   const tasteScrollRef = useRef<HTMLDivElement>(null);
 
   const tastes = ["NEW", "자연생태", "체험", "전통문화", "겨울축제", "불꽃축제", "역사문화", "음식축제"];
-
   const themes = [
     { title: "자연과 함께하는 여행", items: mockFestivals.slice(0, 5) },
     { title: "화려한 축제, 체험을 하고 싶다면", items: topFestivals.slice(0, 5) },
     { title: "역사와 전통이 함께", items: [...topFestivals, ...mockFestivals].slice(5, 10) }
   ];
 
-  // 🔥 지도 탭 필터링 로직
   const regionFestivals = useMemo(() => {
     if (!selectedRegion) return [];
     const combined = [...topFestivals, ...mockFestivals] as Festival[];
@@ -82,7 +67,6 @@ export default function Search() {
     return uniqueFestivals.filter(f => f.location.includes(searchTarget));
   }, [selectedRegion]);
 
-  // 🔥 리스트 탭 취향 필터링 로직
   const filteredList = useMemo(() => {
     const combined = [...topFestivals, ...mockFestivals] as Festival[];
     const uniqueFestivals = combined.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
@@ -144,27 +128,41 @@ export default function Search() {
     <div className="w-full bg-white text-[#111111] pb-20 font-sans overflow-x-hidden pt-10 rounded-t-3xl">
       <main className="container mx-auto">
         
-        {/* 1. 상단 히어로 슬라이더 섹션 */}
-        <section className="relative w-[calc(100%-2rem)] mx-auto h-[220px] md:h-[320px] mb-16 bg-black overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] shadow-xl cursor-pointer">
-          <AnimatePresence mode="wait">
-            <Link to={`/festival/${heroItems[currentSlide].id}`} key={currentSlide} className="absolute inset-0 block">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }} className="absolute inset-0 flex items-center justify-between px-10 md:px-24 lg:px-40">
-                <div className="absolute inset-0"><img src={heroItems[currentSlide].image} className="w-full h-full object-cover opacity-30 blur-md" alt="" /><div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" /></div>
+        {/* --- [수정] 히어로 슬라이더: popLayout 적용 및 구조 최적화 --- */}
+        <section className="relative w-[calc(100%-2rem)] mx-auto h-[220px] md:h-[320px] mb-16 bg-black overflow-hidden rounded-[2.5rem] md:rounded-[3.5rem] shadow-xl">
+          <AnimatePresence mode="popLayout">
+            <motion.div 
+              key={currentSlide} 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }} 
+              transition={{ duration: 0.5 }} 
+              className="absolute inset-0"
+            >
+              <Link to={`/festival/${heroItems[currentSlide].id}`} className="relative flex items-center justify-between px-10 md:px-24 lg:px-40 h-full w-full">
+                <div className="absolute inset-0">
+                  <img src={heroItems[currentSlide].image} className="w-full h-full object-cover opacity-30 blur-md" alt="" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-black via-black/30 to-transparent" />
+                </div>
+                
                 <div className="relative z-10 text-white max-w-sm">
                   <motion.h1 initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-xl md:text-3xl font-black mb-2 leading-tight drop-shadow-lg">{heroItems[currentSlide].title}</motion.h1>
                   <div className="text-gray-400 space-y-0.5 text-xs md:text-sm font-medium"><p>📍 {heroItems[currentSlide].location}</p><p>📅 {heroItems[currentSlide].date}</p></div>
                 </div>
-                <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="relative z-10 hidden md:block w-[180px] lg:w-[220px] aspect-[3/4] rounded-xl overflow-hidden shadow-2xl border border-white/10"><img src={heroItems[currentSlide].image} className="w-full h-full object-cover" alt="" /></motion.div>
-              </motion.div>
-            </Link>
+
+                <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="relative z-10 hidden md:block w-[180px] lg:w-[220px] aspect-[3/4] rounded-xl overflow-hidden shadow-2xl border border-white/10">
+                  <img src={heroItems[currentSlide].image} className="w-full h-full object-cover" alt="" />
+                </motion.div>
+              </Link>
+            </motion.div>
           </AnimatePresence>
+
           <button onClick={prevSlide} className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all active:scale-90 shadow-md"><ChevronLeft size={24} /></button>
           <button onClick={nextSlide} className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white transition-all active:scale-90 shadow-md"><ChevronRight size={24} /></button>
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center bg-black/40 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/5"><div className="text-white text-[10px] font-bold tracking-widest">{String(currentSlide + 1).padStart(2, '0')} / {String(heroItems.length).padStart(2, '0')}</div></div>
         </section>
 
         <div className="px-4">
-          {/* 탭 메뉴 */}
           <div className="flex gap-6 mb-10 border-b border-gray-100">
             <button onClick={() => setActiveTab("list")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "list" ? "text-[#FF3478]" : "text-gray-400 hover:text-gray-600"}`}>목록보기 {activeTab === "list" && <motion.div layoutId="t-line" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}</button>
             <button onClick={() => setActiveTab("map")} className={`pb-3 text-lg font-bold transition-colors relative ${activeTab === "map" ? "text-[#FF3478]" : "text-gray-400 hover:text-gray-600"}`}>지도보기 {activeTab === "map" && <motion.div layoutId="t-line" className="absolute bottom-0 left-0 right-0 h-[3px] bg-[#FF3478]" />}</button>
@@ -173,7 +171,6 @@ export default function Search() {
           <AnimatePresence mode="wait">
             {activeTab === "list" ? (
               <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                
                 {/* 섹션 1: TOP! 베스트 축제 */}
                 <section className="mb-16 relative group">
                   <div className="flex justify-between items-center mb-6"><h2 className="text-[22px] font-extrabold italic underline decoration-[#FF3478]/20 underline-offset-8">TOP! 베스트 축제</h2><div className="flex gap-2"><button onClick={() => handleScroll(bestScrollRef, "left")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><ChevronLeft size={18} /></button><button onClick={() => handleScroll(bestScrollRef, "right")} className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center bg-white shadow-sm hover:bg-gray-50 transition-all"><ChevronRight size={18} /></button></div></div>
@@ -237,10 +234,9 @@ export default function Search() {
                     );
                   })}
                 </section>
-
               </motion.div>
             ) : (
-              /* --- 2. 지도보기 탭 영역 --- */
+              /* 지도보기 탭 */
               <motion.div key="map-view" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[650px]">
                 <div className="lg:col-span-7 bg-[#F8F9FA] rounded-[3rem] flex items-center justify-center border border-gray-100 overflow-hidden relative shadow-inner p-4">
                    <KoreaMap selectedRegion={selectedRegion} onRegionSelect={handleRegionSelect} />

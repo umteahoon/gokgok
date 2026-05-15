@@ -1,4 +1,4 @@
-// 주환 - 2026.05.06: 커뮤니티 페이지 (영속적 좋아요 로직 및 이미지 최적화 통합)
+// 주환 - 2026.05.06: 커뮤니티 페이지 (좋아요 토글 복구 및 디버깅 적용)
 import { useState, useEffect, useRef } from "react"; 
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,7 +14,6 @@ import { getCategoryColor } from "@/lib/index";
 import { getCurrentUser } from "@/lib/login";
 import { supabase } from "@/lib/supabase"; 
 
-// --- 🔥 [이미지 경로 최적화 로직] ---
 const STORAGE_BASE_URL = "https://ofslnmgvaiycywllsosc.supabase.co/storage/v1/object/public/community_images/";
 
 const getFullImageUrl = (imagePath: string) => {
@@ -123,8 +122,18 @@ export default function Community() {
           setPosts(formatted);
 
           if (currentUser?.email) {
-            const { data: myLikes } = await supabase.from('post_likes').select('post_id').eq('user_email', currentUser.email);
-            if (myLikes) setLikedIds(new Set(myLikes.map(item => item.post_id)));
+            // 🚨 디버깅 추가: Supabase에서 데이터 잘 가져오는지 확인
+            const { data: myLikes, error: likeError } = await supabase
+              .from('post_likes')
+              .select('post_id')
+              .eq('user_email', currentUser.email);
+            
+            if (likeError) {
+              console.error("❌ Supabase 하트 기록 불러오기 실패:", likeError.message);
+            } else if (myLikes) {
+              console.log("✅ 내가 누른 하트 데이터 로드 성공:", myLikes);
+              setLikedIds(new Set(myLikes.map(item => item.post_id)));
+            }
           }
         }
       } catch (error) { console.error("Fetch Error:", error); }
@@ -132,29 +141,31 @@ export default function Community() {
     initData();
   }, [currentUser?.email]);
 
-  // 2. 좋아요 처리 (서버 연동)
+  // 2.  좋아요 처리 (취소 가능하도록 자물쇠 해제)
   const handleLike = async (postId: string) => {
     if (!currentUser) return alert("로그인이 필요합니다.");
+    
+    // 취소 불가 로직 삭제됨 (자유롭게 토글 가능)
+
     try {
       const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${postId}/like`, {
         method: "POST", headers: authHeaders, body: JSON.stringify({ user_email: currentUser.email })
       });
       const data = await response.json();
+      
       if (data.success) {
         setLikedIds((prev) => {
           const next = new Set(prev);
-          // 삼항 연산자 대신 if-else 사용
           if (data.isLiked) {
             next.add(postId);
           } else {
             next.delete(postId);
           }
-          
           return next;
         });
         setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: data.likes } : p));
       }
-    } catch (e) { alert("좋아요 실패"); }
+    } catch (e) { alert("좋아요 처리 실패"); }
   };
 
   // 3. 댓글 작성
@@ -168,19 +179,18 @@ export default function Community() {
       if (data.success) {
         const newComment = { id: data.comment.id, author: data.comment.author, author_email: data.comment.author_email, text: data.comment.text, date: data.comment.created_at, likes: 0 };
         setPosts(posts.map(p => p.id === selectedPost.id ? { ...p, comments: p.comments + 1, commentsList: [...(p.commentsList || []), newComment] } : p));
+        
+        // 상세 모달 창의 숫자도 즉시 업데이트
+        setSelectedPost(prev => prev ? { ...prev, comments: prev.comments + 1, commentsList: [...(prev.commentsList || []), newComment] } : null);
+        
         setCommentText(""); 
       }
     } catch (e) { alert("댓글 작성 실패"); }
   };
 
-  // 나머지 핸들러 (삭제, 검색 등) 기존 로직 유지...
+  // 나머지 핸들러 (삭제, 검색 등)
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => { setSearchTerm(e.target.value); setVisibleCount(4); };
-  const toggleExpand = (id: string) => {
-  setExpandedPosts(prev => {const next = new Set(prev);if (next.has(id)) {next.delete(id);} else {next.add(id);}
-    
-    return next;
-  });
-};
+  const toggleExpand = (id: string) => { setExpandedPosts(prev => {const next = new Set(prev); if (next.has(id)) {next.delete(id);} else {next.add(id);} return next;});};
   const handleLoadMore = () => setVisibleCount(prev => prev + 20);
 
   const filteredPosts = posts.filter(p => p.Title.toLowerCase().includes(searchTerm.toLowerCase()) || p.author.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -221,10 +231,20 @@ export default function Community() {
                     <h3 className="text-xl font-semibold text-foreground mb-2">{post.Title}</h3>
                     <p className={`text-muted-foreground mb-4 flex-1 ${expandedPosts.has(post.id) ? "" : "line-clamp-2"}`}>{post.content}</p>
                     <div className="flex items-center gap-6 pt-4 border-t mt-auto">
-                      <button onClick={() => handleLike(post.id)} className={`flex items-center gap-2 transition-colors ${likedIds.has(post.id) ? "text-red-500" : "text-muted-foreground hover:text-red-500"}`}>
+                      
+                      {/* 좋아요 버튼 UI 원상복구: 취소할 수 있으므로 hover 시 더 진한 빨간색 표시 */}
+                      <button 
+                        onClick={() => handleLike(post.id)} 
+                        className={`flex items-center gap-2 transition-colors ${
+                          likedIds.has(post.id) 
+                            ? "text-red-500 hover:text-red-600" 
+                            : "text-muted-foreground hover:text-red-500"
+                        }`}
+                      >
                         <Heart className="w-5 h-5" fill={likedIds.has(post.id) ? "currentColor" : "none"} />
                         <span className="text-sm font-medium">{post.likes}</span>
                       </button>
+
                       <button onClick={() => setSelectedPost(post)} className="flex items-center gap-2 text-muted-foreground hover:text-primary"><MessageCircle className="w-5 h-5" /> {post.comments}</button>
                     </div>
                   </div>
@@ -262,7 +282,20 @@ export default function Community() {
                       <p className="text-xs text-muted-foreground mt-2">{getTimeAgo(selectedPost.date)}</p>
                     </div>
                   </div>
-                  {/* 댓글 리스트... */}
+                  {/* 댓글 리스트 */}
+                  {(!selectedPost.commentsList || selectedPost.commentsList.length === 0) ? (
+                    <p className="text-center text-muted-foreground py-12 text-sm">아직 작성된 댓글이 없습니다.<br/>첫 댓글을 남겨보세요!</p>
+                  ) : (
+                    selectedPost.commentsList.map((comment) => (
+                      <div key={comment.id} className="flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-muted shrink-0 flex items-center justify-center"><User className="w-4 h-4 text-muted-foreground" /></div>
+                        <div className="flex-1">
+                          <p className="text-sm text-foreground"><span className="font-semibold mr-2">{comment.author}</span>{comment.text}</p>
+                          <p className="text-xs text-muted-foreground mt-1">{getTimeAgo(comment.date)}</p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
                 <div className="p-4 border-t flex items-center gap-3">
                   <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit()} placeholder="댓글 달기..." className="flex-1 bg-transparent text-sm outline-none" disabled={!currentUser} />
