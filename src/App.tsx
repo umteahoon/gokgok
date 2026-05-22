@@ -1,7 +1,7 @@
 /**
  * 곡곡 메인 애플리케이션 컴포넌트
  * 작성자: 엄태훈 (2026-04-29)
- * 패치내역: 2026-05-22 아이디/비밀번호 찾기 Route 경로 등록 완료
+ * 패치내역: 2026-05-22 아이디/비밀번호 찾기 & 메일 링크용 ResetPw Route 최종 등록 완료
  */
 
 import { useEffect } from "react"; 
@@ -29,6 +29,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button"; 
 import FindId from "@/pages/FindId";
 import FindPw from "@/pages/FindPw";
+import ResetPw from "@/pages/ResetPw"; // 🚩 [새로 추가] 이메일 링크용 비밀번호 재설정 페이지
 
 const queryClient = new QueryClient();
 
@@ -160,9 +161,10 @@ const App = () => {
                 <Route path={ROUTE_PATHS.PRIVACY} element={<PrivacyPolicy />} />
                 <Route path={ROUTE_PATHS.CONTACT} element={<Contact />} />
                 
-                {/* 🚩 [새로 추가] 아이디/비밀번호 찾기 전용 웹 라우팅 경로 선언 구역 */}
+                {/* 🚩 아이디/비밀번호 찾기 및 재설정 웹 라우팅 경로 선언 구역 */}
                 <Route path="/find-id" element={<FindId />} />
                 <Route path="/find-pw" element={<FindPw />} />
+                <Route path="/reset-password" element={<ResetPw />} /> {/* 👈 여기에 정밀 타격 추가 완료! */}
                 
                 {/* 관리자 전용 페이지 */}
                 <Route 
