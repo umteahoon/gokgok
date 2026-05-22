@@ -274,7 +274,7 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </div>
 
-          {/* 모바일 레이아웃 반응형 햄버거 토글러 인프라 구축 */}
+          {/* 모바일 레이아웃 반응형 햄버거 토글러 */}
           <div className="flex md:hidden items-center gap-2 z-10">
             <button
               onClick={toggleTheme}
@@ -354,37 +354,37 @@ export function Layout({ children }: LayoutProps) {
       {/* 2. 메인 페이지 콘텐츠 영역 */}
       <main className="flex-1 w-full">{children}</main>
 
-      {/* 3. 하단 공통 푸터 배너 섹션 (진한 청록색 테마 및 밑줄/핑크강조 완벽 제거) */}
-      <footer className="w-full bg-[#0a2730] text-[#8fa7ac] py-12 border-t border-[#0d3440] transition-colors duration-300">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-start gap-8 text-left">
+      {/* 3. 🚩 [색상 수정] 요청에 맞춰 화사하고 깔끔하게 원복된 연회색 푸터 셋업 */}
+      <footer className="w-full bg-gray-50/80 dark:bg-[#161616] text-gray-500 dark:text-zinc-400 py-10 border-t border-gray-100 dark:border-zinc-900 transition-colors duration-300">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 text-left">
           {/* 팀 정보 텍스트 */}
-          <div className="space-y-4 flex-1">
-            <div className="flex items-center gap-3">
-              <span className="font-black text-white text-base tracking-wider uppercase">
+          <div className="space-y-2 flex-1">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="font-black text-gray-900 dark:text-white text-base tracking-wider uppercase">
                 GokGok
               </span>
-              <span className="text-[11px] font-medium bg-white/10 text-[#c0d3d6] px-2 py-0.5 rounded-md">
+              <span className="text-[11px] font-medium bg-gray-200/60 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 px-2 py-0.5 rounded-md">
                 대한민국 축제 구석구석
               </span>
             </div>
-            <p className="text-[12px] font-medium leading-relaxed text-[#8fa7ac] max-w-2xl">
+            <p className="text-[12px] font-medium leading-relaxed text-gray-400 dark:text-zinc-500 max-w-2xl">
               작성자: 엄태훈, 이주환, 최원재 (GokGok Project Team)
               <br />본 플랫폼은 국내 지역 활성화 및 로컬 축제 정보 제공을 목적에
               둔 프로젝트 팀 빌딩 공간입니다.
             </p>
-            <p className="text-[11px] font-bold text-[#5a787e] pt-1">
+            <p className="text-[11px] font-bold text-gray-300 dark:text-zinc-600 pt-1">
               &copy; 2026 GokGok. All rights reserved.
             </p>
           </div>
 
-          <div className="flex flex-col sm:items-end gap-6 shrink-0">
+          <div className="flex flex-col sm:items-end gap-5 shrink-0">
             {/* 우측 SNS 패널 */}
             <div className="flex items-center gap-3">
               <a
                 href="https://youtube.com"
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-white transition-all"
+                className="w-9 h-9 bg-gray-200/50 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 transition-all"
               >
                 <Youtube className="w-4 h-4" fill="currentColor" />
               </a>
@@ -392,32 +392,32 @@ export function Layout({ children }: LayoutProps) {
                 href="https://instagram.com"
                 target="_blank"
                 rel="noreferrer"
-                className="w-9 h-9 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-white transition-all"
+                className="w-9 h-9 bg-gray-200/50 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-300 transition-all"
               >
                 <Instagram className="w-4 h-4" />
               </a>
             </div>
 
-            {/* 하단 링크 가로 정렬 영역 (밑줄 및 🚩개인정보처리방침 핑크 강조색 완벽 제거) */}
-            <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] font-bold text-[#c0d3d6]">
+            {/* 하단 링크 가로 정렬 영역 (밑줄 완벽 제거 스타일 유지) */}
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] font-bold text-gray-600 dark:text-zinc-300">
               <Link
                 to="/terms"
                 style={clearButtonStyle}
-                className="hover:text-white transition-colors"
+                className="hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 이용약관
               </Link>
               <Link
                 to="/privacy"
                 style={clearButtonStyle}
-                className="hover:text-white transition-colors"
+                className="hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 개인정보처리방침
               </Link>
               <Link
                 to="/contact"
                 style={clearButtonStyle}
-                className="hover:text-white transition-colors"
+                className="hover:text-gray-900 dark:hover:text-white transition-colors"
               >
                 고객문의
               </Link>
