@@ -1,3 +1,4 @@
+// 주환 - 2026.04.10 / 태훈 수정 - 2026.05.22: 인증 모달 (아이디/비밀번호 찾기 연동 완료)
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
@@ -188,7 +189,26 @@ export function AuthDialog({ isOpen, onClose, onSuccess }: AuthDialogProps) {
                     로그인하기
                   </button>
 
-                  <div className="pt-4 text-center">
+                  {/* 🚩 [새로 추가] 아이디 / 비밀번호 찾기 링크 연결 구분선 */}
+                  <div className="flex items-center justify-center gap-4 text-[12px] text-gray-400 font-semibold pt-2">
+                    <button 
+                      type="button"
+                      onClick={() => { onClose(); navigate("/find-id"); }} 
+                      className="hover:text-gray-900 dark:hover:text-white hover:underline transition-all p-1"
+                    >
+                      아이디 찾기
+                    </button>
+                    <span className="text-gray-200 dark:text-zinc-800 select-none">|</span>
+                    <button 
+                      type="button"
+                      onClick={() => { onClose(); navigate("/find-pw"); }} 
+                      className="hover:text-gray-900 dark:hover:text-white hover:underline transition-all p-1"
+                    >
+                      비밀번호 찾기
+                    </button>
+                  </div>
+
+                  <div className="pt-2 text-center">
                     <button
                       type="button"
                       onClick={() => setMode("signup")}
