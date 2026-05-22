@@ -1,18 +1,22 @@
+/**
+ * 🚀 곡곡(GokGok) 팀 프로젝트 공용 라우트 고유 키 및 로컬 헬퍼 스펙
+ * 기여: 주환(글쓰기), 태훈(notmypage, 약관, 개인정보), 원재(문의하기)
+ */
+
 export const ROUTE_PATHS = {
   HOME: '/',
   SEARCH: '/search',
   COMMUNITY: '/community',
   COMMUNITY_WRITE: '/community/write', // 글쓰기 페이지 추가 - 주환
   MYPAGE: '/mypage',
-  NOTMYPAGE: '/notmypage' ,// notmypage 추가 엄태훈
+  NOTMYPAGE: '/notmypage', // notmypage 추가 엄태훈
   TERMS: '/terms', //  이용약관 추가 엄태훈
   PRIVACY: '/privacy', // 개인정보 처리 방침 추가 엄태훈
   CONTACT: "/contact", // 문의하기 페이지 추가 최원재
-  
 } as const;
 
 export interface Festival {
-  id: string;
+  id: string | number; // id 호환성을 위해 string | number 처리
   title: string;
   location: string;
   date: string;
@@ -23,6 +27,7 @@ export interface Festival {
   status?: 'ongoing' | 'upcoming' | 'ended';
 }
 
+// 🎴 1. 일반 축제 목데이터 리스트
 export const mockFestivals: Festival[] = [
   {
     id: '1',
@@ -80,8 +85,8 @@ export const mockFestivals: Festival[] = [
   },
 ];
 
+// 🏆 2. 메인 화면 상단 베스트 축제 리스트 (중복 완벽 제거본)
 export const topFestivals: Festival[] = [
-  // 🌟 기존에 mockFestivals를 복사하던 부분을 완전히 새로운 축제 데이터로 교체하여 중복 제거!
   {
     id: 'top-1',
     title: '진해 군항제',
@@ -133,7 +138,7 @@ export const topFestivals: Festival[] = [
     status: 'upcoming',
   },
   { 
-    id: 'top-6', // 최
+    id: 'top-6',
     title: '평창 송어축제',
     location: '강원도 평창군',
     date: '2026.12.20 - 2027.01.24',
@@ -184,6 +189,7 @@ export const topFestivals: Festival[] = [
   },
 ];
 
+// 🔥 3. 인기 급상승 섹션에 연동되는 최신 등록 축제 데이터셋
 export const recentFestivals: Festival[] = [
   {
     id: '11',
@@ -266,7 +272,6 @@ export const recentFestivals: Festival[] = [
     category: '음식축제',
     status: 'upcoming',
   },
-  
 ];
 
 export const formatDate = (dateString: string): string => {
