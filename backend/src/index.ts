@@ -1,6 +1,6 @@
 /**
  * 곡곡 백엔드 메인 서버 - 엄태훈 최종 통합본 (로컬/배포 하이브리드 인증 패치 완료)
- * 업데이트: 2026-05-22
+ * 업데이트: 2026-05-22 (Supabase Auth 500 에러 및 HashRouter 라우팅 꼬임 방어선 구축)
  */
 
 import dotenv from 'dotenv'; 
@@ -146,7 +146,7 @@ app.post('/api/auth/find-id', async (req: Request, res: Response) => {
 });
 
 /**
- * 4. 🔥 Supabase 인증 메일 링크 발송 API (로컬호스트 & Netlify 배포 통합 하이브리드 버전)
+ * 4. 🔥 Supabase 인증 메일 링크 발송 API (로컬호스트 & Netlify 배포 통합 하이브리드 버그 프리 버전)
  * 주소 통로 명시: POST /api/auth/send-reset-link
  */
 app.post('/api/auth/send-reset-link', async (req: Request, res: Response) => {
@@ -157,22 +157,24 @@ app.post('/api/auth/send-reset-link', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: '이메일을 입력해주세요.' });
     }
 
-    // 🎯 [핵심 패치] 요청을 보낸 원래 주소(로컬 8080 포트 혹은 넷리파이 실서버)를 실시간으로 탐지합니다.
+    // 🎯 [정밀 패치] 요청을 보낸 원래 주소를 실시간 탐지하고, 주소 끝에 반드시 슬래시(/)를 명시합니다.
     const requestOrigin = req.headers.origin || 'http://localhost:8080';
-    const finalRedirectUrl = `${requestOrigin}/#/reset-password`;
+    
+    // HashRouter 환경에서 Supabase Auth 엔진의 500 차단 및 에러 유발을 막기 위해 끝부분 슬래시(/) 처리가 필수적입니다.
+    const finalRedirectUrl = `${requestOrigin}/#/reset-password/`;
 
-    console.log(`🔗 [Redirect URI 스마트 가변 매핑]: ${finalRedirectUrl}`);
+    console.log(`🔗 [Redirect URI 스마트 가변 매핑 완료]: ${finalRedirectUrl}`);
 
     // 🎯 Supabase 공식 가이드라인 메일 전송 모듈 활성화
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: finalRedirectUrl, // 🚀 접속 환경에 맞춰 리다이렉트 지점을 유동적으로 분기
+      redirectTo: finalRedirectUrl, // 🚀 접속 환경(로컬/넷리파이)에 맞춰 리다이렉트 지점을 안전하게 분기
     });
 
     if (error) throw error;
 
     return res.json({ success: true, message: '비밀번호 재설정 이메일이 발송되었습니다.' });
   } catch (err: any) {
-    console.error('메일 발송 오류 로그:', err);
+    console.error('❌ 메일 발송 중 500 내부 서버 오류 발생:', err);
     return res.status(500).json({ success: false, message: '인증 메일 발송 중 서버 오류가 발생했습니다.' });
   }
 });
