@@ -226,7 +226,7 @@ router.post('/:postId/comments', async (req: Request<PostIdParams, Record<string
       .from('comments')
       .insert([{ post_id: postId, author, author_email, text }])
       .select()
-      .single();
+      
 
     if (error) throw error;
     return res.status(201).json({ success: true, comment: data });
