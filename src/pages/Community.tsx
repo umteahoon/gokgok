@@ -1,4 +1,4 @@
-// 주환 - 2026.05.15: 커뮤니티 페이지 
+// 주환 - 2026.05.15: 커뮤니티 페이지 (사진 비율 유지 + 이미지 개별 삭제 + 커스텀 모달 및 비로그인 일관성 완벽 통합)
 import { useState, useEffect } from "react"; 
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -95,9 +95,10 @@ export default function Community() {
   const [commentText, setCommentText] = useState("");
   const [highResViewer, setHighResViewer] = useState<{ images: string[], index: number } | null>(null);
 
-  // 💡 커스텀 확인 모달 상태 추가
+  // 모달 상태값
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: 'post' | 'comment', id: string, postId?: string } | null>(null);
+  const [isLoginNoticeOpen, setIsLoginNoticeOpen] = useState(false);
 
   const [editingPost, setEditingPost] = useState<CommunityPost | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -137,21 +138,56 @@ export default function Community() {
   }, [currentUser?.email]);
 
   const handleLike = async (e: React.MouseEvent, postId: string) => {
-    e.stopPropagation(); if (!currentUser) return alert("로그인 필요");
+    e.stopPropagation(); 
+    if (!currentUser) {
+      setIsLoginNoticeOpen(true);
+      return;
+    }
     try {
       const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${postId}/like`, { method: "POST", headers: authHeaders, body: JSON.stringify({ user_email: currentUser.email }) });
       const data = await response.json();
       if (data.success) {
-        setLikedIds((prev) => { const next = new Set(prev); data.isLiked ? next.add(postId) : next.delete(postId); return next; });
+        setLikedIds((prev) => {
+          const next = new Set(prev);
+          if (data.isLiked) {
+            next.add(postId);
+          } else {
+            next.delete(postId);
+          }
+          return next;
+        });
         setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: data.likes } : p));
         if (selectedPost?.id === postId) setSelectedPost(prev => prev ? { ...prev, likes: data.likes } : null);
       }
-    } catch (e) { alert("좋아요 실패"); }
+    } catch { alert("좋아요 실패"); }
   };
 
-  const handleCommentSubmit = async () => { if (!currentUser || !commentText.trim() || !selectedPost) return; try { const res = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${selectedPost.id}/comments`, { method: "POST", headers: authHeaders, body: JSON.stringify({ author: currentUser.name, author_email: currentUser.email, text: commentText }) }); const data = await res.json(); if (data.success) { const newComment = { id: data.comment.id, author: data.comment.author, author_email: data.comment.author_email, text: data.comment.text, date: data.comment.created_at, likes: 0 }; setPosts(posts.map(p => p.id === selectedPost.id ? { ...p, comments: p.comments + 1, commentsList: [...(p.commentsList || []), newComment] } : p)); setSelectedPost(prev => prev ? { ...prev, comments: prev.comments + 1, commentsList: [...(prev.commentsList || []), newComment] } : null); setCommentText(""); } } catch (e) { alert("실패"); } };
+  // 💡 명세서 기반 검증 완료된 댓글 등록 기능
+  const handleCommentSubmit = async () => { 
+    if (!currentUser || !commentText.trim() || !selectedPost) return; 
+    try { 
+      const res = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${selectedPost.id}/comments`, { 
+        method: "POST", 
+        headers: authHeaders, 
+        body: JSON.stringify({ 
+          author: currentUser.name || "익명유저", 
+          author_email: currentUser.email, 
+          text: commentText 
+        }) 
+      }); 
+      
+      const data = await res.json(); 
+      if (data.success) { 
+        const newComment = { id: data.comment.id, author: data.comment.author, author_email: data.comment.author_email, text: data.comment.text, date: data.comment.created_at, likes: 0 }; 
+        setPosts(prev => prev.map(p => p.id === selectedPost.id ? { ...p, comments: p.comments + 1, commentsList: [...(p.commentsList || []), newComment] } : p)); 
+        setSelectedPost(prev => prev ? { ...prev, comments: prev.comments + 1, commentsList: [...(prev.commentsList || []), newComment] } : null); 
+        setCommentText(""); 
+      } 
+    } catch { 
+      alert("댓글 등록 중 서버 통신 실패"); 
+    } 
+  };
 
-  // ---  삭제 핸들러들: 바로 API를 부르지 않고 확인 모달을 띄움 ---
   const handleDeletePostClick = (postId: string) => {
     setConfirmAction({ type: 'post', id: postId });
     setIsConfirmOpen(true);
@@ -162,10 +198,8 @@ export default function Community() {
     setIsConfirmOpen(true);
   };
 
-  // 모달에서 '삭제하기' 버튼을 눌렀을 때 실행될 진짜 삭제 함수
   const executeConfirmDelete = async () => {
     if (!confirmAction || !currentUser) return;
-
     try {
       if (confirmAction.type === 'post') {
         const res = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${confirmAction.id}`, { method: "DELETE", headers: authHeaders, body: JSON.stringify({ author_email: currentUser.email }) });
@@ -176,13 +210,13 @@ export default function Community() {
       } else {
         const res = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${confirmAction.postId}/comments/${confirmAction.id}`, { method: "DELETE", headers: authHeaders, body: JSON.stringify({ author_email: currentUser.email }) });
         if ((await res.json()).success) {
-          setPosts(posts.map(p => p.id === confirmAction.postId ? { ...p, comments: Math.max(0, p.comments - 1), commentsList: p.commentsList?.filter(c => c.id !== confirmAction.id) } : p));
+          setPosts(prev => prev.map(p => p.id === confirmAction.postId ? { ...p, comments: Math.max(0, p.comments - 1), commentsList: p.commentsList?.filter(c => c.id !== confirmAction.id) } : p));
           if (selectedPost && selectedPost.id === confirmAction.postId) {
             setSelectedPost({ ...selectedPost, comments: Math.max(0, selectedPost.comments - 1), commentsList: selectedPost.commentsList?.filter(c => c.id !== confirmAction.id) });
           }
         }
       }
-    } catch (e) { alert("삭제 실패"); }
+    } catch { alert("삭제 실패"); }
     setIsConfirmOpen(false);
     setConfirmAction(null);
   };
@@ -210,13 +244,13 @@ export default function Community() {
       const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${editingPost.id}`, { method: "PUT", headers: formDataHeaders, body: formData }); 
       const data = await response.json(); 
       if (data.success) { 
-        alert("수정되었습니다."); 
+        alert("게시글이 성공적으로 수정되었습니다."); 
         const updatedImages = data.post.images || existingImagesToKeep; 
         setPosts(prev => prev.map(p => p.id === editingPost.id ? { ...p, Title: editTitle, content: editContent, images: updatedImages } : p)); 
         if (selectedPost && selectedPost.id === editingPost.id) setSelectedPost(prev => prev ? { ...prev, Title: editTitle, content: editContent, images: updatedImages } : null); 
         setEditingPost(null); 
       }
-    } catch (e) { alert("수정 처리 중 오류가 발생했습니다."); } 
+    } catch { alert("수정 처리 중 오류가 발생했습니다."); } 
   };
 
   const filteredPosts = posts.filter(p => p.Title.toLowerCase().includes(searchTerm.toLowerCase()) || p.author.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -233,7 +267,16 @@ export default function Community() {
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[#111111] dark:group-focus-within:text-white transition-colors" />
               <input type="text" placeholder="작성자 또는 제목으로 검색해보세요" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-14 pr-6 h-[54px] bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl outline-none font-medium shadow-sm" />
             </div>
-            <Button className="w-full md:w-auto h-[54px] bg-white dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-gray-200 dark:border-gray-800 rounded-2xl px-8 font-bold active:scale-95 flex items-center justify-center gap-2 transition-all shrink-0" onClick={() => navigate("/community/write")}>
+            <Button 
+              className="w-full md:w-auto h-[54px] bg-white dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-gray-200 dark:border-gray-800 rounded-2xl px-8 font-bold active:scale-95 flex items-center justify-center gap-2 transition-all shrink-0" 
+              onClick={() => {
+                if (!currentUser) {
+                  setIsLoginNoticeOpen(true);
+                } else {
+                  navigate("/community/write");
+                }
+              }}
+            >
               <Pencil className="w-4 h-4" /> 포스트 쓰기
             </Button>
           </div>
@@ -262,7 +305,6 @@ export default function Community() {
                       <div className="flex items-center gap-1.5 text-gray-400"><MessageCircle className="w-4 h-4" /><span className="text-[12px] font-bold">{post.comments}</span></div>
                     </div>
                     {currentUser?.email === post.author_email && ( <div className="flex items-center gap-1.5 pl-2" onClick={e => e.stopPropagation()}><button onClick={() => openEditModal(post)} className="text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors p-1"><Pencil className="w-3.5 h-3.5" /></button>
-                    {/* 삭제 아이콘 클릭 시 커스텀 모달 호출 */}
                     <button onClick={() => handleDeletePostClick(post.id)} className="text-gray-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-3.5 h-3.5" /></button></div> )}
                   </div>
                 </div>
@@ -274,6 +316,9 @@ export default function Community() {
 
       <AnimatePresence>
         {highResViewer && <HighResImageViewer images={highResViewer.images} initialIndex={highResViewer.index} onClose={() => setHighResViewer(null)} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {selectedPost && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-0 md:p-10" onClick={() => setSelectedPost(null)}>
             <motion.div initial={{ scale: 0.95, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 30 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-[#1a1a1a] w-full h-full md:h-[85vh] max-w-5xl md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
@@ -289,7 +334,6 @@ export default function Community() {
                   </div>
                   <div className="flex items-center gap-4">
                     {currentUser?.email === selectedPost.author_email && ( <div className="flex items-center gap-3 mr-2"><button onClick={() => openEditModal(selectedPost)} className="text-gray-300 hover:text-[#111111] dark:hover:text-white transition-colors"><Pencil size={18}/></button>
-                    {/* 모달 안에서도 커스텀 모달 호출 */}
                     <button onClick={() => handleDeletePostClick(selectedPost.id)} className="text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button></div> )}
                     <button onClick={() => setSelectedPost(null)} className="hidden md:block text-gray-400 hover:text-[#FF3478] transition-colors"><X size={24} strokeWidth={3}/></button>
                   </div>
@@ -306,17 +350,14 @@ export default function Community() {
                       <div key={comment.id} className="flex gap-3 relative group">
                         <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shrink-0 flex items-center justify-center text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase">{comment.author[0]}</div>
                         <div className="flex-1 text-left pr-6"><p className="text-[14px] text-gray-700 dark:text-gray-300 leading-relaxed"><span className="font-extrabold text-gray-900 dark:text-white mr-2">{comment.author}</span>{comment.text}</p><p className="text-[11px] text-gray-400 mt-1.5 font-bold tracking-tighter">{getTimeAgo(comment.date)}</p></div>
-                        {currentUser?.email === comment.author_email && ( 
-                          // 댓글 삭제 클릭 시 커스텀 모달 호출
-                          <button onClick={() => handleDeleteCommentClick(selectedPost.id, comment.id)} className="absolute top-0 right-0 text-gray-300 hover:text-red-500 p-1 transition-colors opacity-0 group-hover:opacity-100"><X size={14} strokeWidth={3}/></button> 
-                        )}
+                        {currentUser?.email === comment.author_email && ( <button onClick={() => handleDeleteCommentClick(selectedPost.id, comment.id)} className="absolute top-0 right-0 text-gray-300 hover:text-red-500 p-1 transition-colors opacity-0 group-hover:opacity-100"><X size={14} strokeWidth={3}/></button> )}
                       </div>
                     ))}
                   </div>
                 </div>
                 <div className="p-5 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] shrink-0">
                   <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-3 shadow-sm">
-                    <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit()} placeholder={currentUser ? "축제 이야기를 나눠보세요" : "로그인 후 댓글 작성"} className="flex-1 bg-transparent text-[14px] outline-none font-medium text-gray-900 dark:text-white" readOnly={!currentUser} onClick={() => { if (!currentUser) alert("로그인이 필요합니다!"); }} />
+                    <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit()} placeholder={currentUser ? "축제 이야기를 나눠보세요" : "로그인 후 댓글 작성"} className="flex-1 bg-transparent text-[14px] outline-none font-medium text-gray-900 dark:text-white placeholder:text-gray-400" readOnly={!currentUser} onClick={() => { if (!currentUser) setIsLoginNoticeOpen(true); }} />
                     <button onClick={handleCommentSubmit} disabled={!currentUser || !commentText.trim()} className="text-gray-900 dark:text-white font-bold text-sm disabled:text-gray-300 transition-colors">게시</button>
                   </div>
                 </div>
@@ -341,6 +382,33 @@ export default function Community() {
               <div className="flex border-t border-gray-50 dark:border-gray-800">
                 <button onClick={() => setIsConfirmOpen(false)} className="flex-1 py-4.5 text-[14px] font-bold text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-r border-gray-50 dark:border-gray-800">취소</button>
                 <button onClick={executeConfirmDelete} className="flex-1 py-4.5 text-[14px] font-black text-[#FF3478] hover:bg-pink-50/30 dark:hover:bg-pink-900/10 transition-colors">삭제하기</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* --- 로그인 유도 커스텀 모달 --- */}
+      <AnimatePresence>
+        {isLoginNoticeOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setIsLoginNoticeOpen(false)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-[#1a1a1a] w-full max-w-[320px] rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 p-6 text-center">
+              <div className="w-12 h-12 bg-pink-50 dark:bg-pink-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="text-[#FF3478] w-6 h-6" fill="currentColor" />
+              </div>
+              <h3 className="text-[18px] font-black text-gray-900 dark:text-white mb-2">로그인이 필요합니다</h3>
+              <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed mb-6">곡곡 수다방의 포스트 작성, 하트, 댓글 기능은<br />로그인 후 이용하실 수 있습니다.</p>
+              <div className="flex flex-col gap-2">
+                <button 
+                  onClick={() => {
+                    setIsLoginNoticeOpen(false);
+                    navigate("/notmypage"); 
+                  }}
+                  className="w-full py-3.5 bg-[#111111] dark:bg-white text-white dark:text-black font-bold rounded-full text-sm shadow-sm hover:opacity-90 transition-all"
+                >
+                  로그인하러 가기
+                </button>
+                <button onClick={() => setIsLoginNoticeOpen(false)} className="w-full py-2 text-gray-400 dark:text-gray-500 font-medium rounded-full text-xs hover:text-gray-600 transition-colors">취소</button>
               </div>
             </motion.div>
           </motion.div>

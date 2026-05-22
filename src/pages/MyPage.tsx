@@ -42,7 +42,6 @@ export default function MyPage() {
 
   const allFestivals = [...topFestivals, ...mockFestivals];
 
-  // ✅ 데이터 로드 함수
   const loadUserData = async () => {
     const user = getCurrentUser();
     if (!user) {
@@ -75,7 +74,6 @@ export default function MyPage() {
     return () => window.removeEventListener('focus', loadUserData);
   }, []);
 
-  // --- 프로필 사진 수정 ---
   const handleProfilePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && currentUser) {
@@ -92,7 +90,6 @@ export default function MyPage() {
     }
   };
 
-  // --- 게시글 수정 모달 열기 ---
   const openEditModal = (post: any) => {
     setEditingPost(post);
     setEditTitle(post.title);
@@ -100,7 +97,6 @@ export default function MyPage() {
     setEditImages(null);
   };
 
-  // --- 게시글 수정 제출 ---
   const handleEditSubmit = async () => {
     if (!editingPost || !currentUser) return;
     try {
@@ -126,19 +122,20 @@ export default function MyPage() {
     }
   };
 
-  // ✅ 추가: 게시글 삭제 함수
   const handleDeletePost = async (postId: number) => {
     if (!confirm("정말 이 게시글을 삭제하시겠습니까?")) return;
+    if (!currentUser) return;
+
     try {
-      const response = await fetch(`${API_BASE_URL}/api/community/${postId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/community/${postId}?email=${currentUser.email}`, {
         method: "DELETE",
       });
-      const data = await response.json();
-      if (data.success) {
+      
+      if (response.ok) {
         alert("게시글이 삭제되었습니다.");
-        loadUserData(); // 삭제 후 목록 새로고침
+        loadUserData(); 
       } else {
-        alert("삭제에 실패했습니다.");
+        alert(`삭제 실패 (오류 코드: ${response.status})`);
       }
     } catch (e) {
       console.error("삭제 오류:", e);
@@ -258,14 +255,17 @@ export default function MyPage() {
                 <div key={post.id} className="p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] relative group hover:border-[#FF3478]/30 transition-all flex flex-col md:flex-row gap-8">
                   {post.images && post.images.length > 0 && (
                     <div className="w-full md:w-48 h-48 shrink-0 rounded-3xl overflow-hidden bg-gray-50 shadow-inner">
-                      <img src={`${STORAGE_URL}${post.images[0]}`} className="w-full h-full object-cover" alt="post" />
+                      <img 
+                        src={post.images[0].startsWith("http") ? post.images[0] : `${STORAGE_URL}${post.images[0]}`} 
+                        className="w-full h-full object-cover" 
+                        alt="post" 
+                      />
                     </div>
                   )}
 
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-[20px] font-black truncate">{post.title}</h3>
-                      {/* ✅ 수정 및 삭제 버튼 그룹 */}
                       <div className="flex gap-1">
                         <button onClick={() => openEditModal(post)} className="p-2 text-gray-300 hover:text-[#FF3478] transition-colors">
                           <Pencil size={18} />
@@ -279,7 +279,9 @@ export default function MyPage() {
                     <div className="flex items-center gap-3 mb-4">
                       <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FF3478]/5 rounded-full text-[#FF3478]">
                         <Heart size={14} fill="#FF3478" />
-                        <span className="text-xs font-black">{post.likes_count || 0}</span>
+                        <span className="text-xs font-black">
+                          {post.likesCount ?? post.likes_count ?? post.likeCount ?? post.likes ?? 0}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 dark:bg-zinc-800 rounded-full text-gray-400">
                         <MessageSquare size={14} />
@@ -339,7 +341,6 @@ export default function MyPage() {
         </Tabs>
       </main>
 
-      {/* 수정 모달 */}
       <AnimatePresence>
         {editingPost && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
@@ -361,7 +362,13 @@ export default function MyPage() {
                       ))
                     ) : (
                       editingPost.images?.map((img: string, i: number) => (
-                        <div key={i} className="w-20 h-20 shrink-0"><img src={`${STORAGE_URL}${img}`} className="w-full h-full object-cover rounded-xl opacity-60" alt="old" /></div>
+                        <div key={i} className="w-20 h-20 shrink-0">
+                          <img 
+                            src={img.startsWith("http") ? img : `${STORAGE_URL}${img}`} 
+                            className="w-full h-full object-cover rounded-xl opacity-60" 
+                            alt="old" 
+                          />
+                        </div>
                       ))
                     )}
                   </div>
