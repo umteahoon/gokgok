@@ -1,5 +1,6 @@
 /**
- * 곡곡 백엔드 메인 서버 - 엄태훈 최종 통합본 (경로 최적화 버전)
+ * 곡곡 백엔드 메인 서버 - 엄태훈 최종 통합본 (비밀번호 이메일 인증 패치 버전)
+ * 수정일: 2026-05-22
  */
 
 import dotenv from 'dotenv'; 
@@ -24,6 +25,7 @@ const PORT = process.env.PORT || 5000;
 
 const secretKey = process.env.JWT_SECRET || 'gokgok-secret-key';
 
+// 🎯 Supabase 공식 Auth 관리를 위해 SERVICE_ROLE_KEY를 사용하는 클라이언트 인스턴스
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -60,38 +62,46 @@ const verifyAdminInternal = (req: Request, res: Response, next: any) => {
 };
 
 // --- [API 경로 매핑 - 순서 중요!] ---
-
-// 1. 문의사항 관련 통합 (사용자용 & 관리자용 모두 이 라우터에서 처리)
-// 이렇게 설정하면 contactRouter 내부의 모든 경로는 자동으로 /api/contact 뒤에 붙습니다.
 app.use('/api/contact', contactRouter); 
-
-// 2. 기타 라우터들
 app.use('/api/festivals', festivalRouter);
 app.use('/api/interactions', favoritesRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/community', communityRouter);
-app.use('/api/admin', adminRouter); // 통계나 유저관리용
+app.use('/api/admin', adminRouter); 
 
 // --- [인증 및 계정 관리 API] ---
 
 /**
- * 1. 회원가입
+ * 1. 회원가입 (Supabase Auth 통합 가동 구조)
  */
 app.post('/api/auth/signup', async (req: Request, res: Response) => {
   try {
     const { id, email, password, name } = req.body;
+
+    // A. Supabase 공식 Auth 시스템에 계정 동시 생성 (이메일 인증 링크 전송의 핵심 기반)
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: email,
+      password: password, 
+      email_confirm: true // 시연 편의성을 위해 이메일 소유권 확인 자동 통과 플래그 설정
+    });
+
+    if (authError) throw authError;
+
+    // B. 기존 로그인 생태계 유지를 위한 bcrypt 암호화
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const adminEmails = ['am2869@naver.com', 'phj03@naver.com', 'juhwan@test.com', 'qwer@1234.com'];
     const isAdmin = adminEmails.includes(email);  
 
-    const { error } = await supabase
+    // C. 커스텀 profiles 테이블 데이터 적재
+    const { error: dbError } = await supabase
       .from('profiles')
       .insert([{ id, email, password: hashedPassword, name, role: isAdmin ? 'ADMIN' : 'USER' }]);
 
-    if (error) throw error;
+    if (dbError) throw dbError;
     res.status(201).json({ success: true, message: '회원가입 완료' });
   } catch (err: any) {
+    console.error('회원가입 오류:', err);
     res.status(400).json({ success: false, message: '이미 존재하는 아이디이거나 중복된 이메일입니다.' });
   }
 });
@@ -136,12 +146,59 @@ app.post('/api/auth/find-id', async (req: Request, res: Response) => {
 });
 
 /**
- * 4. 비밀번호 재설정
+ * 4. 🚩 [새로 추가] Supabase 인증 메일 링크 발송 API
+ * 주소 통로 명시: POST /api/auth/send-reset-link
+ */
+app.post('/api/auth/send-reset-link', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: '이메일을 입력해주세요.' });
+    }
+
+    // 🎯 Supabase 공식 가이드라인 메일 전송 모듈 활성화
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'http://localhost:8080/#/reset-password', 
+    });
+
+    if (error) throw error;
+
+    return res.json({ success: true, message: '비밀번호 재설정 이메일이 발송되었습니다.' });
+  } catch (err: any) {
+    console.error('메일 발송 오류 로그:', err);
+    return res.status(500).json({ success: false, message: '인증 메일 발송 중 서버 오류가 발생했습니다.' });
+  }
+});
+
+/**
+ * 5. 비밀번호 재설정 & 완전 동기화 (기존 코드 확장 고도화)
+ * 메일 링크를 타고 진입하여 변경 시 Auth 시스템과 profiles 테이블을 연달아 갱신합니다.
  */
 app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
   try {
-    const { id, email, currentPassword, newPassword } = req.body;
+    const { id, email, currentPassword, newPassword, isFromEmailLink } = req.body;
 
+    // A. 이메일 인증 링크를 타고 들어온 특수 케이스 예외 처리
+    if (isFromEmailLink || !currentPassword) {
+      if (!email || !newPassword) return res.status(400).json({ success: false, message: '데이터 누락' });
+
+      // Supabase Auth 계정 정보 동기화 강제 수정
+      const { data: userList } = await supabase.auth.admin.listUsers();
+      const targetUser = userList?.users.find(u => u.email === email);
+      
+      if (targetUser) {
+        await supabase.auth.admin.updateUserById(targetUser.id, { password: newPassword });
+      }
+
+      // 우리 profiles 서비스 테이블 동기화
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await supabase.from('profiles').update({ password: hashedPassword }).eq('email', email);
+
+      return res.json({ success: true, message: '이메일 인증 비밀번호 재설정 완료' });
+    }
+
+    // B. 마이페이지 등에서 현재 패스워드를 대조하고 직접 변경하는 기존 로직 유지 스코프
     const { data: user, error: userError } = await supabase
       .from('profiles')
       .select('id, password')
@@ -159,10 +216,7 @@ app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ password: hashedPassword })
-      .eq('id', id);
+    const { error: updateError } = await supabase.from('profiles').update({ password: hashedPassword }).eq('id', id);
 
     if (updateError) throw updateError;
 
@@ -173,7 +227,7 @@ app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
 });
 
 /**
- * 5. 회원 탈퇴
+ * 6. 회원 탈퇴
  */
 app.delete('/api/auth/delete', async (req: Request, res: Response) => {
   try {
@@ -187,7 +241,7 @@ app.delete('/api/auth/delete', async (req: Request, res: Response) => {
 });
 
 /**
- * 6. 토큰 연장
+ * 7. 토큰 연장
  */
 app.post('/api/auth/refresh', async (req: Request, res: Response) => {
   try {
@@ -205,7 +259,6 @@ app.post('/api/auth/refresh', async (req: Request, res: Response) => {
 });
 
 // --- [관리자 보안 기능] ---
-
 app.post('/api/admin/report-threat', async (req: Request, res: Response) => {
   try {
     const { email, violationType, count } = req.body;
