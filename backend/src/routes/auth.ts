@@ -129,4 +129,28 @@ router.post('/reset-password', async (req: Request, res: Response) => {
   }
 });
 
+// [Supabase 비밀번호 재설정 링크 발송 API]
+router.post('/send-reset-link', async (req: Request, res: Response) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: '이메일을 입력해주세요.' });
+    }
+
+    // 🎯 Supabase 공식 가이드라인 Auth 링크 발송 트리거 활성화
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      // 🚩 메일 링크 클릭 시 사용자를 강제로 복귀시킬 로컬/실서버 주소 매핑
+      redirectTo: 'http://localhost:8080/#/reset-password', 
+    });
+
+    if (error) throw error;
+
+    res.json({ success: true, message: '비밀번호 재설정 이메일이 발송되었습니다.' });
+  } catch (err: any) {
+    console.error('메일 발송 오류:', err);
+    res.status(500).json({ success: false, message: err.message || '인증 메일 발송 중 오류 발생' });
+  }
+});
+
 export default router;
