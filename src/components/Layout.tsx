@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { Menu, X, Sun, Moon, Clock } from 'lucide-react';
-import { ROUTE_PATHS } from '@/lib/index';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from "react";
+import { NavLink, useNavigate, Link } from "react-router-dom";
+import { Menu, X, Sun, Moon, Clock } from "lucide-react";
+import { ROUTE_PATHS } from "@/lib/index";
+import { Button } from "@/components/ui/button";
 import { getCurrentUser, logout } from "@/lib/login";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,7 +27,7 @@ export function Layout({ children }: LayoutProps) {
     const token = localStorage.getItem("accessToken");
     if (!token) return 0;
     try {
-      const payload = JSON.parse(window.atob(token.split('.')[1]));
+      const payload = JSON.parse(window.atob(token.split(".")[1]));
       const exp = payload.exp * 1000;
       const now = Date.now();
       return Math.floor((exp - now) / 1000);
@@ -41,8 +41,12 @@ export function Layout({ children }: LayoutProps) {
     localStorage.removeItem("gokgok_current_user");
     setCurrentUser(null);
     setTimeLeft(0);
-    navigate(ROUTE_PATHS?.HOME || '/');
-    toast({ variant: "destructive", title: "⏰ 세션 만료", description: "로그인 시간이 만료되어 자동 로그아웃되었습니다." });
+    navigate(ROUTE_PATHS?.HOME || "/");
+    toast({
+      variant: "destructive",
+      title: "⏰ 세션 만료",
+      description: "로그인 시간이 만료되어 자동 로그아웃되었습니다.",
+    });
   };
 
   useEffect(() => {
@@ -56,19 +60,24 @@ export function Layout({ children }: LayoutProps) {
       setTimeLeft((prev) => {
         const currentToken = localStorage.getItem("accessToken");
         if (!currentToken) return 0;
-        if (prev <= 1) { clearInterval(timer); forceLogout(); return 0; }
+        if (prev <= 1) {
+          clearInterval(timer);
+          forceLogout();
+          return 0;
+        }
         return prev - 1;
       });
     }, 1000);
 
-    window.addEventListener('hashchange', updateUserStatus);
-    window.addEventListener('auth-change', updateUserStatus);
-    if (document.documentElement.classList.contains('dark')) setIsDarkMode(true);
+    window.addEventListener("hashchange", updateUserStatus);
+    window.addEventListener("auth-change", updateUserStatus);
+    if (document.documentElement.classList.contains("dark"))
+      setIsDarkMode(true);
 
     return () => {
       clearInterval(timer);
-      window.removeEventListener('hashchange', updateUserStatus);
-      window.removeEventListener('auth-change', updateUserStatus);
+      window.removeEventListener("hashchange", updateUserStatus);
+      window.removeEventListener("auth-change", updateUserStatus);
     };
   }, [currentUser?.id]);
 
@@ -77,70 +86,103 @@ export function Layout({ children }: LayoutProps) {
     const h = Math.floor(seconds / 3600);
     const m = Math.floor((seconds % 3600) / 60);
     const s = seconds % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   const handleExtend = async () => {
     const token = localStorage.getItem("accessToken");
     try {
-      const res = await fetch("https://gokgok-8ztf.onrender.com/api/auth/refresh", {
-        method: "POST", headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" }
-      });
+      const res = await fetch(
+        "https://gokgok-8ztf.onrender.com/api/auth/refresh",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem("accessToken", data.token);
         setTimeLeft(3600);
-        toast({ title: "✅ 세션 연장 성공", description: "로그인 시간이 1시간 연장되었습니다." });
+        toast({
+          title: "✅ 세션 연장 성공",
+          description: "로그인 시간이 1시간 연장되었습니다.",
+        });
       }
     } catch (err) {
-      toast({ variant: "destructive", title: "연장 실패", description: "다시 로그인해주세요." });
+      toast({
+        variant: "destructive",
+        title: "연장 실패",
+        description: "다시 로그인해주세요.",
+      });
     }
   };
 
   const baseNavItems = [
-    { label: '마당', path: ROUTE_PATHS?.HOME || '/' },
-    { label: '축제', path: ROUTE_PATHS?.SEARCH || '/search' },
-    { label: '수다', path: ROUTE_PATHS?.COMMUNITY || '/community' },
-    { label: '내 정보', path: ROUTE_PATHS?.MYPAGE || '/mypage' }
+    { label: "마당", path: ROUTE_PATHS?.HOME || "/" },
+    { label: "축제", path: ROUTE_PATHS?.SEARCH || "/search" },
+    { label: "수다", path: ROUTE_PATHS?.COMMUNITY || "/community" },
+    { label: "내 정보", path: ROUTE_PATHS?.MYPAGE || "/mypage" },
   ];
 
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
-      logout(); updateUserStatus(); navigate(ROUTE_PATHS?.HOME || '/'); setMobileMenuOpen(false);
-      toast({ title: "로그아웃 완료", description: "정상적으로 로그아웃 되었습니다." });
+      logout();
+      updateUserStatus();
+      navigate(ROUTE_PATHS?.HOME || "/");
+      setMobileMenuOpen(false);
+      toast({
+        title: "로그아웃 완료",
+        description: "정상적으로 로그아웃 되었습니다.",
+      });
     }
   };
 
   const toggleTheme = () => {
     setIsDarkMode((prev) => {
       const newTheme = !prev;
-      if (newTheme) document.documentElement.classList.add('dark');
-      else document.documentElement.classList.remove('dark');
+      if (newTheme) document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("dark");
       return newTheme;
     });
   };
 
+  // 모바일 터치 하이라이트 방지용 오브젝트 스타일
+  const clearButtonStyle = {
+    WebkitTapHighlightColor: "transparent",
+    outline: "none",
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-[#111111] font-sans transition-colors duration-300">
+      {/* 1. 상단 글로벌 네비게이션 헤더 */}
       <header className="sticky top-0 z-50 w-full border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-[#111111] transition-colors duration-300">
         <div className="relative w-full max-w-[1400px] mx-auto px-4 md:px-8 flex items-center justify-between h-16">
-          
           <div className="flex-shrink-0 z-10">
-            <NavLink to={ROUTE_PATHS?.HOME || '/'} className="group flex items-center">
-              <img src="/gokgok_logo.svg" alt="곡곡 로고" className="h-12 md:h-16 w-auto object-contain transition-opacity hover:opacity-80 dark:invert" />
+            <NavLink
+              to={ROUTE_PATHS?.HOME || "/"}
+              className="group flex items-center"
+            >
+              <img
+                src="/gokgok_logo.svg"
+                alt="곡곡 로고"
+                className="h-12 md:h-16 w-auto object-contain transition-opacity hover:opacity-80 dark:invert"
+              />
             </NavLink>
           </div>
 
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 h-full items-stretch space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (
-              <NavLink 
-                key={item.label} 
+              <NavLink
+                key={item.label}
                 to={item.path}
                 className={({ isActive }) =>
                   `flex items-center text-[15px] lg:text-base transition-all whitespace-nowrap ${
-                    isActive 
-                      ? 'font-bold text-gray-900 dark:text-white' 
-                      : 'font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    isActive
+                      ? "font-bold text-gray-900 dark:text-white"
+                      : "font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`
                 }
               >
@@ -164,35 +206,108 @@ export function Layout({ children }: LayoutProps) {
                   <span>{formatTime(timeLeft)}</span>
                 </div>
                 <div className="h-3 w-[1px] bg-gray-300 dark:bg-gray-600 mx-1" />
-                <button onClick={handleExtend} className="text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-[#FF3478] transition-colors">연장</button>
+                <button
+                  onClick={handleExtend}
+                  className="text-[11px] font-bold text-gray-500 dark:text-gray-400 hover:text-[#FF3478] transition-colors"
+                >
+                  연장
+                </button>
               </div>
             )}
 
             <div className="flex items-center gap-3">
-              {/* 🚩 로그인/로그아웃 버튼 다크모드 아이콘 스타일로 수정 완료 */}
+              {/* 🚩 [우측 상단 제어 버튼 컴포넌트군 정교화 통합] */}
               {currentUser ? (
-                <button onClick={handleLogout} className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all">
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
+                >
                   로그아웃
                 </button>
               ) : (
-                <NavLink to={ROUTE_PATHS?.NOTMYPAGE || '/login'} className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all">
+                <NavLink
+                  to={ROUTE_PATHS?.NOTMYPAGE || "/login"}
+                  className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
+                >
                   로그인
                 </NavLink>
               )}
 
-              <button onClick={toggleTheme} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors" aria-label="테마 변경">
-                {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                aria-label="테마 변경"
+              >
+                {isDarkMode ? (
+                  <Sun className="w-[18px] h-[18px]" />
+                ) : (
+                  <Moon className="w-[18px] h-[18px]" />
+                )}
               </button>
-              
-              {/* 🚩 문의사항 버튼 다크모드 아이콘 스타일로 수정 완료 */}
-              <button onClick={() => navigate('/contact')} className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all">
+
+              <button
+                onClick={() => navigate("/contact")}
+                className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
+              >
                 문의사항
               </button>
             </div>
           </div>
         </div>
       </header>
+
+      {/* 2. 메인 페이지 콘텐츠 영역 */}
       <main className="flex-1 w-full">{children}</main>
+
+      {/* 3. 하단 공통 푸터 배너 섹션 구조 보존 유지 */}
+      <footer className="w-full border-t border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-[#161616] text-gray-400 dark:text-zinc-500 py-10 transition-colors duration-300">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 text-left">
+          {/* 팀 정보 텍스트 */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <span className="font-black text-gray-900 dark:text-white text-base tracking-wider uppercase">
+                GokGok
+              </span>
+              <span className="text-[11px] font-medium bg-gray-200/60 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 px-2 py-0.5 rounded-md">
+                대한민국 축제 구석구석
+              </span>
+            </div>
+            <p className="text-[12px] font-medium text-gray-400 dark:text-zinc-500 leading-relaxed">
+              작성자: 엄태훈, 이주환, 최원재 (GokGok Project Team)
+              <br />본 플랫폼은 국내 지역 활성화 및 로컬 축제 정보 제공을 목적에
+              둔 프로젝트 팀 빌딩 공간입니다.
+            </p>
+            <p className="text-[11px] font-bold text-gray-300 dark:text-zinc-600 pt-2">
+              &copy; 2026 GokGok. All rights reserved.
+            </p>
+          </div>
+
+          {/* 하단 링크 가로 정렬 영역 */}
+          <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] font-bold text-gray-500 dark:text-zinc-400 shrink-0">
+            <Link
+              to="/terms"
+              style={clearButtonStyle}
+              className="hover:text-gray-900 dark:hover:text-white transition-colors underline underline-offset-4 decoration-gray-200"
+            >
+              이용약관
+            </Link>
+            <Link
+              to="/privacy"
+              style={clearButtonStyle}
+              className="hover:text-gray-900 dark:hover:text-white transition-colors underline underline-offset-4 decoration-gray-200"
+            >
+              개인정보처리방침
+            </Link>
+            <Link
+              to="/contact"
+              style={clearButtonStyle}
+              className="hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              고객문의
+            </Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

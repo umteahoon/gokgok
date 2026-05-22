@@ -1,18 +1,74 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { mockFestivals } from "@/lib/index";
 import busanBg from "@/assets/main.png";
-import { ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  MessageSquare,
+  Calendar,
+  ArrowRight,
+  MapPin,
+} from "lucide-react";
+import { getCurrentUser } from "@/lib/login";
 
-const regions = ["전체", "서울", "경기/인천", "강원", "충청", "전라", "경상", "제주"];
+const regions = [
+  "전체",
+  "서울",
+  "경기/인천",
+  "강원",
+  "충청",
+  "전라",
+  "경상",
+  "제주",
+];
 
 export default function Home() {
+  const currentUser = getCurrentUser();
+  const navigate = useNavigate();
   const [activeRegion, setActiveRegion] = useState("전체");
   const [wishlistedIds, setWishlistedIds] = useState<string[]>([]);
+  const [isLoginNoticeOpen, setIsLoginNoticeOpen] = useState(false);
+
+  // 백엔드 수다방 실시간 핫 게시글 상태 관리
+  const [hotPosts, setHotPosts] = useState<any[]>([]);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 로컬 스토리지 찜 목록 동기화
+  const clearButtonStyle = {
+    WebkitTapHighlightColor: "transparent",
+    outline: "none",
+    border: "none",
+  };
+
+  // 수다방 API로부터 데이터를 받아와 좋아요 높은 순으로 3개 정렬하여 가져오기
+  const loadHotPostsData = async () => {
+    try {
+      const response = await fetch(
+        "https://gokgok-8ztf.onrender.com/api/community",
+      );
+      const data = await response.json();
+      if (data.success && data.posts) {
+        const sorted = data.posts
+          .sort((a: any, b: any) => (b.likes || 0) - (a.likes || 0))
+          .slice(0, 3)
+          .map((p: any) => ({
+            id: p.id,
+            title: p.title || "제목 없음",
+            author: p.author || "익명유저",
+            likes: p.likes || 0,
+            comments: p.commentsList ? p.commentsList.length : 0,
+            category: p.category || "수다",
+          }));
+        setHotPosts(sorted);
+      }
+    } catch (error) {
+      console.error("실시간 수다방 데이터를 가져오는 중 오류 발생:", error);
+    }
+  };
+
   const loadWishlist = () => {
     const saved = JSON.parse(localStorage.getItem("gokgok_wishlist") || "[]");
     setWishlistedIds(saved);
@@ -20,12 +76,20 @@ export default function Home() {
 
   useEffect(() => {
     loadWishlist();
-    window.addEventListener('focus', loadWishlist);
-    return () => window.removeEventListener('focus', loadWishlist);
+    loadHotPostsData();
+    window.addEventListener("focus", loadWishlist);
+    return () => window.removeEventListener("focus", loadWishlist);
   }, []);
 
   const toggleWishlist = (e: React.MouseEvent, id: string | number) => {
-    e.preventDefault(); e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!currentUser) {
+      setIsLoginNoticeOpen(true);
+      return;
+    }
+
     const strId = String(id);
     const saved = JSON.parse(localStorage.getItem("gokgok_wishlist") || "[]");
     let updated;
@@ -41,30 +105,47 @@ export default function Home() {
   const displayFestivals = useMemo(() => {
     if (activeRegion === "전체") return mockFestivals.slice(0, 10);
     return mockFestivals.filter((f) => {
-      if (activeRegion === "경기/인천") return f.location.includes("경기") || f.location.includes("인천");
+      if (activeRegion === "경기/인천")
+        return f.location.includes("경기") || f.location.includes("인천");
       return f.location.includes(activeRegion);
     });
   }, [activeRegion]);
+
+  const closingSoonFestivals = useMemo(() => {
+    return mockFestivals.slice(2, 5);
+  }, []);
 
   const handleScroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
       const { scrollLeft, clientWidth } = scrollRef.current;
       const moveAmount = clientWidth * 0.8;
       scrollRef.current.scrollTo({
-        left: direction === "left" ? scrollLeft - moveAmount : scrollLeft + moveAmount,
-        behavior: "smooth"
+        left:
+          direction === "left"
+            ? scrollLeft - moveAmount
+            : scrollLeft + moveAmount,
+        behavior: "smooth",
       });
     }
   };
 
   return (
     <div className="relative w-full min-h-screen bg-white dark:bg-[#111111] text-[#111111] dark:text-white font-sans pb-20 overflow-x-hidden transition-colors">
-      <section className="relative w-full h-screen flex items-center justify-center overflow-hidden">
+      {/* 1. 히어로 비주얼 배너 */}
+      <section className="relative w-full h-[75vh] md:h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <img src={busanBg} alt="배경" className="w-full h-full object-cover brightness-[0.85]" />
+          <img
+            src={busanBg}
+            alt="배경"
+            className="w-full h-full object-cover brightness-[0.85]"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
         </div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 text-center text-white flex flex-col items-center px-4 -mt-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative z-10 text-center text-white flex flex-col items-center px-4 -mt-10"
+        >
           <h2 className="text-[42px] sm:text-[52px] md:text-[64px] font-extrabold leading-[1.15] tracking-tight drop-shadow-xl text-white">
             <span className="block opacity-95">대한민국의</span>
             <span className="block mt-1">따뜻한 매력을</span>
@@ -72,16 +153,20 @@ export default function Home() {
           </h2>
         </motion.div>
       </section>
-      
-      <main className="w-full max-w-[1200px] mx-auto py-12 px-4 md:px-10 bg-white dark:bg-[#1a1a1a] rounded-t-[2.5rem] shadow-[0_-10px_40px_rgba(0,0,0,0.05)] relative z-20 -mt-24 border-t border-gray-100 dark:border-gray-800 transition-colors">
-        <div className="mb-14 pb-6 border-b border-gray-100 dark:border-gray-800 flex justify-center">
+
+      {/* 2. 메인 컨텐츠 영역 (뒷배경 하얀 박스판 완전 제거 상태) */}
+      <main className="w-full max-w-[1200px] mx-auto py-16 px-6 md:px-10 relative z-20 transition-colors">
+        {/* 지역 탭 필터 버튼 */}
+        <div className="mb-16 pb-6 border-b border-gray-100 dark:border-gray-800 flex justify-center">
           <div className="flex gap-2 overflow-x-auto py-2 px-2 no-scrollbar">
             {regions.map((region) => (
-              <button key={region} onClick={() => setActiveRegion(region)}
+              <button
+                key={region}
+                onClick={() => setActiveRegion(region)}
                 className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap border ${
-                  activeRegion === region 
-                  ? "bg-[#FF3478] text-white border-[#FF3478] shadow-md" 
-                  : "bg-[#F5F5F5] dark:bg-[#222222] text-[#666666] dark:text-gray-400 border-transparent hover:bg-gray-200 dark:hover:bg-gray-700"
+                  activeRegion === region
+                    ? "bg-[#FF3478] text-white border-[#FF3478] shadow-md"
+                    : "bg-[#F5F5F5] dark:bg-[#222222] text-[#666666] dark:text-gray-400 border-transparent hover:bg-gray-200 dark:hover:bg-gray-700"
                 }`}
               >
                 {region}
@@ -90,69 +175,244 @@ export default function Home() {
           </div>
         </div>
 
-        <section className="mb-16 relative">
-          <h3 className="text-[24px] md:text-[28px] font-extrabold tracking-tight text-gray-900 dark:text-white mb-8">
-            {activeRegion === "전체" ? "이달의 추천 축제 🌸" : `${activeRegion}의 추천 축제 📍`}
-          </h3>
+        {/* 2-A. 추천 축제 슬라이더 섹션 */}
+        <section className="mb-24 relative">
+          <div className="flex justify-between items-end mb-8">
+            <h3 className="text-[24px] md:text-[28px] font-extrabold tracking-tight text-gray-900 dark:text-white text-left">
+              {activeRegion === "전체"
+                ? "이달의 추천 축제"
+                : `${activeRegion}의 추천 축제 📍`}
+            </h3>
+            <Link
+              to="/search"
+              style={clearButtonStyle}
+              className="text-sm font-bold text-gray-400 hover:text-[#FF3478] flex items-center gap-1 transition-colors select-none outline-none focus:outline-none"
+            >
+              더보기 <ArrowRight size={14} />
+            </Link>
+          </div>
 
           <div className="relative group/slider">
-            {/* ✅ 왼쪽 끝 버튼 */}
-            <button 
-              onClick={() => handleScroll("left")} 
+            <button
+              onClick={() => handleScroll("left")}
               className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/90 dark:bg-[#222]/90 border border-gray-100 dark:border-zinc-800 shadow-xl flex items-center justify-center text-gray-900 dark:text-white backdrop-blur-md opacity-0 group-hover/slider:opacity-100 transition-all hover:scale-110 active:scale-95"
             >
               <ChevronLeft size={24} />
             </button>
 
-            {/* ✅ 오른쪽 끝 버튼 */}
-            <button 
-              onClick={() => handleScroll("right")} 
+            <button
+              onClick={() => handleScroll("right")}
               className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-white/90 dark:bg-[#222]/90 border border-gray-100 dark:border-zinc-800 shadow-xl flex items-center justify-center text-gray-900 dark:text-white backdrop-blur-md opacity-0 group-hover/slider:opacity-100 transition-all hover:scale-110 active:scale-95"
             >
               <ChevronRight size={24} />
             </button>
 
-            {/* ✅ 슬라이드 컨테이너: 스크롤바 완전 제거 */}
-            <div 
-              ref={scrollRef} 
+            <div
+              ref={scrollRef}
               className="flex flex-nowrap justify-start gap-4 md:gap-5 overflow-x-auto snap-x snap-mandatory pb-4 pt-2 scroll-smooth no-scrollbar [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
             >
               {displayFestivals.length > 0 ? (
                 displayFestivals.map((festival) => (
-                  <Link 
-                    to={`/festival/${festival.id}`} 
-                    key={festival.id} 
+                  <Link
+                    to={`/festival/${festival.id}`}
+                    key={festival.id}
                     className="min-w-[75%] sm:min-w-[calc(33.333%-16px)] lg:min-w-[calc(25%-15px)] max-w-[75%] sm:max-w-[calc(33.333%-16px)] lg:max-w-[calc(25%-15px)] flex-shrink-0 snap-start group/card cursor-pointer"
                   >
                     <div className="relative mb-3 aspect-[4/5] rounded-2xl overflow-hidden shadow-sm bg-gray-50 dark:bg-[#222222]">
-                      <img src={festival.image} alt={festival.title} className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110" />
-                      <div onClick={(e) => toggleWishlist(e, festival.id)} className="absolute top-3 right-3 z-10 cursor-pointer">
-                        <Heart 
-                          size={26} 
-                          className={`drop-shadow-md transition-all active:scale-75 ${
-                            wishlistedIds.includes(String(festival.id)) 
-                            ? "fill-[#FF3478] text-[#FF3478]" 
-                            : "text-white/70 hover:text-white"
-                          }`} 
+                      <img
+                        src={festival.image}
+                        alt={festival.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
+                      />
+                      <div
+                        onClick={(e) => toggleWishlist(e, festival.id)}
+                        className="absolute top-3 right-3 z-10 cursor-pointer select-none outline-none focus:outline-none"
+                        style={clearButtonStyle}
+                      >
+                        <Heart
+                          size={26}
+                          className={`drop-shadow-md transition-all active:scale-75 outline-none border-none focus:outline-none select-none ${
+                            wishlistedIds.includes(String(festival.id))
+                              ? "fill-[#FF3478] text-[#FF3478]"
+                              : "text-white/70 hover:text-white"
+                          }`}
                         />
                       </div>
                     </div>
-                    <div className="px-1">
-                      <span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase">{festival.category || "테마여행"}</span>
-                      <h3 className="font-bold text-[16px] text-gray-900 dark:text-white line-clamp-2 h-[44px] group-hover/card:text-[#FF3478] transition-colors">{festival.title}</h3>
-                      <p className="text-[13px] text-[#555555] dark:text-gray-400 font-semibold mt-1">{festival.location}</p>
+                    <div className="px-1 text-left">
+                      <span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase">
+                        {festival.category || "테마여행"}
+                      </span>
+                      <h3 className="font-bold text-[16px] text-gray-900 dark:text-white line-clamp-2 h-[44px] group-hover/card:text-[#FF3478] transition-colors">
+                        {festival.title}
+                      </h3>
+                      <p className="text-[13px] text-[#555555] dark:text-gray-400 font-semibold mt-1">
+                        {festival.location}
+                      </p>
                     </div>
                   </Link>
                 ))
               ) : (
                 <div className="w-full py-20 text-center bg-gray-50 dark:bg-[#222222] rounded-3xl border-2 border-dashed border-gray-100 dark:border-gray-800">
-                  <p className="text-gray-400 font-bold">해당 지역의 축제 정보가 없습니다.</p>
+                  <p className="text-gray-400 font-bold">
+                    해당 지역의 축제 정보가 없습니다.
+                  </p>
                 </div>
               )}
             </div>
           </div>
         </section>
+
+        {/* 2-B. 놓치면 후회할 마감 임박 축제 */}
+        <section className="mb-24 text-left">
+          <div className="flex justify-between items-end mb-8">
+            <div>
+              <h3 className="text-[24px] md:text-[28px] font-black tracking-tight text-gray-900 dark:text-white">
+                놓치면 후회할 마감 임박 축제
+              </h3>
+              <p className="text-gray-400 font-medium text-sm mt-1">
+                곧 막을 내리는 축제 정보들을 놓치지 마세요.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {closingSoonFestivals.map((festival) => (
+              <Link
+                to={`/festival/${festival.id}`}
+                key={`closing-${festival.id}`}
+                className="flex gap-4 p-4 bg-gray-50 dark:bg-[#222222] rounded-[1.8rem] hover:shadow-md hover:scale-[1.01] transition-all group"
+              >
+                <div className="w-24 h-24 rounded-2xl overflow-hidden shrink-0">
+                  <img
+                    src={festival.image}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    alt=""
+                  />
+                </div>
+                <div className="flex flex-col justify-center min-w-0">
+                  <span className="text-[10px] text-white font-bold bg-[#FF3478] px-2 py-0.5 rounded-full w-fit mb-1.5 shadow-sm">
+                    D-Day 임박
+                  </span>
+                  <h4 className="font-extrabold text-[15px] truncate text-gray-900 dark:text-white group-hover:text-[#FF3478] transition-colors">
+                    {festival.title}
+                  </h4>
+                  <div className="flex items-center gap-1 text-gray-400 text-xs mt-1 font-medium">
+                    <MapPin size={12} />{" "}
+                    <span className="truncate">{festival.location}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* 2-C. ✅ [수정] 요청하신 줄글 텍스트 리스트 형태의 실시간 수다방 HOT 게시글 피드 구현 */}
+        <section className="mb-10 text-left">
+          <div className="flex justify-between items-end mb-6">
+            <div>
+              <h3 className="text-[24px] md:text-[28px] font-black tracking-tight text-gray-900 dark:text-white">
+                실시간 수다방 HOT 게시글
+              </h3>
+              <p className="text-gray-400 font-medium text-sm mt-1">
+                곡곡 멤버들이 전하는 생생한 축제 이야기와 꿀팁.
+              </p>
+            </div>
+            <Link
+              to="/community"
+              style={clearButtonStyle}
+              className="text-sm font-bold text-gray-400 hover:text-[#FF3478] flex items-center gap-1 transition-colors select-none outline-none focus:outline-none"
+            >
+              전체보기 <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {hotPosts.length > 0 ? (
+              hotPosts.map((post) => (
+                <div
+                  key={post.id}
+                  onClick={() => navigate("/community")}
+                  className="w-full p-5 bg-white dark:bg-[#1a1a1a] border border-gray-100 dark:border-gray-800 rounded-2xl flex items-center justify-between hover:border-[#FF3478]/30 cursor-pointer shadow-sm transition-all"
+                >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <span className="text-xs font-bold text-[#FF3478] bg-[#FF3478]/5 px-3 py-1 rounded-full shrink-0">
+                      {post.category}
+                    </span>
+                    <h4 className="font-bold text-[15px] text-gray-800 dark:text-gray-200 truncate">
+                      {post.title}
+                    </h4>
+                    <span className="text-xs text-gray-400 font-medium shrink-0 hidden sm:inline">
+                      by {post.author}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4 text-gray-300 dark:text-gray-600 font-bold text-xs shrink-0 pl-3">
+                    <div className="flex items-center gap-1 text-pink-500/80">
+                      <Heart size={14} fill="currentColor" /> {post.likes}
+                    </div>
+                    <div className="flex items-center gap-1 text-gray-400">
+                      <MessageSquare size={14} /> {post.comments}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="w-full py-10 text-center text-gray-400 font-bold bg-gray-50 dark:bg-[#1a1a1a] border border-dashed border-gray-100 dark:border-gray-800 rounded-2xl">
+                실시간 핫 게시글이 없습니다.
+              </div>
+            )}
+          </div>
+        </section>
       </main>
+
+      {/* --- 로그인 유도 커스텀 모달 --- */}
+      <AnimatePresence>
+        {isLoginNoticeOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setIsLoginNoticeOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#1a1a1a] w-full max-w-[320px] rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 p-6 text-center"
+            >
+              <div className="w-12 h-12 bg-pink-50 dark:bg-pink-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="text-[#FF3478] w-6 h-6" fill="currentColor" />
+              </div>
+              <h3 className="text-[18px] font-black text-gray-900 dark:text-white mb-2">
+                로그인이 필요합니다
+              </h3>
+              <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed mb-6">
+                축제 관심목록 찜 기능은
+                <br />
+                로그인 후 이용하실 수 있습니다.
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setIsLoginNoticeOpen(false);
+                    navigate("/notmypage");
+                  }}
+                  className="w-full py-3.5 bg-[#111111] dark:bg-white text-white dark:text-black font-bold rounded-full text-sm shadow-sm hover:opacity-90 transition-all"
+                >
+                  로그인하러 가기
+                </button>
+                <button
+                  onClick={() => setIsLoginNoticeOpen(false)}
+                  className="w-full py-2 text-gray-400 dark:text-gray-500 font-medium rounded-full text-xs hover:text-gray-600 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

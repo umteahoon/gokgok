@@ -1,8 +1,21 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  User, Camera, LogOut, Key, UserX, Heart, 
-  ChevronRight, Settings, MessageSquare, FileText, Pencil, Trash2, X, ImagePlus, Loader2
+import {
+  User,
+  Camera,
+  LogOut,
+  Key,
+  UserX,
+  Heart,
+  ChevronRight,
+  Settings,
+  MessageSquare,
+  FileText,
+  Pencil,
+  Trash2,
+  X,
+  ImagePlus,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,25 +26,26 @@ import { Label } from "@/components/ui/label";
 import { mockFestivals, topFestivals } from "@/lib/index";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/motion";
 import { FestivalCard } from "@/components/FestivalCard";
-import { 
-  getCurrentUser, 
-  logout, 
-  resetPassword, 
-  deleteAccount, 
-  updateProfilePhoto, 
-  type User as AuthUser 
+import {
+  getCurrentUser,
+  logout,
+  resetPassword,
+  deleteAccount,
+  updateProfilePhoto,
+  type User as AuthUser,
 } from "@/lib/login";
 
 const API_BASE_URL = "https://gokgok-8ztf.onrender.com";
-const STORAGE_URL = "https://ofslnmgvaiycywllsosc.supabase.co/storage/v1/object/public/community_images/";
+const STORAGE_URL =
+  "https://ofslnmgvaiycywllsosc.supabase.co/storage/v1/object/public/community_images/";
 
 export default function MyPage() {
   const navigate = useNavigate();
   const profileFileInputRef = useRef<HTMLInputElement>(null);
   const postFileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
-  const [savedFestivals, setSavedFestivals] = useState<any[]>([]); 
+  const [savedFestivals, setSavedFestivals] = useState<any[]>([]);
   const [myPosts, setMyPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -42,6 +56,13 @@ export default function MyPage() {
 
   const allFestivals = [...topFestivals, ...mockFestivals];
 
+  // 터치 하이라이트 잔상, 아웃라인, 테두리를 근본적으로 다 날려버리는 스타일
+  const clearButtonStyle = {
+    WebkitTapHighlightColor: "transparent",
+    outline: "none",
+    border: "none",
+  };
+
   const loadUserData = async () => {
     const user = getCurrentUser();
     if (!user) {
@@ -50,15 +71,21 @@ export default function MyPage() {
     }
     setCurrentUser(user);
 
-    const savedIds = JSON.parse(localStorage.getItem("gokgok_wishlist") || "[]");
-    const filtered = allFestivals.filter(f => savedIds.includes(String(f.id)));
+    const savedIds = JSON.parse(
+      localStorage.getItem("gokgok_wishlist") || "[]",
+    );
+    const filtered = allFestivals.filter((f) =>
+      savedIds.includes(String(f.id)),
+    );
     setSavedFestivals(filtered);
 
     try {
       const postRes = await fetch(`${API_BASE_URL}/api/community`);
       const postData = await postRes.json();
       if (postData.success) {
-        const userPosts = postData.posts.filter((p: any) => p.author_email === user.email);
+        const userPosts = postData.posts.filter(
+          (p: any) => p.author_email === user.email,
+        );
         setMyPosts(userPosts);
       }
     } catch (err) {
@@ -70,11 +97,13 @@ export default function MyPage() {
 
   useEffect(() => {
     loadUserData();
-    window.addEventListener('focus', loadUserData);
-    return () => window.removeEventListener('focus', loadUserData);
+    window.addEventListener("focus", loadUserData);
+    return () => window.removeEventListener("focus", loadUserData);
   }, []);
 
-  const handleProfilePhotoChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePhotoChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (file && currentUser) {
       const reader = new FileReader();
@@ -105,12 +134,17 @@ export default function MyPage() {
       formData.append("title", editTitle);
       formData.append("content", editContent);
       if (editImages && editImages.length > 0) {
-        Array.from(editImages).forEach(file => formData.append("images", file));
+        Array.from(editImages).forEach((file) =>
+          formData.append("images", file),
+        );
       }
-      const response = await fetch(`${API_BASE_URL}/api/community/${editingPost.id}`, {
-        method: "PUT",
-        body: formData 
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/community/${editingPost.id}`,
+        {
+          method: "PUT",
+          body: formData,
+        },
+      );
       const data = await response.json();
       if (data.success) {
         alert("글과 이미지가 수정되었습니다.");
@@ -127,13 +161,16 @@ export default function MyPage() {
     if (!currentUser) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/community/${postId}?email=${currentUser.email}`, {
-        method: "DELETE",
-      });
-      
+      const response = await fetch(
+        `${API_BASE_URL}/api/community/${postId}?email=${currentUser.email}`,
+        {
+          method: "DELETE",
+        },
+      );
+
       if (response.ok) {
         alert("게시글이 삭제되었습니다.");
-        loadUserData(); 
+        loadUserData();
       } else {
         alert(`삭제 실패 (오류 코드: ${response.status})`);
       }
@@ -161,7 +198,12 @@ export default function MyPage() {
       return;
     }
     try {
-      const result = await resetPassword(currentUser.id, currentUser.email, currentPw, newPw);
+      const result = await resetPassword(
+        currentUser.id,
+        currentUser.email,
+        currentPw,
+        newPw,
+      );
       alert(result.message);
       if (result.success) handleLogout();
     } catch (error) {
@@ -181,63 +223,136 @@ export default function MyPage() {
     return (
       <div className="min-h-screen bg-white dark:bg-[#111111] flex items-center justify-center">
         <div className="text-center px-6">
-          <div className="w-20 h-20 bg-gray-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-6"><User className="w-10 h-10 text-gray-300" /></div>
-          <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">로그인이 필요해요</h2>
-          <Button className="w-full max-w-[280px] h-14 bg-[#FF3478] text-white font-bold rounded-2xl shadow-lg mt-8" onClick={() => navigate("/notmypage")}>로그인 / 회원가입</Button>
+          <div className="w-20 h-20 bg-gray-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-6">
+            <User className="w-10 h-10 text-gray-300" />
+          </div>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white mb-2">
+            로그인이 필요해요
+          </h2>
+          <Button
+            className="w-full max-w-[280px] h-14 bg-[#FF3478] text-white font-bold rounded-2xl shadow-lg mt-8"
+            onClick={() => navigate("/notmypage")}
+          >
+            로그인 / 회원가입
+          </Button>
         </div>
       </div>
     );
   }
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-white dark:bg-[#111111] font-sans text-gray-900 dark:text-zinc-100 transition-colors">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="min-h-screen bg-white dark:bg-[#111111] font-sans text-gray-900 dark:text-zinc-100 transition-colors"
+    >
       <main className="max-w-[1000px] mx-auto pt-12 pb-24 px-5">
-        
         <header className="flex flex-col md:flex-row items-center md:items-start gap-8 mb-12">
           <div className="relative group shrink-0">
             <div className="relative">
               <Avatar className="w-32 h-32 md:w-40 md:h-40 border-[6px] border-gray-50 dark:border-zinc-800 transition-all">
-                <AvatarImage src={currentUser.profilePhoto} className="object-cover" />
-                <AvatarFallback className="bg-[#FF3478]/10 text-[#FF3478] text-5xl font-black">{currentUser.name.charAt(0)}</AvatarFallback>
+                <AvatarImage
+                  src={currentUser.profilePhoto}
+                  className="object-cover"
+                />
+                <AvatarFallback className="bg-[#FF3478]/10 text-[#FF3478] text-5xl font-black">
+                  {currentUser.name.charAt(0)}
+                </AvatarFallback>
               </Avatar>
-              <button onClick={() => profileFileInputRef.current?.click()} className="absolute bottom-1 right-1 w-10 h-10 bg-white dark:bg-zinc-700 border border-gray-100 dark:border-zinc-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all text-gray-600 dark:text-zinc-300">
+              <button
+                onClick={() => profileFileInputRef.current?.click()}
+                style={clearButtonStyle}
+                className="absolute bottom-1 right-1 w-10 h-10 bg-white dark:bg-zinc-700 border border-gray-100 dark:border-zinc-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-all text-gray-600 dark:text-zinc-300 outline-none focus:outline-none select-none"
+              >
                 <Camera size={20} />
               </button>
             </div>
-            <input type="file" ref={profileFileInputRef} className="hidden" accept="image/*" onChange={handleProfilePhotoChange} />
+            <input
+              type="file"
+              ref={profileFileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleProfilePhotoChange}
+            />
           </div>
 
           <div className="flex-1 text-center md:text-left pt-4">
-            <h1 className="text-3xl font-black tracking-tight mb-2">{currentUser.name}님</h1>
-            <p className="text-gray-400 dark:text-zinc-500 font-medium text-lg mb-8">{currentUser.email}</p>
-            
+            <h1 className="text-3xl font-black tracking-tight mb-2">
+              {currentUser.name}님
+            </h1>
+            <p className="text-gray-400 dark:text-zinc-500 font-medium text-lg mb-8">
+              {currentUser.email}
+            </p>
+
             <div className="flex justify-center md:justify-start gap-4">
               <div className="px-5 py-4 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl flex items-center gap-4 min-w-[150px]">
-                <div className="w-10 h-10 rounded-xl bg-[#FF3478]/10 flex items-center justify-center"><Heart size={18} className="text-[#FF3478]" fill="#FF3478" /></div>
-                <div className="flex flex-col"><span className="text-[11px] font-bold text-gray-400 uppercase">관심 목록</span><span className="text-xl font-black">{savedFestivals.length}</span></div>
+                <div className="w-10 h-10 rounded-xl bg-[#FF3478]/10 flex items-center justify-center">
+                  <Heart size={18} className="text-[#FF3478]" fill="#FF3478" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase">
+                    관심 목록
+                  </span>
+                  <span className="text-xl font-black">
+                    {savedFestivals.length}
+                  </span>
+                </div>
               </div>
               <div className="px-5 py-4 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl flex items-center gap-4 min-w-[150px]">
-                <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-zinc-800 flex items-center justify-center"><FileText size={18} className="text-gray-500" /></div>
-                <div className="flex flex-col"><span className="text-[11px] font-bold text-gray-400 uppercase">작성한 글</span><span className="text-xl font-black">{myPosts.length}</span></div>
+                <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-zinc-800 flex items-center justify-center">
+                  <FileText size={18} className="text-gray-500" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-bold text-gray-400 uppercase">
+                    작성한 글
+                  </span>
+                  <span className="text-xl font-black">{myPosts.length}</span>
+                </div>
               </div>
             </div>
           </div>
         </header>
 
         <Tabs defaultValue="saved" className="w-full">
-          {/* 🚩 탭 메뉴 Hover UI 둥글게 & 이쁘게 변경된 부분 */}
-          <TabsList className="flex w-full border-b border-gray-100 dark:border-zinc-800 bg-transparent h-auto p-0 mb-10 gap-2 md:gap-4 justify-center md:justify-start">
-            <TabsTrigger value="saved" className="px-6 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] data-[state=active]:bg-[#FF3478]/5 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-t-2xl text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none cursor-pointer">관심 목록</TabsTrigger>
-            <TabsTrigger value="posts" className="px-6 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] data-[state=active]:bg-[#FF3478]/5 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-t-2xl text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none cursor-pointer">작성한 글</TabsTrigger>
-            <TabsTrigger value="settings" className="px-6 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] data-[state=active]:bg-[#FF3478]/5 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-t-2xl text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none cursor-pointer">계정 설정</TabsTrigger>
+          <TabsList className="flex w-full border-b border-gray-100 dark:border-zinc-800 bg-transparent h-auto p-0 mb-10 gap-8 md:gap-12">
+            {/* 🚩 [수정 병합 완료] 핑크색 바 제거, 사각 하이라이트 배경 완전 투명 오버라이딩 적용 */}
+            <TabsTrigger
+              value="saved"
+              style={clearButtonStyle}
+              className="px-0 py-4 !border-none !border-transparent data-[state=active]:!border-transparent data-[state=active]:text-[#FF3478] data-[state=active]:!bg-transparent data-[state=active]:!shadow-none bg-transparent hover:bg-transparent focus:bg-transparent shadow-none rounded-none text-lg font-black transition-all focus:outline-none focus-visible:ring-0 focus-visible:outline-none select-none"
+            >
+              관심 목록
+            </TabsTrigger>
+            <TabsTrigger
+              value="posts"
+              style={clearButtonStyle}
+              className="px-0 py-4 !border-none !border-transparent data-[state=active]:!border-transparent data-[state=active]:text-[#FF3478] data-[state=active]:!bg-transparent data-[state=active]:!shadow-none bg-transparent hover:bg-transparent focus:bg-transparent shadow-none rounded-none text-lg font-black transition-all focus:outline-none focus-visible:ring-0 focus-visible:outline-none select-none"
+            >
+              작성한 글
+            </TabsTrigger>
+            <TabsTrigger
+              value="settings"
+              style={clearButtonStyle}
+              className="px-0 py-4 !border-none !border-transparent data-[state=active]:!border-transparent data-[state=active]:text-[#FF3478] data-[state=active]:!bg-transparent data-[state=active]:!shadow-none bg-transparent hover:bg-transparent focus:bg-transparent shadow-none rounded-none text-lg font-black transition-all focus:outline-none focus-visible:ring-0 focus-visible:outline-none select-none"
+            >
+              계정 설정
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="saved" className="outline-none">
             {savedFestivals.length > 0 ? (
-              <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <motion.div
+                variants={staggerContainer}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-2 md:grid-cols-4 gap-6"
+              >
                 {savedFestivals.map((f) => (
                   <motion.div key={f.id} variants={staggerItem}>
-                    <Link to={`/festival/${f.id}`} className="block h-full hover:scale-[1.02] transition-transform">
+                    <Link
+                      to={`/festival/${f.id}`}
+                      className="block h-full hover:scale-[1.02] transition-transform"
+                    >
                       <FestivalCard festival={f} />
                     </Link>
                   </motion.div>
@@ -245,73 +360,113 @@ export default function MyPage() {
               </motion.div>
             ) : (
               <div className="text-center py-24 bg-gray-50 dark:bg-zinc-900/50 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-zinc-800">
-                <Heart className="w-12 h-12 text-gray-200 mx-auto mb-4" /><p className="text-gray-400 font-bold">찜한 축제가 없습니다.</p>
+                <Heart className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                <p className="text-gray-400 font-bold">찜한 축제가 없습니다.</p>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="posts" className="outline-none">
             <div className="grid grid-cols-1 gap-6">
-              {myPosts.length > 0 ? myPosts.map((post) => (
-                <div key={post.id} className="p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] relative group hover:border-[#FF3478]/30 transition-all flex flex-col md:flex-row gap-8">
-                  {post.images && post.images.length > 0 && (
-                    <div className="w-full md:w-48 h-48 shrink-0 rounded-3xl overflow-hidden bg-gray-50 shadow-inner">
-                      <img 
-                        src={post.images[0].startsWith("http") ? post.images[0] : `${STORAGE_URL}${post.images[0]}`} 
-                        className="w-full h-full object-cover" 
-                        alt="post" 
-                      />
-                    </div>
-                  )}
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-[20px] font-black truncate">{post.title}</h3>
-                      <div className="flex gap-1">
-                        <button onClick={() => openEditModal(post)} className="p-2 text-gray-300 hover:text-[#FF3478] transition-colors">
-                          <Pencil size={18} />
-                        </button>
-                        <button onClick={() => handleDeletePost(post.id)} className="p-2 text-gray-300 hover:text-red-500 transition-colors">
-                          <Trash2 size={18} />
-                        </button>
+              {myPosts.length > 0 ? (
+                myPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] relative group hover:border-[#FF3478]/30 transition-all flex flex-col md:flex-row gap-8"
+                  >
+                    {post.images && post.images.length > 0 && (
+                      <div className="w-full md:w-48 h-48 shrink-0 rounded-3xl overflow-hidden bg-gray-50 shadow-inner">
+                        <img
+                          src={
+                            post.images[0].startsWith("http")
+                              ? post.images[0]
+                              : `${STORAGE_URL}${post.images[0]}`
+                          }
+                          className="w-full h-full object-cover"
+                          alt="post"
+                        />
                       </div>
-                    </div>
+                    )}
 
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FF3478]/5 rounded-full text-[#FF3478]">
-                        <Heart size={14} fill="#FF3478" />
-                        <span className="text-xs font-black">
-                          {post.likesCount ?? post.likes_count ?? post.likeCount ?? post.likes ?? 0}
-                        </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-[20px] font-black truncate">
+                          {post.title}
+                        </h3>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => openEditModal(post)}
+                            style={clearButtonStyle}
+                            className="p-2 text-gray-300 hover:text-[#FF3478] transition-colors outline-none border-none focus:outline-none select-none"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePost(post.id)}
+                            style={clearButtonStyle}
+                            className="p-2 text-gray-300 hover:text-red-500 transition-colors outline-none border-none focus:outline-none select-none"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 dark:bg-zinc-800 rounded-full text-gray-400">
-                        <MessageSquare size={14} />
-                        <span className="text-xs font-bold">{post.commentsList?.length || 0}</span>
-                      </div>
-                    </div>
 
-                    <p className="text-[15px] text-gray-500 dark:text-zinc-400 leading-relaxed mb-6 line-clamp-3">{post.content}</p>
-                    
-                    <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-2xl p-5">
-                      <p className="text-[13px] font-bold text-gray-400 mb-4 flex items-center gap-2">
-                        <MessageSquare size={14} /> 댓글 {post.commentsList?.length || 0}개
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FF3478]/5 rounded-full text-[#FF3478]">
+                          <Heart size={14} fill="#FF3478" />
+                          <span className="text-xs font-black">
+                            {post.likesCount ??
+                              post.likes_count ??
+                              post.likeCount ??
+                              post.likes ??
+                              0}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 dark:bg-zinc-800 rounded-full text-gray-400">
+                          <MessageSquare size={14} />
+                          <span className="text-xs font-bold">
+                            {post.commentsList?.length || 0}
+                          </span>
+                        </div>
+                      </div>
+
+                      <p className="text-[15px] text-gray-500 dark:text-zinc-400 leading-relaxed mb-6 line-clamp-3">
+                        {post.content}
                       </p>
-                      <div className="space-y-4 max-h-[160px] overflow-y-auto pr-2 no-scrollbar">
-                        {post.commentsList && post.commentsList.length > 0 ? post.commentsList.map((comment: any) => (
-                          <div key={comment.id} className="text-[14px] border-b border-gray-100 dark:border-zinc-800 last:border-0 pb-3">
-                            <span className="font-black mr-2 text-[#FF3478]">{comment.author}</span>
-                            <span className="text-gray-600 dark:text-zinc-300">{comment.text}</span>
-                          </div>
-                        )) : <p className="text-[13px] text-gray-300 italic">아직 댓글이 없습니다.</p>}
+
+                      <div className="bg-gray-50 dark:bg-zinc-800/50 rounded-2xl p-5">
+                        <p className="text-[13px] font-bold text-gray-400 mb-4 flex items-center gap-2">
+                          <MessageSquare size={14} /> 댓글{" "}
+                          {post.commentsList?.length || 0}개
+                        </p>
+                        <div className="space-y-4 max-h-[160px] overflow-y-auto pr-2 no-scrollbar">
+                          {post.commentsList && post.commentsList.length > 0 ? (
+                            post.commentsList.map((comment: any) => (
+                              <div
+                                key={comment.id}
+                                className="text-[14px] border-b border-gray-100 dark:border-zinc-800 last:border-0 pb-3"
+                              >
+                                <span className="font-black mr-2 text-[#FF3478]">
+                                  {comment.author}
+                                </span>
+                                <span className="text-gray-600 dark:text-zinc-300">
+                                  {comment.text}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-[13px] text-gray-300 italic">
+                              아직 댓글이 없습니다.
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )) : (
-                /* 🚩 작성한 글 없음 빈 화면도 둥근 점선으로 이쁘게 변경 */
-                <div className="text-center py-24 bg-gray-50 dark:bg-zinc-900/50 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-zinc-800 hover:bg-gray-100 transition-colors">
-                  <FileText className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                  <p className="text-gray-400 font-bold">작성한 글이 없습니다.</p>
+                ))
+              ) : (
+                <div className="text-center py-24 text-gray-400 font-bold">
+                  작성한 글이 없습니다.
                 </div>
               )}
             </div>
@@ -320,25 +475,78 @@ export default function MyPage() {
           <TabsContent value="settings" className="outline-none">
             <div className="max-w-xl space-y-10">
               <section>
-                <h3 className="text-xl font-black mb-6 flex items-center gap-2"><User size={20} className="text-[#FF3478]" /> 개인정보 관리</h3>
+                <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                  <User size={20} className="text-[#FF3478]" /> 개인정보 관리
+                </h3>
                 <div className="space-y-4">
-                  <div className="space-y-1"><Label className="ml-1">이름</Label><Input value={currentUser.name} disabled className="h-14 rounded-2xl bg-gray-50 dark:bg-zinc-900 border-none font-bold" /></div>
-                  <div className="space-y-1"><Label className="ml-1">이메일 계정</Label><Input value={currentUser.email} disabled className="h-14 rounded-2xl bg-gray-50 dark:bg-zinc-900 border-none font-bold" /></div>
+                  <div className="space-y-1">
+                    <Label className="ml-1">이름</Label>
+                    <Input
+                      value={currentUser.name}
+                      disabled
+                      className="h-14 rounded-2xl bg-gray-50 dark:bg-zinc-900 border-none font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="ml-1">이메일 계정</Label>
+                    <Input
+                      value={currentUser.email}
+                      disabled
+                      className="h-14 rounded-2xl bg-gray-50 dark:bg-zinc-900 border-none font-bold"
+                    />
+                  </div>
                 </div>
               </section>
               <section className="pt-10 border-t border-gray-100 dark:border-zinc-800">
-                <h3 className="text-xl font-black mb-6 flex items-center gap-2"><Settings size={20} className="text-gray-400" /> 계정 보안 및 관리</h3>
+                <h3 className="text-xl font-black mb-6 flex items-center gap-2">
+                  <Settings size={20} className="text-gray-400" /> 계정 보안 및
+                  관리
+                </h3>
                 <div className="flex flex-col gap-3">
-                  <button onClick={handleChangePassword} className="w-full flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:bg-gray-50 transition-all group shadow-none">
-                    <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-[#FF3478]/10 transition-colors"><Key size={18} className="group-hover:text-[#FF3478]" /></div><span className="font-bold">비밀번호 변경</span></div>
+                  <button
+                    onClick={handleChangePassword}
+                    style={clearButtonStyle}
+                    className="w-full flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:bg-gray-50 transition-all group shadow-none outline-none focus:outline-none select-none"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-[#FF3478]/10 transition-colors">
+                        <Key size={18} className="group-hover:text-[#FF3478]" />
+                      </div>
+                      <span className="font-bold">비밀번호 변경</span>
+                    </div>
                     <ChevronRight size={18} className="text-gray-300" />
                   </button>
-                  <button onClick={handleLogout} className="w-full flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:bg-gray-50 transition-all group shadow-none">
-                    <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center transition-colors"><LogOut size={18} /></div><span className="font-bold">로그아웃</span></div>
+                  <button
+                    onClick={handleLogout}
+                    style={clearButtonStyle}
+                    className="w-full flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:bg-gray-50 transition-all group shadow-none outline-none focus:outline-none select-none"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center transition-colors">
+                        <LogOut size={18} />
+                      </div>
+                      <span className="font-bold">로그아웃</span>
+                    </div>
                     <ChevronRight size={18} className="text-gray-300" />
                   </button>
-                  <button onClick={() => { if(confirm("정말 탈퇴하시겠습니까?")) deleteAccount(currentUser.id).then(() => {alert("탈퇴되었습니다."); logout(); navigate("/");}) }} className="w-full flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:bg-gray-50 transition-all group shadow-none">
-                    <div className="flex items-center gap-4"><div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center transition-colors"><UserX size={18} /></div><span className="font-bold text-red-500">회원 탈퇴</span></div>
+                  <button
+                    onClick={() => {
+                      if (confirm("정말 탈퇴하시겠습니까?"))
+                        deleteAccount(currentUser.id).then(() => {
+                          alert("탈퇴되었습니다.");
+                          logout();
+                          navigate("/");
+                        });
+                    }}
+                    style={clearButtonStyle}
+                    className="w-full flex items-center justify-between p-5 rounded-2xl bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 hover:bg-gray-50 transition-all group shadow-none outline-none focus:outline-none select-none"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center transition-colors">
+                        <UserX size={18} />
+                      </div>
+                      <span className="font-bold text-red-500">회원 탈퇴</span>
+                    </div>
                     <ChevronRight size={18} className="text-gray-300" />
                   </button>
                 </div>
@@ -350,44 +558,113 @@ export default function MyPage() {
 
       <AnimatePresence>
         {editingPost && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4">
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} className="bg-white dark:bg-[#1a1a1a] w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800">
-              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-white dark:bg-[#1a1a1a] w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800"
+            >
+              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1a1a1a]">
                 <h3 className="font-extrabold text-xl">게시글 및 사진 수정</h3>
-                <button onClick={() => setEditingPost(null)} className="text-gray-400 hover:text-gray-900 transition-colors"><X className="w-6 h-6" /></button>
+                <button
+                  onClick={() => setEditingPost(null)}
+                  style={clearButtonStyle}
+                  className="text-gray-400 hover:text-gray-900 transition-colors outline-none border-none focus:outline-none select-none"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
-              <div className="p-8 flex flex-col gap-6 overflow-y-auto max-h-[70vh]">
-                <div><label className="text-[13px] font-extrabold mb-2 block">제목</label><input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-zinc-700 rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#FF3478]/20 transition-all" /></div>
-                <div><label className="text-[13px] font-extrabold mb-2 block">내용</label><textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="w-full h-32 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-zinc-700 rounded-2xl p-4 font-medium outline-none focus:ring-2 focus:ring-[#FF3478]/20 resize-none transition-all" /></div>
-                
+              <div className="p-8 flex flex-col gap-6 text-left overflow-y-auto max-h-[70vh]">
                 <div>
-                  <label className="text-[13px] font-extrabold mb-2 block">사진 변경 (수다방 사진 연동)</label>
+                  <label className="text-[13px] font-extrabold mb-2 block">
+                    제목
+                  </label>
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-zinc-700 rounded-2xl p-4 font-bold outline-none focus:ring-2 focus:ring-[#FF3478]/20 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-[13px] font-extrabold mb-2 block">
+                    내용
+                  </label>
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full h-32 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-zinc-700 rounded-2xl p-4 font-medium outline-none focus:ring-2 focus:ring-[#FF3478]/20 resize-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[13px] font-extrabold mb-2 block">
+                    사진 변경 (수다방 사진 연동)
+                  </label>
                   <div className="flex gap-2 mb-4 overflow-x-auto pb-2 no-scrollbar">
-                    {editImages ? (
-                      Array.from(editImages).map((file, i) => (
-                        <div key={i} className="relative w-20 h-20 shrink-0"><img src={URL.createObjectURL(file)} className="w-full h-full object-cover rounded-xl border border-[#FF3478]" alt="new" /></div>
-                      ))
-                    ) : (
-                      editingPost.images?.map((img: string, i: number) => (
-                        <div key={i} className="w-20 h-20 shrink-0">
-                          <img 
-                            src={img.startsWith("http") ? img : `${STORAGE_URL}${img}`} 
-                            className="w-full h-full object-cover rounded-xl opacity-60" 
-                            alt="old" 
-                          />
-                        </div>
-                      ))
-                    )}
+                    {editImages
+                      ? Array.from(editImages).map((file, i) => (
+                          <div key={i} className="relative w-20 h-20 shrink-0">
+                            <img
+                              src={URL.createObjectURL(file)}
+                              className="w-full h-full object-cover rounded-xl border border-[#FF3478]"
+                              alt="new"
+                            />
+                          </div>
+                        ))
+                      : editingPost.images?.map((img: string, i: number) => (
+                          <div key={i} className="w-20 h-20 shrink-0">
+                            <img
+                              src={
+                                img.startsWith("http")
+                                  ? img
+                                  : `${STORAGE_URL}${img}`
+                              }
+                              className="w-full h-full object-cover rounded-xl opacity-60"
+                              alt="old"
+                            />
+                          </div>
+                        ))}
                   </div>
-                  <div onClick={() => postFileInputRef.current?.click()} className="w-full h-20 border-2 border-dashed border-gray-200 dark:border-zinc-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-all text-gray-400">
-                    <ImagePlus size={20} /><span className="text-[11px] mt-1">새 사진 선택 시 수다방 사진이 교체됩니다</span>
+                  <div
+                    onClick={() => postFileInputRef.current?.click()}
+                    style={clearButtonStyle}
+                    className="w-full h-20 border-2 border-dashed border-gray-200 dark:border-zinc-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-all text-gray-400 outline-none focus:outline-none select-none"
+                  >
+                    <ImagePlus size={20} />
+                    <span className="text-[11px] mt-1">
+                      새 사진 선택 시 수다방 사진이 교체됩니다
+                    </span>
                   </div>
-                  <input type="file" ref={postFileInputRef} className="hidden" multiple accept="image/*" onChange={(e) => setEditImages(e.target.files)} />
+                  <input
+                    type="file"
+                    ref={postFileInputRef}
+                    className="hidden"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => setEditImages(e.target.files)}
+                  />
                 </div>
               </div>
               <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-white dark:bg-[#1a1a1a]">
-                <Button variant="outline" className="rounded-full px-6" onClick={() => setEditingPost(null)}>취소</Button>
-                <Button className="bg-[#FF3478] hover:bg-[#E62E6C] text-white font-bold px-8 rounded-full shadow-md" onClick={handleEditSubmit}>수정 완료</Button>
+                <Button
+                  variant="outline"
+                  className="rounded-full px-6"
+                  onClick={() => setEditingPost(null)}
+                >
+                  취소
+                </Button>
+                <Button
+                  className="bg-[#FF3478] hover:bg-[#E62E6C] text-white font-bold px-8 rounded-full shadow-md"
+                  onClick={handleEditSubmit}
+                >
+                  수정 완료
+                </Button>
               </div>
             </motion.div>
           </motion.div>

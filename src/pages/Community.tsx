@@ -1,51 +1,108 @@
-// 주환 - 2026.05.15: 커뮤니티 페이지 
-import { useState, useEffect } from "react"; 
+// 주환 - 2026.05.15: 커뮤니티 페이지
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Plus, Heart, MessageCircle, Search, X, 
-  Trash2, Pencil, ChevronLeft, ChevronRight, Maximize2, Loader2
-} from "lucide-react"; 
+import {
+  Plus,
+  Heart,
+  MessageCircle,
+  Search,
+  X,
+  Trash2,
+  Pencil,
+  ChevronLeft,
+  ChevronRight,
+  Maximize2,
+  Loader2,
+  Star,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { fadeInUp, staggerContainer, staggerItem } from "@/lib/motion";
 import { getCurrentUser } from "@/lib/login";
-import { supabase } from "@/lib/supabase"; 
+import { supabase } from "@/lib/supabase";
 
-const STORAGE_BASE_URL = "https://ofslnmgvaiycywllsosc.supabase.co/storage/v1/object/public/community_images/";
+const STORAGE_BASE_URL =
+  "https://ofslnmgvaiycywllsosc.supabase.co/storage/v1/object/public/community_images/";
 
 const getFullImageUrl = (imagePath: string) => {
-  if (!imagePath) return "https://placehold.co/800x400/eeeeee/999999?text=No+Photo";
-  if (imagePath.startsWith('http') || imagePath.startsWith('blob:')) return imagePath;
+  if (!imagePath)
+    return "https://placehold.co/800x400/eeeeee/999999?text=No+Photo";
+  if (imagePath.startsWith("http") || imagePath.startsWith("blob:"))
+    return imagePath;
   return `${STORAGE_BASE_URL}${imagePath}`;
 };
 
 const getCategoryColor = (category: string) => {
   switch (category) {
-    case "전통문화": return "bg-red-50 text-red-500 border-red-100";
-    case "공연예술": return "bg-blue-50 text-blue-500 border-blue-100";
-    case "수다": return "bg-gray-50 text-gray-500 border-gray-100";
-    default: return "bg-green-50 text-green-500 border-green-100";
+    case "전통문화":
+      return "bg-red-50 text-red-500 border-red-100";
+    case "공연예술":
+      return "bg-blue-50 text-blue-500 border-blue-100";
+    case "수다":
+      return "bg-gray-50 text-gray-500 border-gray-100";
+    default:
+      return "bg-green-50 text-green-500 border-green-100";
   }
 };
 
 // 고화질 원본 이미지 전용 뷰어 컴포넌트
-const HighResImageViewer = ({ images, initialIndex, onClose }: { images: string[], initialIndex: number, onClose: () => void }) => {
+const HighResImageViewer = ({
+  images,
+  initialIndex,
+  onClose,
+}: {
+  images: string[];
+  initialIndex: number;
+  onClose: () => void;
+}) => {
   const [idx, setIdx] = useState(initialIndex);
-  const prev = (e: React.MouseEvent) => { e.stopPropagation(); setIdx(idx === 0 ? images.length - 1 : idx - 1); };
-  const next = (e: React.MouseEvent) => { e.stopPropagation(); setIdx(idx === images.length - 1 ? 0 : idx + 1); };
+  const prev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIdx(idx === 0 ? images.length - 1 : idx - 1);
+  };
+  const next = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIdx(idx === images.length - 1 ? 0 : idx + 1);
+  };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4" onClick={onClose}>
-      <button className="absolute top-6 right-6 text-white/70 hover:text-white z-[310] transition-colors"><X size={32} /></button>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <button className="absolute top-6 right-6 text-white/70 hover:text-white z-[310] transition-colors">
+        <X size={32} />
+      </button>
       {images.length > 1 && (
         <>
-          <button onClick={prev} className="absolute left-6 text-white/50 hover:text-white p-3 bg-white/10 rounded-full z-[310] transition-all"><ChevronLeft size={36} /></button>
-          <button onClick={next} className="absolute right-6 text-white/50 hover:text-white p-3 bg-white/10 rounded-full z-[310] transition-all"><ChevronRight size={36} /></button>
+          <button
+            onClick={prev}
+            className="absolute left-6 text-white/50 hover:text-white p-3 bg-white/10 rounded-full z-[310] transition-all"
+          >
+            <ChevronLeft size={36} />
+          </button>
+          <button
+            onClick={next}
+            className="absolute right-6 text-white/50 hover:text-white p-3 bg-white/10 rounded-full z-[310] transition-all"
+          >
+            <ChevronRight size={36} />
+          </button>
         </>
       )}
-      <motion.img key={idx} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} src={getFullImageUrl(images[idx])} className="max-w-full max-h-full object-contain pointer-events-none shadow-2xl" />
-      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/40 px-4 py-2 rounded-full text-white/80 text-sm font-bold backdrop-blur-md">{idx + 1} / {images.length}</div>
+      <motion.img
+        key={idx}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        src={getFullImageUrl(images[idx])}
+        className="max-w-full max-h-full object-contain pointer-events-none shadow-2xl"
+      />
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-black/40 px-4 py-2 rounded-full text-white/80 text-sm font-bold backdrop-blur-md">
+        {idx + 1} / {images.length}
+      </div>
     </motion.div>
   );
 };
@@ -53,89 +110,193 @@ const HighResImageViewer = ({ images, initialIndex, onClose }: { images: string[
 // 게시글 상세 모달 내부용 슬라이더 컴포넌트 (비율 깨짐 방지)
 const PostImageSlider = ({ images }: { images: string[] }) => {
   const [idx, setIdx] = useState(0);
-  if (!images || images.length === 0) return <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>;
+  if (!images || images.length === 0)
+    return (
+      <div className="w-full h-full flex items-center justify-center text-gray-400">
+        No Image
+      </div>
+    );
   return (
     <div className="w-full h-full relative group/slider overflow-hidden bg-black flex items-center justify-center">
-      <img src={getFullImageUrl(images[idx])} className="w-full h-full object-contain" alt="Post content" />
+      <img
+        src={getFullImageUrl(images[idx])}
+        className="w-full h-full object-contain"
+        alt="Post content"
+      />
       {images.length > 1 && (
         <>
-          <button onClick={(e) => { e.stopPropagation(); setIdx(idx === 0 ? images.length - 1 : idx - 1); }} className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white p-2 rounded-full opacity-0 group-hover/slider:opacity-100 transition-all"><ChevronLeft size={24} /></button>
-          <button onClick={(e) => { e.stopPropagation(); setIdx(idx === images.length - 1 ? 0 : idx + 1); }} className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white p-2 rounded-full opacity-0 group-hover/slider:opacity-100 transition-all"><ChevronRight size={24} /></button>
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">{images.map((_, i) => ( <div key={i} className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? "bg-white w-4" : "bg-white/40"}`} /> ))}</div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIdx(idx === 0 ? images.length - 1 : idx - 1);
+            }}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white p-2 rounded-full opacity-0 group-hover/slider:opacity-100 transition-all"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIdx(idx === images.length - 1 ? 0 : idx + 1);
+            }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white p-2 rounded-full opacity-0 group-hover/slider:opacity-100 transition-all"
+          >
+            <ChevronRight size={24} />
+          </button>
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+            {images.map((_, i) => (
+              <div
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === idx ? "bg-white w-4" : "bg-white/40"}`}
+              />
+            ))}
+          </div>
         </>
       )}
     </div>
   );
 };
 
-interface CommentData { id: string; author: string; author_email: string; text: string; date: string; likes?: number; }
-interface CommunityPost { id: string; author: string; author_email: string; avatar?: string; Title: string; content: string; images: string[]; likes: number; comments: number; date: string; category: string; commentsList?: CommentData[]; }
+interface CommentData {
+  id: string;
+  author: string;
+  author_email: string;
+  text: string;
+  date: string;
+  likes?: number;
+}
+interface CommunityPost {
+  id: string;
+  author: string;
+  author_email: string;
+  avatar?: string;
+  Title: string;
+  content: string;
+  images: string[];
+  likes: number;
+  comments: number;
+  date: string;
+  category: string;
+  rating: number;
+  commentsList?: CommentData[];
+}
 
-const getTimeAgo = (dateString: string) => { if (!dateString) return "방금 전"; const commentDate = new Date(dateString); const now = new Date(); const diffMs = now.getTime() - commentDate.getTime(); const diffMins = Math.floor(diffMs / (1000 * 60)); if (diffMins < 1) return "방금 전"; if (diffMins < 60) return `${diffMins}분 전`; if (Math.floor(diffMs / (1000 * 60 * 60)) < 24) return `${Math.floor(diffMs / (1000 * 60 * 60))}시간 전`; return `${commentDate.getFullYear()}.${String(commentDate.getMonth() + 1).padStart(2, '0')}.${String(commentDate.getDate()).padStart(2, '0')}`; };
+const getTimeAgo = (dateString: string) => {
+  if (!dateString) return "방금 전";
+  const commentDate = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - commentDate.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  if (diffMins < 1) return "방금 전";
+  if (diffMins < 60) return `${diffMins}분 전`;
+  if (Math.floor(diffMs / (1000 * 60 * 60)) < 24)
+    return `${Math.floor(diffMs / (1000 * 60 * 60))}시간 전`;
+  return `${commentDate.getFullYear()}.${String(commentDate.getMonth() + 1).padStart(2, "0")}.${String(commentDate.getDate()).padStart(2, "0")}`;
+};
 
 export default function Community() {
-  const currentUser = getCurrentUser(); 
+  const currentUser = getCurrentUser();
   const navigate = useNavigate();
-  
+
   const [posts, setPosts] = useState<CommunityPost[]>([]);
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(12);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPost, setSelectedPost] = useState<CommunityPost | null>(null);
   const [commentText, setCommentText] = useState("");
-  const [highResViewer, setHighResViewer] = useState<{ images: string[], index: number } | null>(null);
+  const [highResViewer, setHighResViewer] = useState<{
+    images: string[];
+    index: number;
+  } | null>(null);
 
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<{ type: 'post' | 'comment', id: string, postId?: string } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "post" | "comment";
+    id: string;
+    postId?: string;
+  } | null>(null);
   const [isLoginNoticeOpen, setIsLoginNoticeOpen] = useState(false);
 
   const [editingPost, setEditingPost] = useState<CommunityPost | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editImages, setEditImages] = useState<FileList | null>(null);
-  const [existingImagesToKeep, setExistingImagesToKeep] = useState<string[]>([]);
+  const [existingImagesToKeep, setExistingImagesToKeep] = useState<string[]>(
+    [],
+  );
 
-  const token = localStorage.getItem('accessToken') || localStorage.getItem('token');
-  const authHeaders = { "Content-Type": "application/json", ...(token && { "Authorization": `Bearer ${token}` }) };
-  const formDataHeaders = { ...(token && { "Authorization": `Bearer ${token}` }) };
+  const token =
+    localStorage.getItem("accessToken") || localStorage.getItem("token");
+  const authHeaders = {
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
+  const formDataHeaders = {
+    ...(token && { Authorization: `Bearer ${token}` }),
+  };
 
   const loadPostsData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("https://gokgok-8ztf.onrender.com/api/community");
+      const response = await fetch(
+        "https://gokgok-8ztf.onrender.com/api/community",
+      );
       const data = await response.json();
-      
       if (data.success && Array.isArray(data.posts)) {
         const formatted = data.posts.map((p: any) => ({
-          id: p.id || String(Math.random()), 
-          author: p.author || "익명유저", 
-          author_email: p.author_email || "", 
-          Title: p.title || "제목 없음", 
-          content: p.content || "", 
-          images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []),
-          likes: p.likes || 0, 
+          id: p.id || String(Math.random()),
+          author: p.author || "익명유저",
+          author_email: p.author_email || "",
+          Title: p.title || "제목 없음",
+          content: p.content || "",
+          images: Array.isArray(p.images)
+            ? p.images
+            : p.images
+              ? [p.images]
+              : [],
+          likes: p.likes || 0,
           comments: p.commentsList ? p.commentsList.length : 0,
-          date: p.created_at || new Date().toISOString(), 
+          date: p.created_at || new Date().toISOString(),
           category: p.category || "수다",
-          commentsList: Array.isArray(p.commentsList) ? p.commentsList.map((c: any) => ({
-            id: c.id || String(Math.random()), author: c.author || "익명", author_email: c.author_email || "", text: c.text || "", date: c.created_at || new Date().toISOString(), likes: c.likes || 0
-          })) : []
+          rating: p.rating || 0, // 🚩 [수정] 작성 시 입력 안 된 게시글은 별점 0개(빈 별)로 처리하도록 가드 설정
+          commentsList: Array.isArray(p.commentsList)
+            ? p.commentsList.map((c: any) => ({
+                id: c.id || String(Math.random()),
+                author: c.author || "익명",
+                author_email: c.author_email || "",
+                text: c.text || "",
+                date: c.created_at || new Date().toISOString(),
+                likes: c.likes || 0,
+              }))
+            : [],
         }));
         setPosts(formatted);
-
         if (currentUser?.email) {
-          const res = await fetch("https://gokgok-8ztf.onrender.com/api/community/my-likes", { method: "POST", headers: authHeaders, body: JSON.stringify({ user_email: currentUser.email }) });
+          const res = await fetch(
+            "https://gokgok-8ztf.onrender.com/api/community/my-likes",
+            {
+              method: "POST",
+              headers: authHeaders,
+              body: JSON.stringify({ user_email: currentUser.email }),
+            },
+          );
           const likesData = await res.json();
           if (likesData.success && Array.isArray(likesData.likes)) {
-            setLikedIds(new Set(likesData.likes.map((item: { post_id: string }) => item.post_id)));
+            setLikedIds(
+              new Set(
+                likesData.likes.map(
+                  (item: { post_id: string }) => item.post_id,
+                ),
+              ),
+            );
           }
         }
       } else {
         setPosts([]);
       }
-    } catch (error) { 
-      console.error("데이터를 불러오는 중 오류 발생:", error); 
+    } catch (error) {
+      console.error(error);
       setPosts([]);
     } finally {
       setIsLoading(false);
@@ -147,13 +308,20 @@ export default function Community() {
   }, [currentUser?.email]);
 
   const handleLike = async (e: React.MouseEvent, postId: string) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     if (!currentUser) {
       setIsLoginNoticeOpen(true);
       return;
     }
     try {
-      const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${postId}/like`, { method: "POST", headers: authHeaders, body: JSON.stringify({ user_email: currentUser.email }) });
+      const response = await fetch(
+        `https://gokgok-8ztf.onrender.com/api/community/${postId}/like`,
+        {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify({ user_email: currentUser.email }),
+        },
+      );
       const data = await response.json();
       if (data.success) {
         setLikedIds((prev) => {
@@ -161,114 +329,190 @@ export default function Community() {
           data.isLiked ? next.add(postId) : next.delete(postId);
           return next;
         });
-        setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: data.likes } : p));
-        if (selectedPost?.id === postId) setSelectedPost(prev => prev ? { ...prev, likes: data.likes } : null);
+        setPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, likes: data.likes } : p)),
+        );
+        if (selectedPost?.id === postId)
+          setSelectedPost((prev) =>
+            prev ? { ...prev, likes: data.likes } : null,
+          );
       }
-    } catch { alert("좋아요 처리에 실패했습니다."); }
+    } catch {
+      alert("좋아요 실패");
+    }
   };
 
-  const handleCommentSubmit = async () => { 
-    if (!currentUser || !commentText.trim() || !selectedPost) return; 
-    try { 
-      const requestBody = { 
-        author: currentUser.name || "익명", 
-        author_email: currentUser.email, 
-        text: commentText.trim()         
+  const handleCommentSubmit = async () => {
+    if (!currentUser || !commentText.trim() || !selectedPost) return;
+    try {
+      const requestBody = {
+        author: currentUser.name || "익명",
+        author_email: currentUser.email,
+        text: commentText.trim(),
       };
 
-      const res = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${selectedPost.id}/comments`, { 
-        method: "POST", 
-        headers: authHeaders, 
-        body: JSON.stringify(requestBody) 
-      }); 
-      
-      if (!res.ok) return alert("서버 응답 오류가 발생했습니다.");
+      const res = await fetch(
+        `https://gokgok-8ztf.onrender.com/api/community/${selectedPost.id}/comments`,
+        {
+          method: "POST",
+          headers: authHeaders,
+          body: JSON.stringify(requestBody),
+        },
+      );
 
-      const data = await res.json(); 
-      if (data.success) { 
+      if (!res.ok) return alert("댓글 서버 응답 실패");
+
+      const data = await res.json();
+      if (data.success) {
         const c = data.comment || {};
-        const newComment = { 
-          id: c.id || String(Date.now()), 
-          author: c.author || currentUser.name || "익명", 
-          author_email: c.author_email || currentUser.email, 
-          text: c.text || commentText, 
-          date: c.created_at || new Date().toISOString(), 
-          likes: 0 
-        }; 
+        const newComment = {
+          id: c.id || String(Date.now()),
+          author: c.author || currentUser.name || "익명",
+          author_email: c.author_email || currentUser.email,
+          text: c.text || commentText,
+          date: c.created_at || new Date().toISOString(),
+          likes: 0,
+        };
 
-        setPosts(prev => prev.map(p => p.id === selectedPost.id ? { ...p, comments: p.comments + 1, commentsList: [...(p.commentsList || []), newComment] } : p)); 
-        setSelectedPost(prev => prev ? { ...prev, comments: prev.comments + 1, commentsList: [...(prev.commentsList || []), newComment] } : null); 
-        setCommentText(""); 
+        setPosts((prev) =>
+          prev.map((p) =>
+            p.id === selectedPost.id
+              ? {
+                  ...p,
+                  comments: p.comments + 1,
+                  commentsList: [...(p.commentsList || []), newComment],
+                }
+              : p,
+          ),
+        );
+        setSelectedPost((prev) =>
+          prev
+            ? {
+                ...prev,
+                comments: prev.comments + 1,
+                commentsList: [...(prev.commentsList || []), newComment],
+              }
+            : null,
+        );
+        setCommentText("");
       } else {
-        alert(`댓글 등록 거부: ${data.message || "알 수 없는 오류"}`);
+        alert(`댓글 등록 거부: ${data.message || "오류"}`);
       }
-    } catch { alert("서버 통신에 실패했습니다."); } 
+    } catch {
+      alert("서버 통신 실패");
+    }
   };
 
   const handleDeletePostClick = (postId: string) => {
-    setConfirmAction({ type: 'post', id: postId });
+    setConfirmAction({ type: "post", id: postId });
     setIsConfirmOpen(true);
   };
 
   const handleDeleteCommentClick = (postId: string, commentId: string) => {
-    setConfirmAction({ type: 'comment', id: commentId, postId });
+    setConfirmAction({ type: "comment", id: commentId, postId });
     setIsConfirmOpen(true);
   };
 
   const executeConfirmDelete = async () => {
     if (!confirmAction || !currentUser) return;
     try {
-      if (confirmAction.type === 'post') {
-        const res = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${confirmAction.id}`, { method: "DELETE", headers: authHeaders, body: JSON.stringify({ author_email: currentUser.email }) });
+      if (confirmAction.type === "post") {
+        const res = await fetch(
+          `https://gokgok-8ztf.onrender.com/api/community/${confirmAction.id}`,
+          {
+            method: "DELETE",
+            headers: authHeaders,
+            body: JSON.stringify({ author_email: currentUser.email }),
+          },
+        );
         if ((await res.json()).success) {
-          setPosts(prev => prev.filter(p => p.id !== confirmAction.id));
+          setPosts((prev) => prev.filter((p) => p.id !== confirmAction.id));
           if (selectedPost?.id === confirmAction.id) setSelectedPost(null);
         }
       } else {
-        const res = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${confirmAction.postId}/comments/${confirmAction.id}`, { method: "DELETE", headers: authHeaders, body: JSON.stringify({ author_email: currentUser.email }) });
+        const res = await fetch(
+          `https://gokgok-8ztf.onrender.com/api/community/${confirmAction.postId}/comments/${confirmAction.id}`,
+          {
+            method: "DELETE",
+            headers: authHeaders,
+            body: JSON.stringify({ author_email: currentUser.email }),
+          },
+        );
         if ((await res.json()).success) {
-          setPosts(prev => prev.map(p => p.id === confirmAction.postId ? { ...p, comments: Math.max(0, p.comments - 1), commentsList: p.commentsList?.filter(c => c.id !== confirmAction.id) } : p));
+          setPosts((prev) =>
+            prev.map((p) =>
+              p.id === confirmAction.postId
+                ? {
+                    ...p,
+                    comments: Math.max(0, p.comments - 1),
+                    commentsList: p.commentsList?.filter(
+                      (c) => c.id !== confirmAction.id,
+                    ),
+                  }
+                : p,
+            ),
+          );
           if (selectedPost && selectedPost.id === confirmAction.postId) {
-            setSelectedPost({ ...selectedPost, comments: Math.max(0, selectedPost.comments - 1), commentsList: selectedPost.commentsList?.filter(c => c.id !== confirmAction.id) });
+            setSelectedPost({
+              ...selectedPost,
+              comments: Math.max(0, selectedPost.comments - 1),
+              commentsList: selectedPost.commentsList?.filter(
+                (c) => c.id !== confirmAction.id,
+              ),
+            });
           }
         }
       }
-    } catch { alert("삭제를 실패했습니다."); }
+    } catch {
+      alert("삭제 실패");
+    }
     setIsConfirmOpen(false);
     setConfirmAction(null);
   };
 
-  const openEditModal = (post: CommunityPost) => { 
-    setEditingPost(post); 
-    setEditTitle(post.Title || ""); 
-    setEditContent(post.content || ""); 
+  const openEditModal = (post: CommunityPost) => {
+    setEditingPost(post);
+    setEditTitle(post.Title || "");
+    setEditContent(post.content || "");
     setEditImages(null);
-    setExistingImagesToKeep(post.images || []); 
+    setExistingImagesToKeep(post.images || []);
   };
 
-  const handleEditSubmit = async () => { 
-    if (!editingPost || !currentUser) return; 
-    if (!editTitle.trim() || !editContent.trim()) return alert("제목과 내용을 모두 입력해주세요."); 
-    try { 
-      const formData = new FormData(); 
-      formData.append("author_email", currentUser.email); 
-      formData.append("title", editTitle); 
-      formData.append("content", editContent); 
-      if (existingImagesToKeep.length > 0) existingImagesToKeep.forEach(url => formData.append("existingImages", url));
+  const handleEditSubmit = async () => {
+    if (!editingPost || !currentUser) return;
+    if (!editTitle.trim() || !editContent.trim())
+      return alert("제목과 내용을 모두 입력해주세요.");
+    try {
+      const formData = new FormData();
+      formData.append("author_email", currentUser.email);
+      formData.append("title", editTitle);
+      formData.append("content", editContent);
+      if (existingImagesToKeep.length > 0)
+        existingImagesToKeep.forEach((url) =>
+          formData.append("existingImages", url),
+        );
       else formData.append("existingImages", "[]");
-      if (editImages && editImages.length > 0) Array.from(editImages).forEach(file => formData.append("images", file)); 
-      
-      const response = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${editingPost.id}`, { method: "PUT", headers: formDataHeaders, body: formData }); 
-      const data = await response.json(); 
-      if (data.success) { 
-        alert("게시글이 성공적으로 수정되었습니다."); 
+      if (editImages && editImages.length > 0)
+        Array.from(editImages).forEach((file) =>
+          formData.append("images", file),
+        );
+
+      const response = await fetch(
+        `https://gokgok-8ztf.onrender.com/api/community/${editingPost.id}`,
+        { method: "PUT", headers: formDataHeaders, body: formData },
+      );
+      const data = await response.json();
+      if (data.success) {
+        alert("게시글이 성공적으로 수정되었습니다.");
         loadPostsData();
-        setEditingPost(null); 
+        setEditingPost(null);
       }
-    } catch { alert("수정 처리 중 오류가 발생했습니다."); } 
+    } catch {
+      alert("수정 처리 중 오류가 발생했습니다.");
+    }
   };
 
-  const filteredPosts = posts.filter(p => {
+  const filteredPosts = posts.filter((p) => {
     const titleStr = String(p.Title || "").toLowerCase();
     const authorStr = String(p.author || "").toLowerCase();
     const searchStr = searchTerm.toLowerCase();
@@ -277,29 +521,38 @@ export default function Community() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#111111] transition-colors relative font-sans text-[#111111] dark:text-white pb-20">
-      <motion.div variants={fadeInUp} initial="hidden" animate="visible" className="w-full pt-12 pb-16 px-4 md:px-10">
+      <motion.div
+        variants={fadeInUp}
+        initial="hidden"
+        animate="visible"
+        className="w-full pt-12 pb-16 px-4 md:px-10"
+      >
         <div className="max-w-[1200px] mx-auto">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 text-left">
-            <div><h1 className="text-[32px] font-black tracking-tight">수다</h1><p className="text-gray-400 font-medium text-sm">여행의 즐거움을 함께 나누세요.</p></div>
+            <div>
+              <h1 className="text-[32px] font-black tracking-tight">수다</h1>
+              <p className="text-gray-400 font-medium text-sm">
+                여행의 즐거움을 함께 나누세요.
+              </p>
+            </div>
           </div>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-10">
             <div className="relative w-full md:w-2/3 lg:w-1/2 group">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 group-focus-within:text-[#111111] dark:group-focus-within:text-white transition-colors" />
-              
-              {/* 🚩 검색 박스 호버/포커스 수정 완료 구역 */}
-              <input 
-                type="text" 
-                placeholder="작성자 또는 제목으로 검색해보세요" 
-                value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
-                className="w-full pl-14 pr-6 h-[54px] bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-2xl outline-none font-medium shadow-sm transition-all focus:bg-white dark:focus:bg-[#1a1a1a]" 
+              <input
+                type="text"
+                placeholder="작성자 또는 제목으로 검색해보세요"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-14 pr-6 h-[54px] bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-2xl outline-none font-medium shadow-sm transition-all focus:bg-white dark:focus:bg-[#1a1a1a]"
               />
             </div>
-            
-            <Button 
-              variant="outline"
-              className="w-full md:w-auto h-[54px] bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-gray-800 text-[#111111] dark:text-white hover:text-[#111111] dark:hover:text-white border border-gray-200 dark:border-gray-800 rounded-2xl px-8 font-bold active:scale-95 flex items-center justify-center gap-2 transition-all shrink-0" 
-              onClick={() => { if (!currentUser) setIsLoginNoticeOpen(true); else navigate("/community/write"); }}
+            <Button
+              className="w-full md:w-auto h-[54px] bg-[#111111] dark:bg-white text-white dark:text-[#111111] border-none rounded-2xl px-8 font-black active:scale-95 flex items-center justify-center gap-2 transition-all shrink-0 shadow-md hover:bg-black dark:hover:bg-gray-200"
+              onClick={() => {
+                if (!currentUser) setIsLoginNoticeOpen(true);
+                else navigate("/community/write");
+              }}
             >
               <Pencil className="w-4 h-4" /> 게시글 작성
             </Button>
@@ -308,44 +561,158 @@ export default function Community() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-32 opacity-70">
               <Loader2 className="w-12 h-12 text-[#FF3478] animate-spin mb-4" />
-              <p className="text-gray-500 dark:text-gray-400 font-bold">서버 데이터를 불러오고 있습니다...</p>
-              <p className="text-xs text-gray-400 mt-2">무료 서버 특성상 잠시 대기시간이 발생할 수 있어요.</p>
+              <p className="text-gray-500 dark:text-gray-400 font-bold">
+                서버 데이터를 불러오고 있습니다...
+              </p>
             </div>
           ) : filteredPosts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-32">
               <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
                 <MessageCircle className="w-8 h-8 text-gray-300" />
               </div>
-              <p className="text-gray-500 font-bold">등록된 게시글이 없습니다.</p>
+              <p className="text-gray-500 font-bold">
+                등록된 게시글이 없습니다.
+              </p>
             </div>
           ) : (
-            <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6">
+            <motion.div
+              variants={staggerContainer}
+              initial="hidden"
+              animate="visible"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 md:gap-6"
+            >
               {filteredPosts.slice(0, visibleCount).map((post) => (
                 <motion.div key={post.id} variants={staggerItem}>
-                  <div className="group bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col h-full" onClick={() => setSelectedPost(post)}>
+                  <div
+                    className="group bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col h-full"
+                    onClick={() => setSelectedPost(post)}
+                  >
                     <div className="flex flex-col flex-1">
-                      <div className="w-full aspect-[4/3] shrink-0 mb-4 relative group/img overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-800" onClick={(e) => { if (post.images && post.images.length > 0) { e.stopPropagation(); setHighResViewer({ images: post.images, index: 0 }); } }}>
-                        {post.images && post.images.length > 0 ? ( <> <img src={getFullImageUrl(post.images[0])} alt="thumbnail" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" /> <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center"><Maximize2 className="text-white" size={24} /></div> {post.images.length > 1 && <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded-md font-bold backdrop-blur-sm">+{post.images.length - 1}</div>} </> ) : ( <div className="w-full h-full flex items-center justify-center border border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-600 font-bold text-sm">No Photo</div> )}
+                      <div
+                        className="w-full aspect-[4/3] shrink-0 mb-4 relative group/img overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-800"
+                        onClick={(e) => {
+                          if (post.images && post.images.length > 0) {
+                            e.stopPropagation();
+                            setHighResViewer({ images: post.images, index: 0 });
+                          }
+                        }}
+                      >
+                        {post.images && post.images.length > 0 ? (
+                          <>
+                            {" "}
+                            <img
+                              src={getFullImageUrl(post.images[0])}
+                              alt="thumbnail"
+                              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                            />{" "}
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                              <Maximize2 className="text-white" size={24} />
+                            </div>{" "}
+                            {post.images.length > 1 && (
+                              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded-md font-bold backdrop-blur-sm">
+                                +{post.images.length - 1}
+                              </div>
+                            )}{" "}
+                          </>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center border border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-600 font-bold text-sm">
+                            No Photo
+                          </div>
+                        )}
                       </div>
+
+                      {/* 노란색 별점 디자인 스타일 반영 구역 */}
+                      <div className="flex items-center gap-0.5 mb-1.5">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            size={13}
+                            className={
+                              i < (post.rating || 0)
+                                ? "fill-[#FFD233] text-[#FFD233]"
+                                : "text-gray-200 dark:text-zinc-700"
+                            }
+                          />
+                        ))}
+                      </div>
+
                       <div className="flex items-center justify-between mb-3 text-left">
                         <div className="flex items-center gap-2">
                           <div className="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-[10px] font-extrabold text-gray-700 dark:text-gray-200 uppercase">
                             {post.author ? post.author[0] : "익"}
                           </div>
-                          <div className="flex flex-col"><span className="text-[12px] font-extrabold text-gray-900 dark:text-white line-clamp-1">{post.author}</span><span className="text-[10px] text-gray-400 font-medium">{getTimeAgo(post.date)}</span></div>
+                          <div className="flex flex-col">
+                            <span className="text-[12px] font-extrabold text-gray-900 dark:text-white line-clamp-1">
+                              {post.author}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-medium">
+                              {getTimeAgo(post.date)}
+                            </span>
+                          </div>
                         </div>
-                        <Badge variant="outline" className={`border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold text-[10px] px-2 py-0.5 rounded-full ${getCategoryColor(post.category)}`}>{post.category}</Badge>
+                        <Badge
+                          variant="outline"
+                          className={`border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold text-[10px] px-2 py-0.5 rounded-full ${getCategoryColor(post.category)}`}
+                        >
+                          {post.category}
+                        </Badge>
                       </div>
-                      <h3 className="text-[16px] font-extrabold text-gray-900 dark:text-white mb-1.5 transition-colors line-clamp-1 text-left">{post.Title}</h3>
-                      <p className="text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2 font-medium mb-4 text-left">{post.content}</p>
+                      <h3 className="text-[16px] font-extrabold text-gray-900 dark:text-white mb-1.5 group-hover:text-[#FF3478] transition-colors line-clamp-1 text-left">
+                        {post.Title}
+                      </h3>
+                      <p className="text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2 font-medium mb-4 text-left">
+                        {post.content}
+                      </p>
                     </div>
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800 mt-auto">
                       <div className="flex items-center gap-4">
-                        <button onClick={(e) => handleLike(e, post.id)} className={`flex items-center gap-1.5 transition-all ${likedIds.has(post.id) ? "text-[#FF3478]" : "text-gray-400"}`}><Heart className="w-4 h-4" fill={likedIds.has(post.id) ? "currentColor" : "none"} /><span className="text-[12px] font-bold">{post.likes}</span></button>
-                        <div className="flex items-center gap-1.5 text-gray-400"><MessageCircle className="w-4 h-4" /><span className="text-[12px] font-bold">{post.comments}</span></div>
+                        {/* 🚩 [요청 반영] 하트 가져다 대면 반응하는 호버 마크업 및 액티브 모션 효과 통합 */}
+                        <button
+                          onClick={(e) => handleLike(e, post.id)}
+                          className={`flex items-center gap-1.5 transition-all select-none outline-none border-none focus:outline-none hover:scale-110 active:scale-75 ${likedIds.has(post.id) ? "text-[#FF3478]" : "text-gray-400 hover:text-[#FF3478]"}`}
+                          style={{
+                            WebkitTapHighlightColor: "transparent",
+                            outline: "none",
+                          }}
+                        >
+                          <Heart
+                            className="w-4 h-4"
+                            fill={
+                              likedIds.has(post.id) ? "currentColor" : "none"
+                            }
+                          />
+                          <span className="text-[12px] font-bold select-none">
+                            {post.likes}
+                          </span>
+                        </button>
+
+                        {/* 🚩 [요청 반영] 댓글 가져다 대면 반응하는 호버 마크업 및 액티브 모션 효과 통합 */}
+                        <div className="flex items-center gap-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:scale-110 active:scale-90 transition-all cursor-pointer">
+                          <MessageCircle className="w-4 h-4" />
+                          <span className="text-[12px] font-bold">
+                            {post.comments}
+                          </span>
+                        </div>
                       </div>
-                      {currentUser?.email === post.author_email && ( <div className="flex items-center gap-1.5 pl-2" onClick={e => e.stopPropagation()}><button onClick={() => openEditModal(post)} className="text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors p-1"><Pencil className="w-3.5 h-3.5" /></button>
-                      <button onClick={() => handleDeletePostClick(post.id)} className="text-gray-300 hover:text-red-500 transition-colors p-1"><Trash2 className="w-3.5 h-3.5" /></button></div> )}
+                      {currentUser?.email === post.author_email && (
+                        <div
+                          className="flex items-center gap-1.5 pl-2"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            onClick={() => openEditModal(post)}
+                            className="text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors p-1"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePostClick(post.id)}
+                            className="text-gray-300 hover:text-red-500 transition-colors p-1"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -356,52 +723,177 @@ export default function Community() {
       </motion.div>
 
       <AnimatePresence>
-        {highResViewer && <HighResImageViewer images={highResViewer.images} initialIndex={highResViewer.index} onClose={() => setHighResViewer(null)} />}
+        {highResViewer && (
+          <HighResImageViewer
+            images={highResViewer.images}
+            initialIndex={highResViewer.index}
+            onClose={() => setHighResViewer(null)}
+          />
+        )}
         {selectedPost && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-0 md:p-10" onClick={() => setSelectedPost(null)}>
-            <motion.div initial={{ scale: 0.95, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 30 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-[#1a1a1a] w-full h-full md:h-[85vh] max-w-5xl md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-0 md:p-10"
+            onClick={() => setSelectedPost(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 30 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 30 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#1a1a1a] w-full h-full md:h-[85vh] max-w-5xl md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden relative"
+            >
               <div className="w-full md:w-[55%] h-[40vh] md:h-full bg-black relative shrink-0 border-r border-gray-100 dark:border-gray-800 flex items-center justify-center">
                 <PostImageSlider images={selectedPost.images || []} />
-                <button onClick={() => setSelectedPost(null)} className="absolute top-6 left-6 text-white md:hidden bg-black/40 backdrop-blur-md rounded-full p-2.5 z-10"><X size={24} /></button>
+                <button
+                  onClick={() => setSelectedPost(null)}
+                  className="absolute top-6 left-6 text-white md:hidden bg-black/40 backdrop-blur-md rounded-full p-2.5 z-10"
+                >
+                  <X size={24} />
+                </button>
               </div>
               <div className="w-full md:w-[45%] flex flex-col flex-1 bg-white dark:bg-[#1a1a1a] relative min-h-0 text-left">
-                 <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between shrink-0">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center shrink-0">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center font-extrabold text-sm text-gray-700 dark:text-gray-200 uppercase">
                       {selectedPost.author ? selectedPost.author[0] : "익"}
                     </div>
-                    <div className="text-left"><p className="font-extrabold text-[15px] text-gray-900 dark:text-white">{selectedPost.author}</p><p className="text-[11px] text-[#FF3478] font-bold tracking-tight">{selectedPost.category}</p></div>
+                    <div className="text-left">
+                      <p className="font-extrabold text-[15px] text-gray-900 dark:text-white">
+                        {selectedPost.author}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[11px] text-[#FF3478] font-bold tracking-tight">
+                          {selectedPost.category}
+                        </p>
+                        <div className="flex items-center gap-0.5">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              size={11}
+                              className={
+                                i < (selectedPost.rating || 0)
+                                  ? "fill-[#FFD233] text-[#FFD233]"
+                                  : "text-gray-200 dark:text-zinc-700"
+                              }
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    {currentUser?.email === selectedPost.author_email && ( <div className="flex items-center gap-3 mr-2"><button onClick={() => openEditModal(selectedPost)} className="text-gray-300 hover:text-[#111111] dark:hover:text-white transition-colors"><Pencil size={18}/></button>
-                    <button onClick={() => handleDeletePostClick(selectedPost.id)} className="text-gray-300 hover:text-red-500 transition-colors"><Trash2 size={18}/></button></div> )}
-                    <button onClick={() => setSelectedPost(null)} className="hidden md:block text-gray-400 hover:text-[#FF3478] transition-colors"><X size={24} strokeWidth={3}/></button>
+                    {currentUser?.email === selectedPost.author_email && (
+                      <div className="flex items-center gap-3 mr-2">
+                        <button
+                          onClick={() => openEditModal(selectedPost)}
+                          className="text-gray-300 hover:text-[#111111] dark:hover:text-white transition-colors"
+                        >
+                          <Pencil size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeletePostClick(selectedPost.id)}
+                          className="text-gray-300 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => setSelectedPost(null)}
+                      className="hidden md:block text-gray-400 hover:text-[#FF3478] transition-colors"
+                    >
+                      <X size={24} strokeWidth={3} />
+                    </button>
                   </div>
                 </div>
                 <div className="p-7 overflow-y-auto flex-1 no-scrollbar space-y-8">
                   <div className="pb-8 border-b border-gray-100 dark:border-gray-800">
-                    <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-5 leading-tight tracking-tight">{selectedPost.Title}</h2>
-                    <p className="text-[15px] text-gray-600 dark:text-gray-300 leading-relaxed font-medium whitespace-pre-wrap">{selectedPost.content}</p>
-                    <p className="text-[12px] text-gray-400 mt-8 font-bold">{getTimeAgo(selectedPost.date)}</p>
+                    <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-5 leading-tight tracking-tight">
+                      {selectedPost.Title}
+                    </h2>
+                    <p className="text-[15px] text-gray-600 dark:text-gray-300 leading-relaxed font-medium whitespace-pre-wrap">
+                      {selectedPost.content}
+                    </p>
+                    <p className="text-[12px] text-gray-400 mt-8 font-bold">
+                      {getTimeAgo(selectedPost.date)}
+                    </p>
                   </div>
                   <div className="space-y-6">
-                    <p className="text-[13px] font-extrabold text-gray-900 dark:text-white mb-4">댓글 <span className="text-[#FF3478]">{selectedPost.commentsList?.length || 0}</span></p>
-                    
-                    {selectedPost.commentsList?.map((comment: any, index: number) => (
-                      <div key={comment.id || `comment-${index}`} className="flex gap-3 relative group">
-                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shrink-0 flex items-center justify-center text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase">
-                          {comment.author ? comment.author[0] : "익"}
+                    <p className="text-[13px] font-extrabold text-gray-900 dark:text-white mb-4">
+                      댓글{" "}
+                      <span className="text-[#FF3478]">
+                        {selectedPost.commentsList?.length || 0}
+                      </span>
+                    </p>
+
+                    {selectedPost.commentsList?.map(
+                      (comment: any, index: number) => (
+                        <div
+                          key={comment.id || `comment-${index}`}
+                          className="flex gap-3 relative group"
+                        >
+                          <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shrink-0 flex items-center justify-center text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase">
+                            {comment.author ? comment.author[0] : "익"}
+                          </div>
+                          <div className="flex-1 text-left pr-6">
+                            <p className="text-[14px] text-gray-700 dark:text-gray-300 leading-relaxed">
+                              <span className="font-extrabold text-gray-900 dark:text-white mr-2">
+                                {comment.author}
+                              </span>
+                              {comment.text}
+                            </p>
+                            <p className="text-[11px] text-gray-400 mt-1.5 font-bold tracking-tighter">
+                              {getTimeAgo(comment.date)}
+                            </p>
+                          </div>
+                          {currentUser?.email === comment.author_email && (
+                            <button
+                              onClick={() =>
+                                handleDeleteCommentClick(
+                                  selectedPost.id,
+                                  comment.id,
+                                )
+                              }
+                              className="absolute top-0 right-0 text-gray-300 hover:text-red-500 p-1 transition-colors opacity-0 group-hover:opacity-100"
+                            >
+                              <X size={14} strokeWidth={3} />
+                            </button>
+                          )}
                         </div>
-                        <div className="flex-1 text-left pr-6"><p className="text-[14px] text-gray-700 dark:text-gray-300 leading-relaxed"><span className="font-extrabold text-gray-900 dark:text-white mr-2">{comment.author}</span>{comment.text}</p><p className="text-[11px] text-gray-400 mt-1.5 font-bold tracking-tighter">{getTimeAgo(comment.date)}</p></div>
-                        {currentUser?.email === comment.author_email && ( <button onClick={() => handleDeleteCommentClick(selectedPost.id, comment.id)} className="absolute top-0 right-0 text-gray-300 hover:text-red-500 p-1 transition-colors opacity-0 group-hover:opacity-100"><X size={14} strokeWidth={3}/></button> )}
-                      </div>
-                    ))}
+                      ),
+                    )}
                   </div>
                 </div>
                 <div className="p-5 border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-[#1a1a1a] shrink-0">
                   <div className="flex items-center gap-3 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-2xl px-5 py-3 shadow-sm">
-                    <input type="text" value={commentText} onChange={(e) => setCommentText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCommentSubmit()} placeholder={currentUser ? "축제 이야기를 나눠보세요" : "로그인 후 댓글 작성"} className="flex-1 bg-transparent text-[14px] outline-none font-medium text-gray-900 dark:text-white placeholder:text-gray-400" readOnly={!currentUser} onClick={() => { if (!currentUser) setIsLoginNoticeOpen(true); }} />
-                    <button onClick={handleCommentSubmit} disabled={!currentUser || !commentText.trim()} className="text-gray-900 dark:text-white font-bold text-sm disabled:text-gray-300 transition-colors">게시</button>
+                    <input
+                      type="text"
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      onKeyDown={(e) =>
+                        e.key === "Enter" && handleCommentSubmit()
+                      }
+                      placeholder={
+                        currentUser
+                          ? "축제 이야기를 나눠보세요"
+                          : "로그인 후 댓글 작성"
+                      }
+                      className="flex-1 bg-transparent text-[14px] outline-none font-medium text-gray-900 dark:text-white placeholder:text-gray-400"
+                      readOnly={!currentUser}
+                      onClick={() => {
+                        if (!currentUser) setIsLoginNoticeOpen(true);
+                      }}
+                    />
+                    <button
+                      onClick={handleCommentSubmit}
+                      disabled={!currentUser || !commentText.trim()}
+                      className="text-gray-900 dark:text-white font-bold text-sm disabled:text-gray-300 transition-colors"
+                    >
+                      게시
+                    </button>
                   </div>
                 </div>
               </div>
@@ -413,18 +905,46 @@ export default function Community() {
       {/* --- 삭제 확인 커스텀 모달 --- */}
       <AnimatePresence>
         {isConfirmOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setIsConfirmOpen(false)}>
-            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-[#1a1a1a] w-full max-w-[320px] rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setIsConfirmOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#1a1a1a] w-full max-w-[320px] rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800"
+            >
               <div className="p-8 text-center">
                 <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Trash2 className="text-red-500 w-6 h-6" />
                 </div>
-                <h3 className="text-[17px] font-black text-gray-900 dark:text-white mb-2">정말로 삭제할까요?</h3>
-                <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed">삭제된 {confirmAction?.type === 'post' ? '게시글은' : '댓글은'} 다시 복구할 수 없습니다.</p>
+                <h3 className="text-[17px] font-black text-gray-900 dark:text-white mb-2">
+                  정말로 삭제할까요?
+                </h3>
+                <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                  삭제된{" "}
+                  {confirmAction?.type === "post" ? "게시글은" : "댓글은"} 다시
+                  복구할 수 없습니다.
+                </p>
               </div>
               <div className="flex border-t border-gray-50 dark:border-gray-800">
-                <button onClick={() => setIsConfirmOpen(false)} className="flex-1 py-4.5 text-[14px] font-bold text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-r border-gray-50 dark:border-gray-800">취소</button>
-                <button onClick={executeConfirmDelete} className="flex-1 py-4.5 text-[14px] font-black text-[#FF3478] hover:bg-pink-50/30 dark:hover:bg-pink-900/10 transition-colors">삭제하기</button>
+                <button
+                  onClick={() => setIsConfirmOpen(false)}
+                  className="flex-1 py-4.5 text-[14px] font-bold text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-r border-gray-50 dark:border-gray-800"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={executeConfirmDelete}
+                  className="flex-1 py-4.5 text-[14px] font-black text-[#FF3478] hover:bg-pink-50/30 dark:hover:bg-pink-900/10 transition-colors"
+                >
+                  삭제하기
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -434,21 +954,47 @@ export default function Community() {
       {/* --- 로그인 유도 커스텀 모달 --- */}
       <AnimatePresence>
         {isLoginNoticeOpen && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setIsLoginNoticeOpen(false)}>
-            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-[#1a1a1a] w-full max-w-[320px] rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 p-6 text-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setIsLoginNoticeOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#1a1a1a] w-full max-w-[320px] rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 p-6 text-center"
+            >
               <div className="w-12 h-12 bg-pink-50 dark:bg-pink-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="text-[#FF3478] w-6 h-6" fill="currentColor" />
               </div>
-              <h3 className="text-[18px] font-black text-gray-900 dark:text-white mb-2">로그인이 필요합니다</h3>
-              <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed mb-6">게시글 작성, 하트, 댓글 기능은<br />로그인 후 이용하실 수 있습니다.</p>
+              <h3 className="text-[18px] font-black text-gray-900 dark:text-white mb-2">
+                로그인이 필요합니다
+              </h3>
+              <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed mb-6">
+                게시글 작성, 하트, 댓글 기능은
+                <br />
+                로그인 후 이용하실 수 있습니다.
+              </p>
               <div className="flex flex-col gap-2">
-                <button 
-                  onClick={() => { setIsLoginNoticeOpen(false); navigate("/notmypage"); }}
+                <button
+                  onClick={() => {
+                    setIsLoginNoticeOpen(false);
+                    navigate("/notmypage");
+                  }}
                   className="w-full py-3.5 bg-[#111111] dark:bg-white text-white dark:text-black font-bold rounded-full text-sm shadow-sm hover:opacity-90 transition-all"
                 >
                   로그인하러 가기
                 </button>
-                <button onClick={() => setIsLoginNoticeOpen(false)} className="w-full py-2 text-gray-400 dark:text-gray-500 font-medium rounded-full text-xs hover:text-gray-600 transition-colors">취소</button>
+                <button
+                  onClick={() => setIsLoginNoticeOpen(false)}
+                  className="w-full py-2 text-gray-400 dark:text-gray-500 font-medium rounded-full text-xs hover:text-gray-600 transition-colors"
+                >
+                  취소
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -456,25 +1002,122 @@ export default function Community() {
       </AnimatePresence>
 
       <AnimatePresence>
-        {editingPost && ( 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4" onClick={() => setEditingPost(null)}>
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()} className="bg-white dark:bg-[#1a1a1a] w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800">
+        {editingPost && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4"
+            onClick={() => setEditingPost(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#1a1a1a] w-full max-w-2xl rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col border border-gray-100 dark:border-gray-800"
+            >
               <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-white dark:bg-[#1a1a1a]">
-                <h3 className="font-extrabold text-xl text-gray-900 dark:text-white tracking-tight">게시글 수정</h3>
-                <button onClick={() => setEditingPost(null)} className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"><X className="w-6 h-6" /></button>
+                <h3 className="font-extrabold text-xl text-gray-900 dark:text-white tracking-tight">
+                  게시글 수정
+                </h3>
+                <button
+                  onClick={() => setEditingPost(null)}
+                  className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
               </div>
               <div className="p-8 flex flex-col gap-6 text-left overflow-y-auto max-h-[70vh]">
-                <div><label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">제목</label><input value={editTitle} onChange={e => setEditTitle(e.target.value)} className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 font-bold text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#1a1a1a] transition-all shadow-sm" /></div>
-                <div><label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">내용</label><textarea value={editContent} onChange={e => setEditContent(e.target.value)} className="w-full h-40 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 font-medium text-gray-700 dark:text-gray-300 outline-none focus:bg-white dark:focus:bg-[#1a1a1a] resize-none transition-all shadow-sm" /></div>
-                <div><label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-3 block">사진</label> {existingImagesToKeep.length > 0 ? ( <div className="grid grid-cols-4 gap-3"> {existingImagesToKeep.map((imgUrl, i) => ( <div key={i} className="relative aspect-square group overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800"> <img src={getFullImageUrl(imgUrl)} className="w-full h-full object-cover" /> <button onClick={() => setExistingImagesToKeep(prev => prev.filter((_, idx) => idx !== i))} className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"><X size={12} strokeWidth={3}/></button> </div> ))} </div> ) : ( <div className="text-center py-4 bg-gray-50 dark:bg-black/20 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-gray-400 text-xs">남은 사진이 없습니다.</div> )} </div>
-                <div><label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">사진 추가</label><input type="file" multiple accept="image/*" onChange={(e) => setEditImages(e.target.files)} className="text-sm file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:bg-gray-900 file:text-white" /><p className="text-[10px] text-gray-400 mt-2">* 새로운 사진을 등록하면 기존 사진 뒤에 추가됩니다.</p></div>
+                <div>
+                  <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">
+                    제목
+                  </label>
+                  <input
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-800 rounded-2xl p-4 font-bold text-gray-900 dark:text-white outline-none focus:bg-white dark:focus:bg-[#1a1a1a] transition-all shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">
+                    내용
+                  </label>
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="w-full h-40 bg-gray-50 dark:bg-[#222] border border-gray-200 dark:border-gray-700 rounded-2xl p-4 font-medium text-gray-700 dark:text-gray-300 outline-none focus:bg-white dark:focus:bg-[#1a1a1a] resize-none transition-all shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-3 block">
+                    사진
+                  </label>{" "}
+                  {existingImagesToKeep.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-3">
+                      {" "}
+                      {existingImagesToKeep.map((imgUrl, i) => (
+                        <div
+                          key={i}
+                          className="relative aspect-square group overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800"
+                        >
+                          {" "}
+                          <img
+                            src={getFullImageUrl(imgUrl)}
+                            className="w-full h-full object-cover"
+                          />{" "}
+                          <button
+                            onClick={() =>
+                              setExistingImagesToKeep((prev) =>
+                                prev.filter((_, idx) => idx !== i),
+                              )
+                            }
+                            className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <X size={12} strokeWidth={3} />
+                          </button>{" "}
+                        </div>
+                      ))}{" "}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 bg-gray-50 dark:bg-black/20 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-gray-400 text-xs">
+                      남은 사진이 없습니다.
+                    </div>
+                  )}{" "}
+                </div>
+                <div>
+                  <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 mb-2 block">
+                    사진 추가
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={(e) => setEditImages(e.target.files)}
+                    className="text-sm file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:bg-gray-900 file:text-white"
+                  />
+                  <p className="text-[10px] text-gray-400 mt-2">
+                    * 새로운 사진을 등록하면 기존 사진 뒤에 추가됩니다.
+                  </p>
+                </div>
               </div>
               <div className="p-6 border-t border-gray-100 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-[#1a1a1a]">
-                <Button variant="outline" className="font-bold rounded-full px-6" onClick={() => setEditingPost(null)}>취소</Button>
-                <Button className="bg-gray-900 dark:bg-white hover:bg-black dark:hover:bg-gray-200 text-white dark:text-black font-bold px-8 rounded-full" onClick={handleEditSubmit}>수정 완료</Button>
+                <Button
+                  variant="outline"
+                  className="font-bold rounded-full px-6"
+                  onClick={() => setEditingPost(null)}
+                >
+                  취소
+                </Button>
+                <Button
+                  className="bg-gray-900 dark:bg-white hover:bg-black dark:hover:bg-gray-200 text-white dark:text-black font-bold px-8 rounded-full"
+                  onClick={handleEditSubmit}
+                >
+                  수정 완료
+                </Button>
               </div>
             </motion.div>
-          </motion.div> 
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
