@@ -287,7 +287,6 @@ export default function Community() {
                     </div>
                     <div className="flex items-center justify-between mb-3 text-left">
                       <div className="flex items-center gap-2">
-                        {/* 🚩 안전 처리를 통해 첫 글자 추출 오류 해결 */}
                         <div className="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-[10px] font-extrabold text-gray-700 dark:text-gray-200 uppercase">
                           {post.author ? post.author[0] : "익"}
                         </div>
@@ -344,8 +343,10 @@ export default function Community() {
                   </div>
                   <div className="space-y-6">
                     <p className="text-[13px] font-extrabold text-gray-900 dark:text-white mb-4">댓글 <span className="text-[#FF3478]">{selectedPost.commentsList?.length || 0}</span></p>
-                    {selectedPost.commentsList?.map((comment:any) => (
-                      <div key={comment.id} className="flex gap-3 relative group">
+                    
+                    {/* 🚩 리스트 고유 key 주입 구역 - Warning 경고 완벽 삭제 */}
+                    {selectedPost.commentsList?.map((comment: any, index: number) => (
+                      <div key={comment.id || `comment-${index}`} className="flex gap-3 relative group">
                         <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shrink-0 flex items-center justify-center text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase">
                           {comment.author ? comment.author[0] : "익"}
                         </div>
