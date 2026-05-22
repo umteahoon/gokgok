@@ -1,4 +1,4 @@
-// 주환 - 2026.05.15: 커뮤니티 페이지 (사진 비율 유지 + 이미지 개별 삭제 + 커스텀 모달 및 비로그인 일관성 완벽 통합)
+// 주환 - 2026.05.15: 커뮤니티 페이지 
 import { useState, useEffect } from "react"; 
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -53,7 +53,7 @@ const HighResImageViewer = ({ images, initialIndex, onClose }: { images: string[
 // 게시글 상세 모달 내부용 슬라이더 컴포넌트 (비율 깨짐 방지)
 const PostImageSlider = ({ images }: { images: string[] }) => {
   const [idx, setIdx] = useState(0);
-  if (images.length === 0) return <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>;
+  if (!images || images.length === 0) return <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>;
   return (
     <div className="w-full h-full relative group/slider overflow-hidden bg-black flex items-center justify-center">
       <img src={getFullImageUrl(images[idx])} className="w-full h-full object-contain" alt="Post content" />
@@ -73,16 +73,6 @@ interface CommunityPost { id: string; author: string; author_email: string; avat
 
 const getTimeAgo = (dateString: string) => { if (!dateString) return "방금 전"; const commentDate = new Date(dateString); const now = new Date(); const diffMs = now.getTime() - commentDate.getTime(); const diffMins = Math.floor(diffMs / (1000 * 60)); if (diffMins < 1) return "방금 전"; if (diffMins < 60) return `${diffMins}분 전`; if (Math.floor(diffMs / (1000 * 60 * 60)) < 24) return `${Math.floor(diffMs / (1000 * 60 * 60))}시간 전`; return `${commentDate.getFullYear()}.${String(commentDate.getMonth() + 1).padStart(2, '0')}.${String(commentDate.getDate()).padStart(2, '0')}`; };
 
-const PostThumbnail = ({ images }: { images: string[] }) => {
-  if (!images || images.length === 0) return null;
-  return (
-    <div className="relative w-full h-full group overflow-hidden bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700">
-      <img src={getFullImageUrl(images[0])} alt="thumbnail" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" />
-      {images.length > 1 && ( <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded-md font-bold backdrop-blur-sm">+{images.length - 1}</div> )}
-    </div>
-  );
-};
-
 export default function Community() {
   const currentUser = getCurrentUser(); 
   const navigate = useNavigate();
@@ -95,7 +85,6 @@ export default function Community() {
   const [commentText, setCommentText] = useState("");
   const [highResViewer, setHighResViewer] = useState<{ images: string[], index: number } | null>(null);
 
-  // 모달 상태값
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ type: 'post' | 'comment', id: string, postId?: string } | null>(null);
   const [isLoginNoticeOpen, setIsLoginNoticeOpen] = useState(false);
@@ -110,31 +99,38 @@ export default function Community() {
   const authHeaders = { "Content-Type": "application/json", ...(token && { "Authorization": `Bearer ${token}` }) };
   const formDataHeaders = { ...(token && { "Authorization": `Bearer ${token}` }) };
 
-  useEffect(() => {
-    const initData = async () => {
-      try {
-        const response = await fetch("https://gokgok-8ztf.onrender.com/api/community");
-        const data = await response.json();
-        if (data.success) {
-          const formatted = data.posts.map((p: any) => ({
-            id: p.id, author: p.author, author_email: p.author_email, Title: p.title, 
-            content: p.content, images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []),
-            likes: p.likes || 0, comments: p.commentsList ? p.commentsList.length : 0,
-            date: p.created_at, category: p.category || "수다",
-            commentsList: p.commentsList?.map((c: any) => ({
-              id: c.id, author: c.author, author_email: c.author_email, text: c.text, date: c.created_at, likes: c.likes || 0
-            })) || []
-          }));
-          setPosts(formatted);
-          if (currentUser?.email) {
-            const res = await fetch("https://gokgok-8ztf.onrender.com/api/community/my-likes", { method: "POST", headers: authHeaders, body: JSON.stringify({ user_email: currentUser.email }) });
-            const likes = await res.json();
-            if (likes.success && likes.likes) setLikedIds(new Set(likes.likes.map((item: any) => item.post_id)));
-          }
+  const loadPostsData = async () => {
+    try {
+      const response = await fetch("https://gokgok-8ztf.onrender.com/api/community");
+      const data = await response.json();
+      if (data.success) {
+        const formatted = data.posts.map((p: any) => ({
+          id: p.id, 
+          author: p.author || "익명유저", 
+          author_email: p.author_email || "", 
+          Title: p.title || "제목 없음", 
+          content: p.content || "", 
+          images: Array.isArray(p.images) ? p.images : (p.images ? [p.images] : []),
+          likes: p.likes || 0, 
+          comments: p.commentsList ? p.commentsList.length : 0,
+          date: p.created_at, 
+          category: p.category || "수다",
+          commentsList: p.commentsList?.map((c: any) => ({
+            id: c.id, author: c.author || "익명", author_email: c.author_email || "", text: c.text || "", date: c.created_at, likes: c.likes || 0
+          })) || []
+        }));
+        setPosts(formatted);
+        if (currentUser?.email) {
+          const res = await fetch("https://gokgok-8ztf.onrender.com/api/community/my-likes", { method: "POST", headers: authHeaders, body: JSON.stringify({ user_email: currentUser.email }) });
+          const likes = await res.json();
+          if (likes.success && likes.likes) setLikedIds(new Set(likes.likes.map((item: { post_id: string }) => item.post_id)));
         }
-      } catch (error) { console.error(error); }
-    };
-    initData();
+      }
+    } catch (error) { console.error(error); }
+  };
+
+  useEffect(() => {
+    loadPostsData();
   }, [currentUser?.email]);
 
   const handleLike = async (e: React.MouseEvent, postId: string) => {
@@ -149,11 +145,7 @@ export default function Community() {
       if (data.success) {
         setLikedIds((prev) => {
           const next = new Set(prev);
-          if (data.isLiked) {
-            next.add(postId);
-          } else {
-            next.delete(postId);
-          }
+          data.isLiked ? next.add(postId) : next.delete(postId);
           return next;
         });
         setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: data.likes } : p));
@@ -162,30 +154,42 @@ export default function Community() {
     } catch { alert("좋아요 실패"); }
   };
 
-  // 💡 명세서 기반 검증 완료된 댓글 등록 기능
   const handleCommentSubmit = async () => { 
     if (!currentUser || !commentText.trim() || !selectedPost) return; 
     try { 
+      const requestBody = { 
+        author: currentUser.name || "익명", 
+        author_email: currentUser.email, 
+        text: commentText.trim()         
+      };
+
       const res = await fetch(`https://gokgok-8ztf.onrender.com/api/community/${selectedPost.id}/comments`, { 
         method: "POST", 
         headers: authHeaders, 
-        body: JSON.stringify({ 
-          author: currentUser.name || "익명유저", 
-          author_email: currentUser.email, 
-          text: commentText 
-        }) 
+        body: JSON.stringify(requestBody) 
       }); 
       
+      if (!res.ok) return alert("댓글 서버 응답 실패");
+
       const data = await res.json(); 
       if (data.success) { 
-        const newComment = { id: data.comment.id, author: data.comment.author, author_email: data.comment.author_email, text: data.comment.text, date: data.comment.created_at, likes: 0 }; 
+        const c = data.comment;
+        const newComment = { 
+          id: c.id, 
+          author: c.author || currentUser.name, 
+          author_email: c.author_email || currentUser.email, 
+          text: c.text || commentText, 
+          date: c.created_at || new Date().toISOString(), 
+          likes: 0 
+        }; 
+
         setPosts(prev => prev.map(p => p.id === selectedPost.id ? { ...p, comments: p.comments + 1, commentsList: [...(p.commentsList || []), newComment] } : p)); 
         setSelectedPost(prev => prev ? { ...prev, comments: prev.comments + 1, commentsList: [...(prev.commentsList || []), newComment] } : null); 
         setCommentText(""); 
-      } 
-    } catch { 
-      alert("댓글 등록 중 서버 통신 실패"); 
-    } 
+      } else {
+        alert(`댓글 등록 거부: ${data.message || "오류"}`);
+      }
+    } catch { alert("서버 통신 실패"); } 
   };
 
   const handleDeletePostClick = (postId: string) => {
@@ -245,9 +249,7 @@ export default function Community() {
       const data = await response.json(); 
       if (data.success) { 
         alert("게시글이 성공적으로 수정되었습니다."); 
-        const updatedImages = data.post.images || existingImagesToKeep; 
-        setPosts(prev => prev.map(p => p.id === editingPost.id ? { ...p, Title: editTitle, content: editContent, images: updatedImages } : p)); 
-        if (selectedPost && selectedPost.id === editingPost.id) setSelectedPost(prev => prev ? { ...prev, Title: editTitle, content: editContent, images: updatedImages } : null); 
+        loadPostsData();
         setEditingPost(null); 
       }
     } catch { alert("수정 처리 중 오류가 발생했습니다."); } 
@@ -269,15 +271,9 @@ export default function Community() {
             </div>
             <Button 
               className="w-full md:w-auto h-[54px] bg-white dark:bg-[#1a1a1a] text-[#111111] dark:text-white border border-gray-200 dark:border-gray-800 rounded-2xl px-8 font-bold active:scale-95 flex items-center justify-center gap-2 transition-all shrink-0" 
-              onClick={() => {
-                if (!currentUser) {
-                  setIsLoginNoticeOpen(true);
-                } else {
-                  navigate("/community/write");
-                }
-              }}
+              onClick={() => { if (!currentUser) setIsLoginNoticeOpen(true); else navigate("/community/write"); }}
             >
-              <Pencil className="w-4 h-4" /> 포스트 쓰기
+              <Pencil className="w-4 h-4" /> 게시글 작성
             </Button>
           </div>
 
@@ -286,12 +282,15 @@ export default function Community() {
               <motion.div key={post.id} variants={staggerItem}>
                 <div className="group bg-white dark:bg-[#1a1a1a] border border-gray-200 dark:border-gray-800 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col h-full" onClick={() => setSelectedPost(post)}>
                   <div className="flex flex-col flex-1">
-                    <div className="w-full aspect-[4/3] shrink-0 mb-4 relative group/img overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-800" onClick={(e) => { if (post.images.length > 0) { e.stopPropagation(); setHighResViewer({ images: post.images, index: 0 }); } }}>
-                      {post.images.length > 0 ? ( <> <img src={getFullImageUrl(post.images[0])} alt="thumbnail" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" /> <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center"><Maximize2 className="text-white" size={24} /></div> {post.images.length > 1 && <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded-md font-bold backdrop-blur-sm">+{post.images.length - 1}</div>} </> ) : ( <div className="w-full h-full flex items-center justify-center border border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-600 font-bold text-sm">No Photo</div> )}
+                    <div className="w-full aspect-[4/3] shrink-0 mb-4 relative group/img overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-800" onClick={(e) => { if (post.images && post.images.length > 0) { e.stopPropagation(); setHighResViewer({ images: post.images, index: 0 }); } }}>
+                      {post.images && post.images.length > 0 ? ( <> <img src={getFullImageUrl(post.images[0])} alt="thumbnail" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" /> <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center"><Maximize2 className="text-white" size={24} /></div> {post.images.length > 1 && <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] px-2 py-1 rounded-md font-bold backdrop-blur-sm">+{post.images.length - 1}</div>} </> ) : ( <div className="w-full h-full flex items-center justify-center border border-gray-100 dark:border-gray-700 text-gray-300 dark:text-gray-600 font-bold text-sm">No Photo</div> )}
                     </div>
                     <div className="flex items-center justify-between mb-3 text-left">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-[10px] font-extrabold text-gray-700 dark:text-gray-200 uppercase">{post.author[0]}</div>
+                        {/* 🚩 안전 처리를 통해 첫 글자 추출 오류 해결 */}
+                        <div className="w-7 h-7 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-[10px] font-extrabold text-gray-700 dark:text-gray-200 uppercase">
+                          {post.author ? post.author[0] : "익"}
+                        </div>
                         <div className="flex flex-col"><span className="text-[12px] font-extrabold text-gray-900 dark:text-white line-clamp-1">{post.author}</span><span className="text-[10px] text-gray-400 font-medium">{getTimeAgo(post.date)}</span></div>
                       </div>
                       <Badge variant="outline" className={`border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 font-bold text-[10px] px-2 py-0.5 rounded-full ${getCategoryColor(post.category)}`}>{post.category}</Badge>
@@ -316,20 +315,19 @@ export default function Community() {
 
       <AnimatePresence>
         {highResViewer && <HighResImageViewer images={highResViewer.images} initialIndex={highResViewer.index} onClose={() => setHighResViewer(null)} />}
-      </AnimatePresence>
-
-      <AnimatePresence>
         {selectedPost && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-0 md:p-10" onClick={() => setSelectedPost(null)}>
             <motion.div initial={{ scale: 0.95, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 30 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-[#1a1a1a] w-full h-full md:h-[85vh] max-w-5xl md:rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row overflow-hidden relative">
               <div className="w-full md:w-[55%] h-[40vh] md:h-full bg-black relative shrink-0 border-r border-gray-100 dark:border-gray-800 flex items-center justify-center">
-                <PostImageSlider images={selectedPost.images} />
+                <PostImageSlider images={selectedPost.images || []} />
                 <button onClick={() => setSelectedPost(null)} className="absolute top-6 left-6 text-white md:hidden bg-black/40 backdrop-blur-md rounded-full p-2.5 z-10"><X size={24} /></button>
               </div>
               <div className="w-full md:w-[45%] flex flex-col flex-1 bg-white dark:bg-[#1a1a1a] relative min-h-0 text-left">
                  <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center font-extrabold text-sm text-gray-700 dark:text-gray-200 uppercase">{selectedPost.author[0]}</div>
+                    <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center font-extrabold text-sm text-gray-700 dark:text-gray-200 uppercase">
+                      {selectedPost.author ? selectedPost.author[0] : "익"}
+                    </div>
                     <div className="text-left"><p className="font-extrabold text-[15px] text-gray-900 dark:text-white">{selectedPost.author}</p><p className="text-[11px] text-[#FF3478] font-bold tracking-tight">{selectedPost.category}</p></div>
                   </div>
                   <div className="flex items-center gap-4">
@@ -348,7 +346,9 @@ export default function Community() {
                     <p className="text-[13px] font-extrabold text-gray-900 dark:text-white mb-4">댓글 <span className="text-[#FF3478]">{selectedPost.commentsList?.length || 0}</span></p>
                     {selectedPost.commentsList?.map((comment:any) => (
                       <div key={comment.id} className="flex gap-3 relative group">
-                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shrink-0 flex items-center justify-center text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase">{comment.author[0]}</div>
+                        <div className="w-8 h-8 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shrink-0 flex items-center justify-center text-[10px] font-black text-gray-700 dark:text-gray-200 uppercase">
+                          {comment.author ? comment.author[0] : "익"}
+                        </div>
                         <div className="flex-1 text-left pr-6"><p className="text-[14px] text-gray-700 dark:text-gray-300 leading-relaxed"><span className="font-extrabold text-gray-900 dark:text-white mr-2">{comment.author}</span>{comment.text}</p><p className="text-[11px] text-gray-400 mt-1.5 font-bold tracking-tighter">{getTimeAgo(comment.date)}</p></div>
                         {currentUser?.email === comment.author_email && ( <button onClick={() => handleDeleteCommentClick(selectedPost.id, comment.id)} className="absolute top-0 right-0 text-gray-300 hover:text-red-500 p-1 transition-colors opacity-0 group-hover:opacity-100"><X size={14} strokeWidth={3}/></button> )}
                       </div>
@@ -371,7 +371,7 @@ export default function Community() {
       <AnimatePresence>
         {isConfirmOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setIsConfirmOpen(false)}>
-            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-[#1a1a1a] w-full max-w-[320px] rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800">
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} onClick={(e) => e.stopPropagation()} className="bg-white dark:bg-[#1a1a1a] w-full max-w-[320px] rounded-[2rem] shadow-2xl overflow-hidden border border-gray-100 border-gray-800">
               <div className="p-8 text-center">
                 <div className="w-12 h-12 bg-red-50 dark:bg-red-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
                   <Trash2 className="text-red-500 w-6 h-6" />
@@ -380,7 +380,7 @@ export default function Community() {
                 <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed">삭제된 {confirmAction?.type === 'post' ? '게시글은' : '댓글은'} 다시 복구할 수 없습니다.</p>
               </div>
               <div className="flex border-t border-gray-50 dark:border-gray-800">
-                <button onClick={() => setIsConfirmOpen(false)} className="flex-1 py-4.5 text-[14px] font-bold text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-r border-gray-50 dark:border-gray-800">취소</button>
+                <button onClick={() => setIsConfirmOpen(false)} className="flex-1 py-4.5 text-[14px] font-bold text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors border-r border-gray-50 border-gray-800">취소</button>
                 <button onClick={executeConfirmDelete} className="flex-1 py-4.5 text-[14px] font-black text-[#FF3478] hover:bg-pink-50/30 dark:hover:bg-pink-900/10 transition-colors">삭제하기</button>
               </div>
             </motion.div>
@@ -397,13 +397,10 @@ export default function Community() {
                 <Heart className="text-[#FF3478] w-6 h-6" fill="currentColor" />
               </div>
               <h3 className="text-[18px] font-black text-gray-900 dark:text-white mb-2">로그인이 필요합니다</h3>
-              <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed mb-6">곡곡 수다방의 포스트 작성, 하트, 댓글 기능은<br />로그인 후 이용하실 수 있습니다.</p>
+              <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed mb-6">게시글 작성, 하트, 댓글 기능은<br />로그인 후 이용하실 수 있습니다.</p>
               <div className="flex flex-col gap-2">
                 <button 
-                  onClick={() => {
-                    setIsLoginNoticeOpen(false);
-                    navigate("/notmypage"); 
-                  }}
+                  onClick={() => { setIsLoginNoticeOpen(false); navigate("/notmypage"); }}
                   className="w-full py-3.5 bg-[#111111] dark:bg-white text-white dark:text-black font-bold rounded-full text-sm shadow-sm hover:opacity-90 transition-all"
                 >
                   로그인하러 가기
