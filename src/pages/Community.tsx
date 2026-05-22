@@ -14,7 +14,6 @@ import {
   ChevronRight,
   Maximize2,
   Loader2,
-  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -177,7 +176,6 @@ interface CommunityPost {
   comments: number;
   date: string;
   category: string;
-  rating: number;
   commentsList?: CommentData[];
 }
 
@@ -245,7 +243,7 @@ export default function Community() {
       const data = await response.json();
       if (data.success && Array.isArray(data.posts)) {
         const formatted = data.posts.map((p: any) => ({
-          id: p.id || String(Math.random()),
+          id: String(p.id || Math.random()),
           author: p.author || "익명유저",
           author_email: p.author_email || "",
           Title: p.title || "제목 없음",
@@ -259,10 +257,9 @@ export default function Community() {
           comments: p.commentsList ? p.commentsList.length : 0,
           date: p.created_at || new Date().toISOString(),
           category: p.category || "수다",
-          rating: p.rating || 0, // 🚩 [수정] 작성 시 입력 안 된 게시글은 별점 0개(빈 별)로 처리하도록 가드 설정
           commentsList: Array.isArray(p.commentsList)
             ? p.commentsList.map((c: any) => ({
-                id: c.id || String(Math.random()),
+                id: String(c.id || Math.random()),
                 author: c.author || "익명",
                 author_email: c.author_email || "",
                 text: c.text || "",
@@ -285,8 +282,8 @@ export default function Community() {
           if (likesData.success && Array.isArray(likesData.likes)) {
             setLikedIds(
               new Set(
-                likesData.likes.map(
-                  (item: { post_id: string }) => item.post_id,
+                likesData.likes.map((item: { post_id: string }) =>
+                  String(item.post_id),
                 ),
               ),
             );
@@ -326,7 +323,8 @@ export default function Community() {
       if (data.success) {
         setLikedIds((prev) => {
           const next = new Set(prev);
-          data.isLiked ? next.add(postId) : next.delete(postId);
+          if (data.isLiked) next.add(postId);
+          else next.delete(postId);
           return next;
         });
         setPosts((prev) =>
@@ -418,16 +416,18 @@ export default function Community() {
     try {
       if (confirmAction.type === "post") {
         const res = await fetch(
-          `https://gokgok-8ztf.onrender.com/api/community/${confirmAction.id}`,
+          `https://gokgok-8ztf.onrender.com/api/community/${confirmAction.id}?email=${currentUser.email}`,
           {
             method: "DELETE",
             headers: authHeaders,
-            body: JSON.stringify({ author_email: currentUser.email }),
           },
         );
-        if ((await res.json()).success) {
+        if (res.ok) {
           setPosts((prev) => prev.filter((p) => p.id !== confirmAction.id));
           if (selectedPost?.id === confirmAction.id) setSelectedPost(null);
+          alert("게시글이 삭제되었습니다.");
+        } else {
+          alert("게시글 삭제에 실패했습니다.");
         }
       } else {
         const res = await fetch(
@@ -519,6 +519,11 @@ export default function Community() {
     return titleStr.includes(searchStr) || authorStr.includes(searchStr);
   });
 
+  const clearButtonStyle = {
+    WebkitTapHighlightColor: "transparent",
+    outline: "none",
+  };
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#111111] transition-colors relative font-sans text-[#111111] dark:text-white pb-20">
       <motion.div
@@ -547,8 +552,10 @@ export default function Community() {
                 className="w-full pl-14 pr-6 h-[54px] bg-white dark:bg-[#1a1a1a] hover:bg-gray-50 dark:hover:bg-gray-800 border border-gray-200 dark:border-gray-800 rounded-2xl outline-none font-medium shadow-sm transition-all focus:bg-white dark:focus:bg-[#1a1a1a]"
               />
             </div>
+
             <Button
-              className="w-full md:w-auto h-[54px] bg-[#111111] dark:bg-white text-white dark:text-[#111111] border-none rounded-2xl px-8 font-black active:scale-95 flex items-center justify-center gap-2 transition-all shrink-0 shadow-md hover:bg-black dark:hover:bg-gray-200"
+              style={clearButtonStyle}
+              className="w-full md:w-auto h-[54px] bg-transparent border border-gray-200 dark:border-zinc-800 text-[#111111] dark:text-white rounded-2xl px-8 font-black active:scale-95 flex items-center justify-center gap-2 transition-all shrink-0 shadow-sm hover:bg-gray-50 dark:hover:bg-zinc-900"
               onClick={() => {
                 if (!currentUser) setIsLoginNoticeOpen(true);
                 else navigate("/community/write");
@@ -621,20 +628,7 @@ export default function Community() {
                         )}
                       </div>
 
-                      {/* 노란색 별점 디자인 스타일 반영 구역 */}
-                      <div className="flex items-center gap-0.5 mb-1.5">
-                        {[...Array(5)].map((_, i) => (
-                          <Star
-                            key={i}
-                            size={13}
-                            className={
-                              i < (post.rating || 0)
-                                ? "fill-[#FFD233] text-[#FFD233]"
-                                : "text-gray-200 dark:text-zinc-700"
-                            }
-                          />
-                        ))}
-                      </div>
+                      {/* 🚩 [수정] 카드 리스트 내부에서 기존의 별점 드로잉 패널 영역을 완전히 없앴습니다. */}
 
                       <div className="flex items-center justify-between mb-3 text-left">
                         <div className="flex items-center gap-2">
@@ -657,7 +651,7 @@ export default function Community() {
                           {post.category}
                         </Badge>
                       </div>
-                      <h3 className="text-[16px] font-extrabold text-gray-900 dark:text-white mb-1.5 group-hover:text-[#FF3478] transition-colors line-clamp-1 text-left">
+                      <h3 className="text-[16px] font-extrabold text-gray-900 dark:text-white mb-1.5 transition-colors line-clamp-1 text-left">
                         {post.Title}
                       </h3>
                       <p className="text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2 font-medium mb-4 text-left">
@@ -666,14 +660,10 @@ export default function Community() {
                     </div>
                     <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-800 mt-auto">
                       <div className="flex items-center gap-4">
-                        {/* 🚩 [요청 반영] 하트 가져다 대면 반응하는 호버 마크업 및 액티브 모션 효과 통합 */}
                         <button
                           onClick={(e) => handleLike(e, post.id)}
                           className={`flex items-center gap-1.5 transition-all select-none outline-none border-none focus:outline-none hover:scale-110 active:scale-75 ${likedIds.has(post.id) ? "text-[#FF3478]" : "text-gray-400 hover:text-[#FF3478]"}`}
-                          style={{
-                            WebkitTapHighlightColor: "transparent",
-                            outline: "none",
-                          }}
+                          style={clearButtonStyle}
                         >
                           <Heart
                             className="w-4 h-4"
@@ -681,12 +671,11 @@ export default function Community() {
                               likedIds.has(post.id) ? "currentColor" : "none"
                             }
                           />
-                          <span className="text-[12px] font-bold select-none">
+                          <span className="text-[12px] font-bold">
                             {post.likes}
                           </span>
                         </button>
 
-                        {/* 🚩 [요청 반영] 댓글 가져다 대면 반응하는 호버 마크업 및 액티브 모션 효과 통합 */}
                         <div className="flex items-center gap-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:scale-110 active:scale-90 transition-all cursor-pointer">
                           <MessageCircle className="w-4 h-4" />
                           <span className="text-[12px] font-bold">
@@ -755,7 +744,7 @@ export default function Community() {
                 </button>
               </div>
               <div className="w-full md:w-[45%] flex flex-col flex-1 bg-white dark:bg-[#1a1a1a] relative min-h-0 text-left">
-                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center shrink-0">
+                <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-between shrink-0 justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center font-extrabold text-sm text-gray-700 dark:text-gray-200 uppercase">
                       {selectedPost.author ? selectedPost.author[0] : "익"}
@@ -768,19 +757,7 @@ export default function Community() {
                         <p className="text-[11px] text-[#FF3478] font-bold tracking-tight">
                           {selectedPost.category}
                         </p>
-                        <div className="flex items-center gap-0.5">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              size={11}
-                              className={
-                                i < (selectedPost.rating || 0)
-                                  ? "fill-[#FFD233] text-[#FFD233]"
-                                  : "text-gray-200 dark:text-zinc-700"
-                              }
-                            />
-                          ))}
-                        </div>
+                        {/* 🚩 [수정] 모달창 헤더 우측의 별점 아이콘 컴포넌트를 완전히 삭제했습니다. */}
                       </div>
                     </div>
                   </div>

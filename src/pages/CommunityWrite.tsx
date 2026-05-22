@@ -1,8 +1,8 @@
 // 주환 - 2026.05.06: CommunityWrite (화이트 테마 및 다크모드 대응, UI 일체화)
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ImagePlus, X, Star } from "lucide-react"; // Star 컴포넌트 추가
+import { ImagePlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { fadeInUp } from "@/lib/motion";
@@ -15,20 +15,25 @@ export default function CommunityWrite() {
   const navigate = useNavigate();
   const currentUser = getCurrentUser();
 
+  // 🚩 [수정] formData 객체 내부에서 rating(별점) 상태 필드를 완전히 제거했습니다.
   const [formData, setFormData] = useState({
     festivalTitle: "",
     category: "전통문화",
     content: "",
   });
 
-  // 🚩 별점 관련 상태 관리 필드 (0점부터 5점까지 0.5단위 제어)
-  const [rating, setRating] = useState<number>(0);
-  const [hoverRating, setHoverRating] = useState<number | null>(null);
-
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach((url) => {
+        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+      });
+    };
+  }, [imagePreviews]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -37,32 +42,6 @@ export default function CommunityWrite() {
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  // 마우스 위치를 계산해 0.5점 단위를 감지하는 정밀 렌더링 유틸 핸들러
-  const handleMouseMoveStar = (
-    e: React.MouseEvent<HTMLDivElement>,
-    index: number,
-  ) => {
-    const { left, width } = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX - left;
-    // 마우스 마킹 위치가 해당 별의 가로 중심보다 왼쪽이면 .5점, 오른쪽이면 1점 부여
-    const isHalf = mouseX < width / 2;
-    setHoverRating(index + (isHalf ? 0.5 : 1));
-  };
-
-  const handleMouseLeaveStar = () => {
-    setHoverRating(null);
-  };
-
-  const handleClickStar = (
-    index: number,
-    e: React.MouseEvent<HTMLDivElement>,
-  ) => {
-    const { left, width } = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX - left;
-    const isHalf = mouseX < width / 2;
-    setRating(index + (isHalf ? 0.5 : 1));
   };
 
   const handleImageClick = () => {
@@ -94,6 +73,9 @@ export default function CommunityWrite() {
   };
 
   const handleRemoveImage = (indexToRemove: number) => {
+    if (imagePreviews[indexToRemove].startsWith("blob:")) {
+      URL.revokeObjectURL(imagePreviews[indexToRemove]);
+    }
     setImagePreviews((prev) => prev.filter((_, idx) => idx !== indexToRemove));
     setImageFiles((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
@@ -122,7 +104,6 @@ export default function CommunityWrite() {
     sendData.append("title", formData.festivalTitle);
     sendData.append("content", formData.content);
     sendData.append("category", formData.category);
-    sendData.append("rating", String(rating)); // 🚩 선택한 정밀 별점 데이터 주입
     sendData.append("status", "active");
 
     imageFiles.forEach((file) => {
@@ -159,8 +140,6 @@ export default function CommunityWrite() {
   };
 
   if (!currentUser) return <Navigate to="/notmypage" replace />;
-
-  const activeRating = hoverRating !== null ? hoverRating : rating;
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#111111] transition-colors py-12 px-4 font-sans">
@@ -215,65 +194,7 @@ export default function CommunityWrite() {
               </div>
             </div>
 
-            {/* 🚩 [신규 추가] 0.5단위 미세 조절형 노란색 별점 드로잉 컨테이너 */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 block">
-                  축제 평점
-                </label>
-                <span className="text-xs font-black text-[#FFD233] bg-[#FFD233]/10 px-2 py-0.5 rounded-md font-mono">
-                  {rating === 0 ? "평가 없음" : `${rating.toFixed(1)} / 5.0`}
-                </span>
-              </div>
-              <div className="flex items-center gap-1 w-fit select-none">
-                {[...Array(5)].map((_, index) => {
-                  const starValue = index + 1;
-                  const isHalfFilled = activeRating + 0.5 === starValue;
-                  const isFullyFilled = activeRating >= starValue;
-
-                  return (
-                    <div
-                      key={index}
-                      className="relative cursor-pointer transition-transform hover:scale-110 active:scale-95"
-                      style={{ WebkitTapHighlightColor: "transparent" }}
-                      onMouseMove={(e) => handleMouseMoveStar(e, index)}
-                      onMouseLeave={handleMouseLeaveStar}
-                      onClick={(e) => handleClickStar(index, e)}
-                    >
-                      {/* 배경용 회색 빈 별 */}
-                      <Star
-                        size={28}
-                        className="text-gray-200 dark:text-zinc-700"
-                      />
-
-                      {/* 정밀 마스킹 클리핑 마스크 분기문 */}
-                      {isFullyFilled ? (
-                        <Star
-                          size={28}
-                          className="absolute inset-0 fill-[#FFD233] text-[#FFD233]"
-                        />
-                      ) : isHalfFilled ? (
-                        <div className="absolute inset-0 overflow-hidden w-[50%]">
-                          <Star
-                            size={28}
-                            className="fill-[#FFD233] text-[#FFD233]"
-                          />
-                        </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
-                {rating > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setRating(0)}
-                    className="ml-3 text-[11px] font-bold text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    초기화
-                  </button>
-                )}
-              </div>
-            </div>
+            {/* 🚩 별점 노출 및 상태 조절 인터페이스 UI 가젯 영역 전면 제거 완료 */}
 
             <div className="space-y-3">
               <label className="text-[13px] font-extrabold text-gray-900 dark:text-gray-200 block">
