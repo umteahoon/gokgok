@@ -1,10 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { NavLink, useNavigate, Link } from "react-router-dom";
-import { Menu, X, Sun, Moon, Clock } from "lucide-react";
+import {
+  Menu,
+  X,
+  Sun,
+  Moon,
+  Clock,
+  Heart,
+  Youtube,
+  Instagram,
+} from "lucide-react";
 import { ROUTE_PATHS } from "@/lib/index";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser, logout } from "@/lib/login";
 import { useToast } from "@/hooks/use-toast";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,6 +25,8 @@ export function Layout({ children }: LayoutProps) {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [isLoginNoticeOpen, setIsLoginNoticeOpen] = useState(false);
+
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -149,7 +161,14 @@ export function Layout({ children }: LayoutProps) {
     });
   };
 
-  // 모바일 터치 하이라이트 방지용 오브젝트 스타일
+  const handleContactClick = () => {
+    if (!currentUser) {
+      setIsLoginNoticeOpen(true);
+    } else {
+      navigate("/contact");
+    }
+  };
+
   const clearButtonStyle = {
     WebkitTapHighlightColor: "transparent",
     outline: "none",
@@ -173,6 +192,7 @@ export function Layout({ children }: LayoutProps) {
             </NavLink>
           </div>
 
+          {/* 데스크탑 네비게이션 */}
           <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 h-full items-stretch space-x-10 lg:space-x-14">
             {baseNavItems.map((item) => (
               <NavLink
@@ -198,6 +218,7 @@ export function Layout({ children }: LayoutProps) {
             ))}
           </nav>
 
+          {/* 데스크탑 우측 메뉴 링크 스펙 */}
           <div className="hidden md:flex items-center justify-end gap-6 z-10">
             {currentUser && (
               <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-700">
@@ -216,7 +237,6 @@ export function Layout({ children }: LayoutProps) {
             )}
 
             <div className="flex items-center gap-3">
-              {/* 🚩 [우측 상단 제어 버튼 컴포넌트군 정교화 통합] */}
               {currentUser ? (
                 <button
                   onClick={handleLogout}
@@ -246,68 +266,215 @@ export function Layout({ children }: LayoutProps) {
               </button>
 
               <button
-                onClick={() => navigate("/contact")}
-                className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
+                onClick={handleContactClick}
+                className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all"
               >
                 문의사항
               </button>
             </div>
           </div>
+
+          {/* 모바일 레이아웃 반응형 햄버거 토글러 인프라 구축 */}
+          <div className="flex md:hidden items-center gap-2 z-10">
+            <button
+              onClick={toggleTheme}
+              className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+            >
+              {isDarkMode ? (
+                <Sun className="w-[18px] h-[18px]" />
+              ) : (
+                <Moon className="w-[18px] h-[18px]" />
+              )}
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full"
+            >
+              {mobileMenuOpen ? (
+                <X className="w-6 h-6" />
+              ) : (
+                <Menu className="w-6 h-6" />
+              )}
+            </button>
+          </div>
         </div>
       </header>
+
+      {/* 모바일 팝업 슬라이드 네비게이션 드롭다운 메인 뷰 */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="md:hidden w-full bg-white dark:bg-[#111111] border-b border-gray-100 dark:border-gray-800 px-6 py-6 space-y-4 absolute top-16 left-0 z-40 shadow-xl text-left"
+          >
+            {baseNavItems.map((item) => (
+              <Link
+                key={item.label}
+                to={item.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-[16px] font-black text-gray-800 dark:text-gray-200 hover:text-[#FF3478] py-1"
+              >
+                {item.label}
+              </Link>
+            ))}
+            <div className="h-[1px] bg-gray-100 dark:bg-zinc-800 my-4" />
+            <div className="flex flex-col gap-2.5">
+              {currentUser ? (
+                <button
+                  onClick={handleLogout}
+                  className="w-full py-3 text-sm font-bold text-center bg-gray-50 dark:bg-zinc-900 rounded-xl text-gray-700 dark:text-gray-300"
+                >
+                  로그아웃
+                </button>
+              ) : (
+                <Link
+                  to={ROUTE_PATHS?.NOTMYPAGE || "/login"}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-3 text-sm font-bold text-center bg-gray-50 dark:bg-zinc-900 rounded-xl text-gray-700 dark:text-gray-300 block"
+                >
+                  로그인 / 회원가입
+                </Link>
+              )}
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleContactClick();
+                }}
+                className="w-full py-3 text-sm font-black text-center bg-[#FF3478]/5 text-[#FF3478] rounded-xl"
+              >
+                1:1 고객 문의사항
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 2. 메인 페이지 콘텐츠 영역 */}
       <main className="flex-1 w-full">{children}</main>
 
-      {/* 3. 하단 공통 푸터 배너 섹션 구조 보존 유지 */}
-      <footer className="w-full border-t border-gray-100 dark:border-gray-900 bg-gray-50/50 dark:bg-[#161616] text-gray-400 dark:text-zinc-500 py-10 transition-colors duration-300">
-        <div className="max-w-[1200px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 text-left">
+      {/* 3. 하단 공통 푸터 배너 섹션 (진한 청록색 테마 및 밑줄/핑크강조 완벽 제거) */}
+      <footer className="w-full bg-[#0a2730] text-[#8fa7ac] py-12 border-t border-[#0d3440] transition-colors duration-300">
+        <div className="max-w-[1200px] mx-auto px-6 md:px-10 flex flex-col md:flex-row justify-between items-start gap-8 text-left">
           {/* 팀 정보 텍스트 */}
-          <div className="space-y-2">
+          <div className="space-y-4 flex-1">
             <div className="flex items-center gap-3">
-              <span className="font-black text-gray-900 dark:text-white text-base tracking-wider uppercase">
+              <span className="font-black text-white text-base tracking-wider uppercase">
                 GokGok
               </span>
-              <span className="text-[11px] font-medium bg-gray-200/60 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 px-2 py-0.5 rounded-md">
+              <span className="text-[11px] font-medium bg-white/10 text-[#c0d3d6] px-2 py-0.5 rounded-md">
                 대한민국 축제 구석구석
               </span>
             </div>
-            <p className="text-[12px] font-medium text-gray-400 dark:text-zinc-500 leading-relaxed">
+            <p className="text-[12px] font-medium leading-relaxed text-[#8fa7ac] max-w-2xl">
               작성자: 엄태훈, 이주환, 최원재 (GokGok Project Team)
               <br />본 플랫폼은 국내 지역 활성화 및 로컬 축제 정보 제공을 목적에
               둔 프로젝트 팀 빌딩 공간입니다.
             </p>
-            <p className="text-[11px] font-bold text-gray-300 dark:text-zinc-600 pt-2">
+            <p className="text-[11px] font-bold text-[#5a787e] pt-1">
               &copy; 2026 GokGok. All rights reserved.
             </p>
           </div>
 
-          {/* 하단 링크 가로 정렬 영역 */}
-          <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] font-bold text-gray-500 dark:text-zinc-400 shrink-0">
-            <Link
-              to="/terms"
-              style={clearButtonStyle}
-              className="hover:text-gray-900 dark:hover:text-white transition-colors underline underline-offset-4 decoration-gray-200"
-            >
-              이용약관
-            </Link>
-            <Link
-              to="/privacy"
-              style={clearButtonStyle}
-              className="hover:text-gray-900 dark:hover:text-white transition-colors underline underline-offset-4 decoration-gray-200"
-            >
-              개인정보처리방침
-            </Link>
-            <Link
-              to="/contact"
-              style={clearButtonStyle}
-              className="hover:text-gray-900 dark:hover:text-white transition-colors"
-            >
-              고객문의
-            </Link>
+          <div className="flex flex-col sm:items-end gap-6 shrink-0">
+            {/* 우측 SNS 패널 */}
+            <div className="flex items-center gap-3">
+              <a
+                href="https://youtube.com"
+                target="_blank"
+                rel="noreferrer"
+                className="w-9 h-9 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-white transition-all"
+              >
+                <Youtube className="w-4 h-4" fill="currentColor" />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noreferrer"
+                className="w-9 h-9 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-white transition-all"
+              >
+                <Instagram className="w-4 h-4" />
+              </a>
+            </div>
+
+            {/* 하단 링크 가로 정렬 영역 (밑줄 및 🚩개인정보처리방침 핑크 강조색 완벽 제거) */}
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-[13px] font-bold text-[#c0d3d6]">
+              <Link
+                to="/terms"
+                style={clearButtonStyle}
+                className="hover:text-white transition-colors"
+              >
+                이용약관
+              </Link>
+              <Link
+                to="/privacy"
+                style={clearButtonStyle}
+                className="hover:text-white transition-colors"
+              >
+                개인정보처리방침
+              </Link>
+              <Link
+                to="/contact"
+                style={clearButtonStyle}
+                className="hover:text-white transition-colors"
+              >
+                고객문의
+              </Link>
+            </div>
           </div>
         </div>
       </footer>
+
+      {/* --- 로그인 유도 커스텀 모달 애니메이션 레이어 (문의사항 가드 일체화) --- */}
+      <AnimatePresence>
+        {isLoginNoticeOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[500] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            onClick={() => setIsLoginNoticeOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white dark:bg-[#1a1a1a] w-full max-w-[320px] rounded-[2.5rem] shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 p-6 text-center"
+            >
+              <div className="w-12 h-12 bg-pink-50 dark:bg-pink-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Heart className="text-[#FF3478] w-6 h-6" fill="currentColor" />
+              </div>
+              <h3 className="text-[18px] font-black text-gray-900 dark:text-white mb-2">
+                로그인이 필요합니다
+              </h3>
+              <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed mb-6">
+                1:1 문의사항 작성 및 확인 기능은
+                <br />
+                로그인 후 이용하실 수 있습니다.
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => {
+                    setIsLoginNoticeOpen(false);
+                    navigate("/notmypage");
+                  }}
+                  className="w-full py-3.5 bg-[#111111] dark:bg-white text-white dark:text-black font-bold rounded-full text-sm shadow-sm hover:opacity-90 transition-all"
+                >
+                  로그인하러 가기
+                </button>
+                <button
+                  onClick={() => setIsLoginNoticeOpen(false)}
+                  className="w-full py-2 text-gray-400 dark:text-gray-500 font-medium rounded-full text-xs hover:text-gray-600 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
