@@ -162,7 +162,7 @@ export default function Contact() {
           <SheetContent side="right" className="w-full sm:max-w-lg bg-white dark:bg-[#1a1a1a] border-l border-gray-100 dark:border-gray-800 overflow-y-auto">
             <SheetHeader className="mb-8">
               <SheetTitle className="text-2xl font-black text-gray-900 dark:text-white">답변 확인</SheetTitle>
-              <SheetDescription className="text-gray-400 font-medium">로그인된 계정({currentUser.email})의 문의 내역을 확인합니다.</SheetDescription>
+              <SheetDescription className="text-gray-400 font-medium">로그인된 계정({currentUser.email})의 문의 내역을 확인합니다.<br></br><br></br>  30일 이내의 문의만 조회되며, 자동으로 삭제됩니다.</SheetDescription>
             </SheetHeader>
 
             <div className="space-y-5">
