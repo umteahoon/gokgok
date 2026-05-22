@@ -1,40 +1,33 @@
-// 태훈 - 2026.05.22: 비밀번호 변경 페이지 (백엔드 reset-password 라우터 연동 완료)
+// 태훈 - 2026.05.22: 비밀번호 찾기 (Supabase 이메일 인증 발송 버전)
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Mail, ArrowLeft, Key, Lock } from "lucide-react";
+import { Mail, ArrowLeft, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { fadeInUp } from "@/lib/motion";
 
 export default function FindPw() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isSent, setIsSent] = useState(false);
 
-  const handleResetPw = async (e: React.FormEvent) => {
+  const handleSendResetLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userId.trim() || !email.trim() || !newPassword.trim()) return alert("모든 필드를 입력해주세요.");
-    if (newPassword.length < 6) return alert("새 비밀번호는 최소 6자 이상이어야 합니다.");
+    if (!email.trim()) return alert("이메일을 입력해주세요.");
 
     try {
-      // 🎯 백엔드의 실제 주소인 /reset-password 로 정밀 타격
-      const res = await fetch("https://gokgok-8ztf.onrender.com/api/auth/reset-password", {
+      // 🎯 백엔드의 Supabase Auth 링크 발송 API 호출
+      const res = await fetch("https://gokgok-8ztf.onrender.com/api/auth/send-reset-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          id: userId.trim(), 
-          email: email.trim(), 
-          newPassword: newPassword.trim() 
-        })
+        body: JSON.stringify({ email: email.trim() })
       });
       const data = await res.json();
       
       if (data.success) {
-        setIsSuccess(true);
+        setIsSent(true);
       } else {
-        alert(data.message || "정보가 일치하지 않습니다.");
+        alert(data.message || "인증 메일 발송에 실패했습니다.");
       }
     } catch {
       alert("서버 통신 오류");
@@ -49,45 +42,36 @@ export default function FindPw() {
         </button>
 
         <div className="text-center mb-8 mt-4">
-          <h2 className="text-[24px] font-black tracking-tight mb-2">비밀번호 재설정</h2>
-          <p className="text-xs font-medium text-gray-400">아이디와 이메일을 대조한 후 새 비밀번호로 변경합니다.</p>
+          <h2 className="text-[24px] font-black tracking-tight mb-2">비밀번호 찾기</h2>
+          <p className="text-xs font-medium text-gray-400">가입하신 이메일 주소로 본인 인증 링크를 전송합니다.</p>
         </div>
 
-        {!isSuccess ? (
-          <form onSubmit={handleResetPw} className="space-y-5">
+        {!isSent ? (
+          <form onSubmit={handleSendResetLink} className="space-y-5">
             <div className="space-y-2.5">
-              <label className="text-[13px] font-extrabold ml-1">아이디</label>
-              <div className="group flex items-center bg-white dark:bg-[#222] rounded-2xl px-5 py-4 focus-within:ring-2 focus-within:ring-gray-200 dark:focus-within:ring-gray-700 transition-all shadow-sm border border-gray-100 dark:border-zinc-800">
-                <Key className="w-5 h-5 text-gray-400 mr-3" />
-                <input type="text" placeholder="가입 아이디 입력" value={userId} onChange={e => setUserId(e.target.value)} className="w-full bg-transparent outline-none text-[15px] font-medium placeholder:text-gray-400" required />
-              </div>
-            </div>
-
-            <div className="space-y-2.5">
-              <label className="text-[13px] font-extrabold ml-1">이메일</label>
+              <label className="text-[13px] font-extrabold ml-1">이메일 계정</label>
               <div className="group flex items-center bg-white dark:bg-[#222] rounded-2xl px-5 py-4 focus-within:ring-2 focus-within:ring-gray-200 dark:focus-within:ring-gray-700 transition-all shadow-sm border border-gray-100 dark:border-zinc-800">
                 <Mail className="w-5 h-5 text-gray-400 mr-3" />
                 <input type="email" placeholder="example@gokgok.com" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-transparent outline-none text-[15px] font-medium placeholder:text-gray-400" required />
               </div>
             </div>
 
-            <div className="space-y-2.5">
-              <label className="text-[13px] font-extrabold ml-1">새로운 비밀번호 설정</label>
-              <div className="group flex items-center bg-white dark:bg-[#222] rounded-2xl px-5 py-4 focus-within:ring-2 focus-within:ring-gray-200 dark:focus-within:ring-gray-700 transition-all shadow-sm border border-gray-100 dark:border-zinc-800">
-                <Lock className="w-5 h-5 text-gray-400 mr-3" />
-                <input type="password" placeholder="6자 이상의 새 비밀번호" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="w-full bg-transparent outline-none text-[15px] font-medium placeholder:text-gray-400" required />
-              </div>
-            </div>
-
             <Button type="submit" className="w-full h-[56px] mt-4 rounded-full bg-[#111111] dark:bg-white text-white dark:text-[#111111] font-black text-[15px] shadow-md hover:opacity-90 transition-all">
-              비밀번호 변경하기
+              인증 메일 보내기
             </Button>
           </form>
         ) : (
           <div className="text-center py-6">
-            <p className="text-gray-500 mb-6 font-bold text-sm">🎉 비밀번호가 안전하게 변경되었습니다!<br />새로 설정한 비밀번호로 로그인해 주세요.</p>
+            <div className="w-12 h-12 bg-blue-50 dark:bg-blue-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <ShieldCheck className="text-[#FF3478] w-6 h-6" />
+            </div>
+            <p className="text-gray-900 dark:text-white font-bold text-base mb-2">인증 메일 발송 완료!</p>
+            <p className="text-gray-400 text-xs font-semibold mb-8 leading-relaxed">
+              <span className="text-[#FF3478] font-bold">{email}</span> 메일함을 확인해 주세요.<br />
+              비밀번호 재설정 링크가 안전하게 도착했습니다.
+            </p>
             <Button onClick={() => navigate("/")} className="w-full h-[56px] rounded-full bg-[#111111] dark:bg-white text-white dark:text-[#111111] font-black text-[15px] shadow-md">
-              로그인하러 가기
+              메인으로 이동
             </Button>
           </div>
         )}
