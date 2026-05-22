@@ -147,7 +147,6 @@ export function Layout({ children }: LayoutProps) {
                 {({ isActive }) => (
                   <span className="relative">
                     {item.label}
-                    {/* ✅ 강조선: 텍스트 바로 밑(-bottom-1)에 위치하도록 수정 */}
                     {isActive && (
                       <span className="absolute -bottom-1.5 left-0 right-0 h-[3px] bg-[#FF3478] rounded-full" />
                     )}
@@ -170,12 +169,13 @@ export function Layout({ children }: LayoutProps) {
             )}
 
             <div className="flex items-center gap-3">
+              {/* 🚩 로그인/로그아웃 버튼 다크모드 아이콘 스타일로 수정 완료 */}
               {currentUser ? (
-                <button onClick={handleLogout} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
+                <button onClick={handleLogout} className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all">
                   로그아웃
                 </button>
               ) : (
-                <NavLink to={ROUTE_PATHS?.NOTMYPAGE || '/login'} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
+                <NavLink to={ROUTE_PATHS?.NOTMYPAGE || '/login'} className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all">
                   로그인
                 </NavLink>
               )}
@@ -184,7 +184,8 @@ export function Layout({ children }: LayoutProps) {
                 {isDarkMode ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
               </button>
               
-              <button onClick={() => navigate('/contact')} className="px-4 py-2 text-xs font-bold text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 rounded-full hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-all">
+              {/* 🚩 문의사항 버튼 다크모드 아이콘 스타일로 수정 완료 */}
+              <button onClick={() => navigate('/contact')} className="px-4 py-2 text-xs font-bold text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-full hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 active:scale-95 transition-all">
                 문의사항
               </button>
             </div>

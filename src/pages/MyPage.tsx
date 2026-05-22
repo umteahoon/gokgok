@@ -225,10 +225,11 @@ export default function MyPage() {
         </header>
 
         <Tabs defaultValue="saved" className="w-full">
-          <TabsList className="flex w-full border-b border-gray-100 dark:border-zinc-800 bg-transparent h-auto p-0 mb-10 gap-8 md:gap-12">
-            <TabsTrigger value="saved" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none">관심 목록</TabsTrigger>
-            <TabsTrigger value="posts" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none">작성한 글</TabsTrigger>
-            <TabsTrigger value="settings" className="px-0 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] bg-transparent shadow-none rounded-none text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none">계정 설정</TabsTrigger>
+          {/* 🚩 탭 메뉴 Hover UI 둥글게 & 이쁘게 변경된 부분 */}
+          <TabsList className="flex w-full border-b border-gray-100 dark:border-zinc-800 bg-transparent h-auto p-0 mb-10 gap-2 md:gap-4 justify-center md:justify-start">
+            <TabsTrigger value="saved" className="px-6 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] data-[state=active]:bg-[#FF3478]/5 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-t-2xl text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none cursor-pointer">관심 목록</TabsTrigger>
+            <TabsTrigger value="posts" className="px-6 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] data-[state=active]:bg-[#FF3478]/5 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-t-2xl text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none cursor-pointer">작성한 글</TabsTrigger>
+            <TabsTrigger value="settings" className="px-6 py-4 border-b-4 border-transparent data-[state=active]:border-[#FF3478] data-[state=active]:text-[#FF3478] data-[state=active]:bg-[#FF3478]/5 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-t-2xl text-lg font-black transition-all focus-visible:ring-0 focus-visible:outline-none cursor-pointer">계정 설정</TabsTrigger>
           </TabsList>
 
           <TabsContent value="saved" className="outline-none">
@@ -306,7 +307,13 @@ export default function MyPage() {
                     </div>
                   </div>
                 </div>
-              )) : <div className="text-center py-24 text-gray-400 font-bold">작성한 글이 없습니다.</div>}
+              )) : (
+                /* 🚩 작성한 글 없음 빈 화면도 둥근 점선으로 이쁘게 변경 */
+                <div className="text-center py-24 bg-gray-50 dark:bg-zinc-900/50 rounded-[2.5rem] border-2 border-dashed border-gray-200 dark:border-zinc-800 hover:bg-gray-100 transition-colors">
+                  <FileText className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                  <p className="text-gray-400 font-bold">작성한 글이 없습니다.</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
