@@ -1,6 +1,6 @@
 /**
- * 곡곡 백엔드 메인 서버 - 엄태훈 최종 통합본 (비밀번호 이메일 인증 패치 버전)
- * 수정일: 2026-05-22
+ * 곡곡 백엔드 메인 서버 - 엄태훈 최종 통합본 (로컬/배포 하이브리드 인증 패치 완료)
+ * 업데이트: 2026-05-22
  */
 
 import dotenv from 'dotenv'; 
@@ -146,7 +146,7 @@ app.post('/api/auth/find-id', async (req: Request, res: Response) => {
 });
 
 /**
- * 4. 🚩 [새로 추가] Supabase 인증 메일 링크 발송 API
+ * 4. 🔥 Supabase 인증 메일 링크 발송 API (로컬호스트 & Netlify 배포 통합 하이브리드 버전)
  * 주소 통로 명시: POST /api/auth/send-reset-link
  */
 app.post('/api/auth/send-reset-link', async (req: Request, res: Response) => {
@@ -157,9 +157,15 @@ app.post('/api/auth/send-reset-link', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: '이메일을 입력해주세요.' });
     }
 
+    // 🎯 [핵심 패치] 요청을 보낸 원래 주소(로컬 8080 포트 혹은 넷리파이 실서버)를 실시간으로 탐지합니다.
+    const requestOrigin = req.headers.origin || 'http://localhost:8080';
+    const finalRedirectUrl = `${requestOrigin}/#/reset-password`;
+
+    console.log(`🔗 [Redirect URI 스마트 가변 매핑]: ${finalRedirectUrl}`);
+
     // 🎯 Supabase 공식 가이드라인 메일 전송 모듈 활성화
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'http://localhost:8080/#/reset-password', 
+      redirectTo: finalRedirectUrl, // 🚀 접속 환경에 맞춰 리다이렉트 지점을 유동적으로 분기
     });
 
     if (error) throw error;
@@ -172,57 +178,44 @@ app.post('/api/auth/send-reset-link', async (req: Request, res: Response) => {
 });
 
 /**
- * 5. 비밀번호 재설정 & 완전 동기화 (기존 코드 확장 고도화)
- * 메일 링크를 타고 진입하여 변경 시 Auth 시스템과 profiles 테이블을 연달아 갱신합니다.
+ * 5. 비밀번호 최종 재설정 & 양쪽 주머니 동기화
  */
 app.post('/api/auth/reset-password', async (req: Request, res: Response) => {
   try {
-    const { id, email, currentPassword, newPassword, isFromEmailLink } = req.body;
+    const { email, newPassword } = req.body;
 
-    // A. 이메일 인증 링크를 타고 들어온 특수 케이스 예외 처리
-    if (isFromEmailLink || !currentPassword) {
-      if (!email || !newPassword) return res.status(400).json({ success: false, message: '데이터 누락' });
-
-      // Supabase Auth 계정 정보 동기화 강제 수정
-      const { data: userList } = await supabase.auth.admin.listUsers();
-      const targetUser = userList?.users.find(u => u.email === email);
-      
-      if (targetUser) {
-        await supabase.auth.admin.updateUserById(targetUser.id, { password: newPassword });
-      }
-
-      // 우리 profiles 서비스 테이블 동기화
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
-      await supabase.from('profiles').update({ password: hashedPassword }).eq('email', email);
-
-      return res.json({ success: true, message: '이메일 인증 비밀번호 재설정 완료' });
+    if (!email || !newPassword) {
+      return res.status(400).json({ success: false, message: '필수 데이터가 누락되었습니다.' });
     }
 
-    // B. 마이페이지 등에서 현재 패스워드를 대조하고 직접 변경하는 기존 로직 유지 스코프
-    const { data: user, error: userError } = await supabase
-      .from('profiles')
-      .select('id, password')
-      .eq('id', id)
-      .eq('email', email)
-      .maybeSingle();
+    // A. Supabase Auth 주머니 패스워드 강제 업데이트
+    const { data: userList, error: listError } = await supabase.auth.admin.listUsers();
+    if (listError) throw listError;
 
-    if (userError || !user) {
-      return res.status(404).json({ success: false, message: '사용자 정보를 찾을 수 없습니다.' });
+    const targetUser = userList.users.find(u => u.email === email);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: '인증 계정을 찾을 수 없습니다.' });
     }
 
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: '현재 비밀번호가 일치하지 않습니다.' });
-    }
+    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
+      targetUser.id,
+      { password: newPassword }
+    );
+    if (authUpdateError) throw authUpdateError;
 
+    // B. 서비스용 profiles 테이블 패스워드도 bcrypt 암호화 갱신 동기화
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    const { error: updateError } = await supabase.from('profiles').update({ password: hashedPassword }).eq('id', id);
+    const { error: dbUpdateError } = await supabase
+      .from('profiles')
+      .update({ password: hashedPassword })
+      .eq('email', email);
 
-    if (updateError) throw updateError;
+    if (dbUpdateError) throw dbUpdateError;
 
-    res.json({ success: true, message: '비밀번호가 성공적으로 변경되었습니다.' });
+    res.json({ success: true, message: '비밀번호가 완전히 재설정되었습니다.' });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: '서버 오류가 발생했습니다.' });
+    console.error('비밀번호 변경 오류:', err);
+    res.status(500).json({ success: false, message: '비밀번호 재설정 처리 중 오류가 발생했습니다.' });
   }
 });
 
