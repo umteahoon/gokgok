@@ -90,7 +90,7 @@ app.post('/api/auth/signup', async (req: Request, res: Response) => {
     // B. 기존 로그인 생태계 유지를 위한 bcrypt 암호화
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const adminEmails = ['am2869@naver.com', 'phj03@naver.com', 'juhwan@test.com', 'qwer@1234.com'];
+    const adminEmails = ['djaxogns@naver.com', 'phj03@naver.com', 'juhwan@test.com', 'qwer@1234.com'];
     const isAdmin = adminEmails.includes(email);  
 
     // C. 커스텀 profiles 테이블 데이터 적재
