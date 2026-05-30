@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@supabase/supabase-js": "^2.102.1",
+    "axios": "^1.6.8",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dayjs": "^1.11.20",
