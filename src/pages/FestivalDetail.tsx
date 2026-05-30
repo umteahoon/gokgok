@@ -9,7 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { mockFestivals, topFestivals } from "@/lib/index";
-import datePoster from "@/assets/date.png"; 
 
 export default function FestivalDetail() {
   const { id } = useParams();
@@ -19,8 +18,13 @@ export default function FestivalDetail() {
   const [activeTab, setActiveTab] = useState("상품상세");
   const [isWishlisted, setIsWishlisted] = useState(false);
 
+  // 데이터 병합 및 해당 축제 찾기
   const allData = [...topFestivals, ...mockFestivals];
   const festival = allData.find((f) => String(f.id) === id);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [id]);
 
   useEffect(() => {
     const savedWishlist = JSON.parse(localStorage.getItem("gokgok_wishlist") || "[]");
@@ -49,7 +53,6 @@ export default function FestivalDetail() {
       text: `${festival?.location}에서 열리는 ${festival?.title} 정보를 확인해보세요!`,
       url: window.location.href,
     };
-
     try {
       if (navigator.share) {
         await navigator.share(shareData);
@@ -65,107 +68,209 @@ export default function FestivalDetail() {
   if (!festival) {
     return (
       <div className="min-h-screen flex items-center justify-center font-sans">
-        <p className="text-gray-500 text-lg font-medium">정보를 찾을 수 없습니다.</p>
+        <p className="text-zinc-500 text-lg font-medium">정보를 찾을 수 없습니다.</p>
       </div>
     );
   }
 
-  // ✅ '장소'와 '리뷰'를 제외한 탭 리스트
+  // ==========================================
+  // 🔥 [핵심 변경 포인트] 축제마다 다른 상세 내용 보여주기!
+  // ==========================================
+  // 실제 DB가 구축되면 festival.detailImages, festival.notices 등을 가져오면 되지만,
+  // 지금은 축제 제목(title)을 보고 알아서 다른 사진과 글씨를 뱉어내게 만들었습니다.
+
+  let detailImages = [];
+  let notices = [];
+  const infoTags = { age: "전체 이용가", target: "누구나" };
+
+  if (festival.title.includes("한옥")) {
+    detailImages = ["https://images.unsplash.com/photo-1590501754285-3f90ff9449a7?q=80&w=1080&auto=format&fit=crop"];
+    notices = [{ id: 1, title: "한복 대여소 조기 마감 안내", date: "2026.05.01", content: "주말 방문객 증가로 인해 한복 대여가 조기 마감될 수 있습니다.", image: "https://images.unsplash.com/photo-1518531933037-91b2f5f229cc?q=80&w=1000" }];
+    infoTags.target = "가족, 연인";
+  } else if (festival.title.includes("산천어") || festival.title.includes("겨울")) {
+    detailImages = ["https://images.unsplash.com/photo-1548296766-417183758b90?q=80&w=1080&auto=format&fit=crop"];
+    notices = [{ id: 1, title: "얼음 낚시터 결빙 상태 안내", date: "2026.01.05", content: "현재 얼음 두께 30cm 이상으로 매우 안전합니다. 따뜻하게 입고 오세요!", image: "https://images.unsplash.com/photo-1544499494-f06d80f4427d?q=80&w=1000" }];
+    infoTags.target = "청년, 가족";
+  } else if (festival.title.includes("불꽃")) {
+    detailImages = ["https://images.unsplash.com/photo-1498855926480-d98e83099315?q=80&w=1080&auto=format&fit=crop"];
+    notices = [{ id: 1, title: "명당 자리 선점 관련 공지", date: "2026.10.15", content: "행사 당일 광안리 해변 통제가 오후 4시부터 시작됩니다.", image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=1000" }];
+    infoTags.target = "연인, 친구";
+  } else {
+    // 그 외 축제들은 기본값으로 썸네일 이미지를 상세이미지에도 똑같이 보여줍니다.
+    detailImages = [festival.image];
+    notices = [{ id: 1, title: "기본 행사 운영 안내", date: "2026.01.01", content: "자세한 프로그램 일정은 공식 홈페이지를 참조해주세요.", image: "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=1000" }];
+  }
+
   const menuTabs = ["공지사항", "상품상세", "이용안내"];
-  const notices = [
-    { id: 1, title: "우천 시 행사 일정 변경 안내", date: "2026.04.15", content: "기상 악화로 인해 야외 공연 일정이 일부 조정될 수 있습니다.", image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?q=80&w=1000&auto=format&fit=crop" },
-    { id: 2, title: "현장 주차장 만차 및 대중교통 이용 권장", date: "2026.04.10", content: "축제 기간 중 방문객 급증으로 현장 주차장이 매우 혼잡하오니 대중교통 이용을 권장합니다.", image: "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?q=80&w=1000&auto=format&fit=crop" }
-  ];
-  const detailImages = [datePoster];
 
   return (
-    <div className="min-h-screen bg-white pb-24 font-sans text-zinc-900">
+    <div className="min-h-screen bg-white pb-28 font-sans text-zinc-900">
+      
+      {/* 1. 상단 배경 및 이미지 영역 */}
       <section className="relative w-full h-[300px] md:h-[400px] overflow-hidden bg-zinc-900">
-        <div className="absolute inset-0 bg-cover bg-center blur-3xl opacity-40 scale-110" style={{ backgroundImage: `url(${festival.image})` }} />
+        <div 
+          className="absolute inset-0 bg-cover bg-center blur-3xl opacity-40 scale-110" 
+          style={{ backgroundImage: `url(${festival.image})` }} 
+        />
         <div className="relative h-full flex items-center justify-center p-4">
-          <motion.img initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} src={festival.image} alt={festival.title} className="h-[85%] w-auto object-contain rounded-md shadow-2xl" />
+          <motion.img 
+            initial={{ opacity: 0, scale: 0.95 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            src={festival.image} 
+            alt={festival.title} 
+            className="h-[85%] w-auto object-contain rounded-xl shadow-2xl" 
+          />
         </div>
-        <button onClick={() => navigate(-1)} className="absolute top-4 left-4 p-2 bg-black/10 backdrop-blur-md rounded-full text-white hover:bg-black/30 transition-all">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="absolute top-4 left-4 p-2.5 bg-black/15 backdrop-blur-md rounded-full text-white hover:bg-black/40 transition-all"
+        >
           <ChevronLeft className="w-5 h-5" />
         </button>
       </section>
 
-      <main className="container mx-auto px-5 mt-6 max-w-4xl">
-        <div className="flex justify-between items-start mb-2">
-          <h1 className="text-xl md:text-2xl font-bold leading-tight">
-            {festival.category} 〈{festival.title}〉
+      {/* 2. 타이틀 및 기본 정보 영역 */}
+      <main className="container mx-auto px-5 mt-8 max-w-[800px]">
+        <div className="flex justify-between items-start mb-3">
+          <h1 className="text-2xl md:text-3xl font-extrabold leading-tight tracking-tight">
+            <span className="text-[#FF3478] text-sm md:text-base font-bold block mb-1">
+              {festival.category}
+            </span>
+            {festival.title}
           </h1>
-          <div className="flex gap-4 pt-1">
-            <button onClick={handleShare} className="text-zinc-800 active:scale-90 transition-transform">
-              <Share2 className="w-5 h-5" />
+          <div className="flex gap-3 pt-1">
+            <button onClick={handleShare} className="p-2 text-zinc-700 active:scale-90 transition-transform">
+              <Share2 className="w-6 h-6" />
             </button>
-            <button onClick={toggleWishlist} className="text-zinc-800 active:scale-90 transition-transform">
-              <Heart className={`w-5 h-5 ${isWishlisted ? "fill-[#FF3478] text-[#FF3478]" : ""}`} />
+            <button onClick={toggleWishlist} className="p-2 text-zinc-700 active:scale-90 transition-transform">
+              <Heart className={`w-6 h-6 transition-colors ${isWishlisted ? "fill-[#FF3478] text-[#FF3478]" : ""}`} />
             </button>
           </div>
         </div>
 
-        {/* ✅ 리뷰 버튼 및 텍스트 제거하고 평점만 노출 */}
-        <div className="flex items-center gap-1.5 mb-6">
-          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-          <span className="font-bold text-sm">4.3</span>
+        <div className="flex items-center gap-1.5 mb-8">
+          <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+          <span className="font-bold text-base">4.3</span>
         </div>
 
+        {/* 3. 메뉴 탭 */}
         <div className="flex gap-2 overflow-x-auto no-scrollbar mb-8 border-b border-zinc-100 pb-3">
-          {menuTabs.map((tab, idx) => (
-            <button key={idx} onClick={() => setActiveTab(tab)} className={`px-4 py-1.5 rounded-full text-[13px] font-medium whitespace-nowrap border transition-all ${activeTab === tab ? "bg-zinc-900 border-zinc-900 text-white" : "bg-zinc-50 border-transparent text-zinc-400 hover:bg-zinc-100"}`}>
+          {menuTabs.map((tab) => (
+            <button 
+              key={tab} 
+              onClick={() => setActiveTab(tab)} 
+              className={`px-5 py-2 rounded-full text-sm font-semibold whitespace-nowrap border transition-all ${
+                activeTab === tab 
+                ? "bg-zinc-900 border-zinc-900 text-white shadow-md" 
+                : "bg-zinc-50 border-transparent text-zinc-500 hover:bg-zinc-100"
+              }`}
+            >
               {tab}
             </button>
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
-          {activeTab === "공지사항" ? (
-            <motion.section key="notice" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-12">
-              {notices.map((notice) => (
-                <div key={notice.id} className="border-b border-zinc-100 pb-10 last:border-0">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Megaphone className="w-4 h-4 text-emerald-500" />
-                    <span className="text-xs text-zinc-400">{notice.date}</span>
+        {/* 4. 탭별 상세 내용 */}
+        <div className="min-h-[400px]">
+          <AnimatePresence mode="wait">
+            
+            {/* 탭 1: 공지사항 */}
+            {activeTab === "공지사항" && (
+              <motion.section 
+                key="notice" 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} 
+                className="space-y-10"
+              >
+                {/* 동적으로 가져온 notices 렌더링 */}
+                {notices.map((notice) => (
+                  <div key={notice.id} className="border-b border-zinc-100 pb-10 last:border-0">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Megaphone className="w-4 h-4 text-[#FF3478]" />
+                      <span className="text-sm font-medium text-zinc-500">{notice.date}</span>
+                    </div>
+                    <h3 className="font-bold text-xl mb-4">{notice.title}</h3>
+                    {notice.image && (
+                      <div className="rounded-2xl overflow-hidden mb-5 border border-zinc-100">
+                        <img src={notice.image} alt="공지 이미지" className="w-full h-auto object-cover max-h-[300px]" />
+                      </div>
+                    )}
+                    <p className="text-base text-zinc-700 leading-relaxed">{notice.content}</p>
                   </div>
-                  <h3 className="font-bold text-lg mb-4">{notice.title}</h3>
-                  <div className="rounded-2xl overflow-hidden mb-5 shadow-sm border border-zinc-100"><img src={notice.image} alt="공지" className="w-full h-auto object-cover" /></div>
-                  <p className="text-sm text-zinc-600 leading-relaxed">{notice.content}</p>
+                ))}
+              </motion.section>
+            )}
+
+            {/* 탭 2: 상품상세 */}
+            {activeTab === "상품상세" && (
+              <motion.section 
+                key="detail" 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} 
+                className="space-y-4"
+              >
+                {/* 동적으로 가져온 detailImages 렌더링 */}
+                <div className="flex flex-col -mx-5 md:-mx-0"> 
+                  {detailImages.map((src, index) => (
+                    <img key={index} src={src} alt={`${festival.title} 상세이미지`} className="w-full h-auto block" />
+                  ))}
                 </div>
-              ))}
-            </motion.section>
-          ) : activeTab === "상품상세" ? (
-            <motion.section key="detail" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
-              <div className="flex flex-col gap-0 -mx-5 md:-mx-0"> 
-                {detailImages.map((src, index) => (<img key={index} src={src} alt="상세이미지" className="w-full h-auto display-block" />))}
-              </div>
-            </motion.section>
-          ) : (
-            <motion.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="space-y-3.5 text-sm mb-10">
-                <div className="flex gap-4"><span className="text-zinc-400 w-12 shrink-0">장소</span><span className="font-medium">{festival.location}</span></div>
-                <div className="flex gap-4"><span className="text-zinc-400 w-12 shrink-0">기간</span><span className="font-medium">{festival.date}</span></div>
-                <div className="flex gap-4"><span className="text-zinc-400 w-12 shrink-0">연령</span><span className="font-medium">전체 이용가</span></div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 py-5 border-y border-zinc-100 mb-10">
-                <div className="flex flex-col items-center justify-center gap-1"><Ticket className="w-5 h-5 text-zinc-800" /><span className="text-[10px] font-bold text-zinc-500 text-center">축제 월간 3위</span></div>
-                <div className="flex flex-col items-center justify-center gap-1"><Clock className="w-5 h-5 text-orange-500" /><span className="text-[10px] font-bold text-zinc-500 text-center flex items-center gap-0.5">대기 <Info className="w-2.5 h-2.5 text-zinc-300" /></span></div>
-                <div className="flex flex-col items-center justify-center gap-1"><Users className="w-5 h-5 text-emerald-600" /><span className="text-[10px] font-bold text-emerald-600 text-center">청년, 가족</span></div>
-              </div>
-              <section className="mb-16 pt-10 border-t border-zinc-100">
-                <h2 className="text-lg font-bold mb-8">행사 정보</h2>
-                <div className="space-y-10">
-                  <div className="flex gap-4"><Calendar className="w-6 h-6 text-emerald-500 shrink-0" /><div><p className="font-bold text-[15px]">행사 기간</p><p className="text-zinc-600 text-sm">{festival.date}</p></div></div>
-                  <div className="flex gap-4"><MapPin className="w-6 h-6 text-emerald-500 shrink-0" /><div><p className="font-bold text-[15px]">행사 장소</p><p className="text-zinc-600 text-sm font-medium">{festival.location} 일원</p></div></div>
+              </motion.section>
+            )}
+
+            {/* 탭 3: 이용안내 */}
+            {activeTab === "이용안내" && (
+              <motion.section 
+                key="info" 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              >
+                <div className="space-y-4 text-[15px] mb-10 bg-zinc-50 p-6 rounded-2xl">
+                  <div className="flex gap-4"><span className="text-zinc-500 font-bold w-12 shrink-0">장소</span><span className="font-medium text-zinc-900">{festival.location}</span></div>
+                  <div className="flex gap-4"><span className="text-zinc-500 font-bold w-12 shrink-0">기간</span><span className="font-medium text-zinc-900">{festival.date}</span></div>
+                  <div className="flex gap-4"><span className="text-zinc-500 font-bold w-12 shrink-0">연령</span><span className="font-medium text-zinc-900">{infoTags.age}</span></div>
                 </div>
-              </section>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+                <div className="grid grid-cols-3 gap-2 py-6 border-y border-zinc-100 mb-12">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 bg-zinc-100 rounded-full flex items-center justify-center"><Ticket className="w-6 h-6 text-zinc-700" /></div>
+                    <span className="text-[12px] font-bold text-zinc-600">축제 월간 3위</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center"><Clock className="w-6 h-6 text-orange-500" /></div>
+                    <span className="text-[12px] font-bold text-zinc-600 flex items-center gap-1">대기 <Info className="w-3 h-3 text-zinc-400" /></span>
+                  </div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 bg-emerald-50 rounded-full flex items-center justify-center"><Users className="w-6 h-6 text-emerald-600" /></div>
+                    <span className="text-[12px] font-bold text-zinc-600">{infoTags.target}</span>
+                  </div>
+                </div>
+
+                <div className="mb-10">
+                  <h2 className="text-xl font-extrabold mb-6">행사 정보</h2>
+                  <div className="space-y-8">
+                    <div className="flex gap-4">
+                      <div className="mt-1"><Calendar className="w-6 h-6 text-zinc-400" /></div>
+                      <div>
+                        <p className="font-bold text-[16px] text-zinc-900 mb-1">행사 기간</p>
+                        <p className="text-zinc-600 text-sm leading-relaxed">{festival.date}</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-4">
+                      <div className="mt-1"><MapPin className="w-6 h-6 text-zinc-400" /></div>
+                      <div>
+                        <p className="font-bold text-[16px] text-zinc-900 mb-1">행사 장소</p>
+                        <p className="text-zinc-600 text-sm leading-relaxed">{festival.location} 일원</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.section>
+            )}
+
+          </AnimatePresence>
+        </div>
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/80 backdrop-blur-lg border-t border-zinc-100 md:hidden z-50">
-        <Button className="w-full h-12 bg-zinc-900 text-white font-bold rounded-xl active:scale-[0.98] transition-transform">
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/85 backdrop-blur-xl border-t border-zinc-100 md:hidden z-50">
+        <Button className="w-full h-14 bg-zinc-900 text-white text-base font-bold rounded-xl active:scale-[0.98] transition-transform shadow-lg">
           축제 예매하기
         </Button>
       </div>

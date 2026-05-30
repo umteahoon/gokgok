@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom"; // useNavigate 추가
 import { mockFestivals, topFestivals } from "@/lib/index";
 import { KoreaMap } from "@/components/KoreaMap";
+import axios from 'axios';
 import {
   ChevronLeft,
   ChevronRight,

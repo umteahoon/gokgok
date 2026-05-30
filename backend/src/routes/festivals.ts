@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { createClient } from '@supabase/supabase-js';
-
+import axios from 'axios';
 const router = Router();
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -63,5 +63,25 @@ router.get('/:id', async (req: Request, res: Response) => {
     res.status(404).json({ success: false, message: "축제 정보를 찾을 수 없습니다." });
   }
 });
+// routes/festivals.ts 라우터에 추가
+router.get('/gallery-images', async (req: Request, res: Response) => {
+  try {
+    const response = await axios.get(`https://apis.data.go.kr/B551011/KorService1/galleryList1`, {
+      params: {
+        serviceKey: process.env.TOURISM_API_KEY,
+        MobileOS: 'ETC',
+        MobileApp: 'GokGok',
+        _type: 'json',
+        numOfRows: 10,
+        pageNo: 1
+      }
+    });
 
+    // 📸 API 응답에서 사진 데이터(galWebImageUrl)를 추출
+    const items = response.data.response.body.items.item;
+    res.json({ success: true, images: items });
+  } catch (err) {
+    res.status(500).json({ success: false, message: '이미지 불러오기 실패' });
+  }
+});
 export default router;

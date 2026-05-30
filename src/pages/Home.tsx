@@ -2,16 +2,21 @@ import { useState, useRef, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { mockFestivals } from "@/lib/index";
-import busanBg from "@/assets/main.png";
+
+import home1 from "@/assets/home3.jpg";
+import home2 from "@/assets/home4.jpg";
+import home4 from "@/assets/home5.jpg";
+import homeBack from "@/assets/main.png";
+
 import {
   ChevronLeft,
   ChevronRight,
   Heart,
   MessageSquare,
-  Calendar,
   ArrowRight,
   MapPin,
 } from "lucide-react";
+
 import { getCurrentUser } from "@/lib/login";
 
 const regions = [
@@ -28,11 +33,16 @@ const regions = [
 export default function Home() {
   const currentUser = getCurrentUser();
   const navigate = useNavigate();
+
   const [activeRegion, setActiveRegion] = useState("전체");
   const [wishlistedIds, setWishlistedIds] = useState<string[]>([]);
   const [isLoginNoticeOpen, setIsLoginNoticeOpen] = useState(false);
 
-  // 백엔드 수다방 실시간 핫 게시글 상태 관리
+  // 히어로 배경 이미지
+  const heroImages = [home1, home2, home4, homeBack];
+  const [currentHero, setCurrentHero] = useState(0);
+
+  // 실시간 HOT 게시글
   const [hotPosts, setHotPosts] = useState<any[]>([]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -43,13 +53,24 @@ export default function Home() {
     border: "none",
   };
 
-  // 수다방 API로부터 데이터를 받아와 좋아요 높은 순으로 3개 정렬하여 가져오기
+  // 6초마다 히어로 이미지 변경
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentHero((prev) => (prev + 1) % heroImages.length);
+    }, 6000);
+
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
+
+  // HOT 게시글 불러오기
   const loadHotPostsData = async () => {
     try {
       const response = await fetch(
         "https://gokgok-8ztf.onrender.com/api/community",
       );
+
       const data = await response.json();
+
       if (data.success && data.posts) {
         const sorted = data.posts
           .sort((a: any, b: any) => (b.likes || 0) - (a.likes || 0))
@@ -62,6 +83,7 @@ export default function Home() {
             comments: p.commentsList ? p.commentsList.length : 0,
             category: p.category || "수다",
           }));
+
         setHotPosts(sorted);
       }
     } catch (error) {
@@ -69,6 +91,7 @@ export default function Home() {
     }
   };
 
+  // 찜 목록 로드
   const loadWishlist = () => {
     const saved = JSON.parse(localStorage.getItem("gokgok_wishlist") || "[]");
     setWishlistedIds(saved);
@@ -77,10 +100,13 @@ export default function Home() {
   useEffect(() => {
     loadWishlist();
     loadHotPostsData();
+
     window.addEventListener("focus", loadWishlist);
+
     return () => window.removeEventListener("focus", loadWishlist);
   }, []);
 
+  // 찜 토글
   const toggleWishlist = (e: React.MouseEvent, id: string | number) => {
     e.preventDefault();
     e.stopPropagation();
@@ -91,56 +117,73 @@ export default function Home() {
     }
 
     const strId = String(id);
+
     const saved = JSON.parse(localStorage.getItem("gokgok_wishlist") || "[]");
+
     let updated;
+
     if (saved.includes(strId)) {
       updated = saved.filter((itemId: string) => itemId !== strId);
     } else {
       updated = [...saved, strId];
     }
+
     localStorage.setItem("gokgok_wishlist", JSON.stringify(updated));
     setWishlistedIds(updated);
   };
 
+  // 지역별 축제 필터
   const displayFestivals = useMemo(() => {
     if (activeRegion === "전체") return mockFestivals.slice(0, 10);
-    return mockFestivals.filter((f) => {
-      if (activeRegion === "경기/인천")
-        return f.location.includes("경기") || f.location.includes("인천");
-      return f.location.includes(activeRegion);
+
+    return mockFestivals.filter((festival) => {
+      if (activeRegion === "경기/인천") {
+        return (
+          festival.location.includes("경기") ||
+          festival.location.includes("인천")
+        );
+      }
+
+      return festival.location.includes(activeRegion);
     });
   }, [activeRegion]);
 
+  // 마감 임박 축제
   const closingSoonFestivals = useMemo(() => {
     return mockFestivals.slice(2, 5);
   }, []);
 
+  // 슬라이더 스크롤
   const handleScroll = (direction: "left" | "right") => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      const moveAmount = clientWidth * 0.8;
-      scrollRef.current.scrollTo({
-        left:
-          direction === "left"
-            ? scrollLeft - moveAmount
-            : scrollLeft + moveAmount,
-        behavior: "smooth",
-      });
-    }
+    if (!scrollRef.current) return;
+
+    const { scrollLeft, clientWidth } = scrollRef.current;
+
+    const moveAmount = clientWidth * 0.8;
+
+    scrollRef.current.scrollTo({
+      left:
+        direction === "left"
+          ? scrollLeft - moveAmount
+          : scrollLeft + moveAmount,
+      behavior: "smooth",
+    });
   };
 
   return (
     <div className="relative w-full min-h-screen bg-white dark:bg-[#111111] text-[#111111] dark:text-white font-sans pb-20 overflow-x-hidden transition-colors">
-      {/* 1. 히어로 비주얼 배너 */}
+      {/* 히어로 배너 */}
       <section className="relative w-full h-[75vh] md:h-screen flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
-            src={busanBg}
+            src={heroImages[currentHero]}
             alt="배경"
-            className="w-full h-full object-cover brightness-[0.85]"
+            className="w-full h-full object-cover brightness-[0.85] transition-all duration-1000"
           />
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
         </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -154,9 +197,9 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* 2. 메인 컨텐츠 영역 (뒷배경 하얀 박스판 완전 제거 상태) */}
+      {/* 메인 컨텐츠 */}
       <main className="w-full max-w-[1200px] mx-auto py-16 px-6 md:px-10 relative z-20 transition-colors">
-        {/* 지역 탭 필터 버튼 */}
+        {/* 지역 필터 */}
         <div className="mb-16 pb-6 border-b border-gray-100 dark:border-gray-800 flex justify-center">
           <div className="flex gap-2 overflow-x-auto py-2 px-2 no-scrollbar">
             {regions.map((region) => (
@@ -175,7 +218,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* 2-A. 추천 축제 슬라이더 섹션 */}
+        {/* 추천 축제 */}
         <section className="mb-24 relative">
           <div className="flex justify-between items-end mb-8">
             <h3 className="text-[24px] md:text-[28px] font-extrabold tracking-tight text-gray-900 dark:text-white text-left">
@@ -183,10 +226,11 @@ export default function Home() {
                 ? "이달의 추천 축제"
                 : `${activeRegion}의 추천 축제 📍`}
             </h3>
+
             <Link
               to="/search"
               style={clearButtonStyle}
-              className="text-sm font-bold text-gray-400 hover:text-[#FF3478] flex items-center gap-1 transition-colors select-none outline-none focus:outline-none"
+              className="text-sm font-bold text-gray-400 hover:text-[#FF3478] flex items-center gap-1 transition-colors"
             >
               더보기 <ArrowRight size={14} />
             </Link>
@@ -224,14 +268,15 @@ export default function Home() {
                         alt={festival.title}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-110"
                       />
+
+                      {/* 찜 버튼 */}
                       <div
                         onClick={(e) => toggleWishlist(e, festival.id)}
-                        className="absolute top-3 right-3 z-10 cursor-pointer select-none outline-none focus:outline-none"
-                        style={clearButtonStyle}
+                        className="absolute top-3 right-3 z-10 cursor-pointer"
                       >
                         <Heart
                           size={26}
-                          className={`drop-shadow-md transition-all active:scale-75 outline-none border-none focus:outline-none select-none ${
+                          className={`drop-shadow-md transition-all active:scale-75 ${
                             wishlistedIds.includes(String(festival.id))
                               ? "fill-[#FF3478] text-[#FF3478]"
                               : "text-white/70 hover:text-white"
@@ -239,13 +284,16 @@ export default function Home() {
                         />
                       </div>
                     </div>
+
                     <div className="px-1 text-left">
                       <span className="text-[11px] text-[#FF3478] font-bold mb-1 block uppercase">
                         {festival.category || "테마여행"}
                       </span>
+
                       <h3 className="font-bold text-[16px] text-gray-900 dark:text-white line-clamp-2 h-[44px] group-hover/card:text-[#FF3478] transition-colors">
                         {festival.title}
                       </h3>
+
                       <p className="text-[13px] text-[#555555] dark:text-gray-400 font-semibold mt-1">
                         {festival.location}
                       </p>
@@ -263,18 +311,20 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 2-B. 놓치면 후회할 마감 임박 축제 */}
+        {/* 마감 임박 축제 */}
         <section className="mb-24 text-left">
           <div className="flex justify-between items-end mb-8">
             <div>
               <h3 className="text-[24px] md:text-[28px] font-black tracking-tight text-gray-900 dark:text-white">
                 놓치면 후회할 마감 임박 축제
               </h3>
+
               <p className="text-gray-400 font-medium text-sm mt-1">
                 곧 막을 내리는 축제 정보들을 놓치지 마세요.
               </p>
             </div>
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {closingSoonFestivals.map((festival) => (
               <Link
@@ -286,18 +336,21 @@ export default function Home() {
                   <img
                     src={festival.image}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    alt=""
+                    alt={festival.title}
                   />
                 </div>
+
                 <div className="flex flex-col justify-center min-w-0">
                   <span className="text-[10px] text-white font-bold bg-[#FF3478] px-2 py-0.5 rounded-full w-fit mb-1.5 shadow-sm">
                     D-Day 임박
                   </span>
+
                   <h4 className="font-extrabold text-[15px] truncate text-gray-900 dark:text-white group-hover:text-[#FF3478] transition-colors">
                     {festival.title}
                   </h4>
+
                   <div className="flex items-center gap-1 text-gray-400 text-xs mt-1 font-medium">
-                    <MapPin size={12} />{" "}
+                    <MapPin size={12} />
                     <span className="truncate">{festival.location}</span>
                   </div>
                 </div>
@@ -306,21 +359,23 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 2-C. ✅ [수정] 요청하신 줄글 텍스트 리스트 형태의 실시간 수다방 HOT 게시글 피드 구현 */}
+        {/* HOT 게시글 */}
         <section className="mb-10 text-left">
           <div className="flex justify-between items-end mb-6">
             <div>
               <h3 className="text-[24px] md:text-[28px] font-black tracking-tight text-gray-900 dark:text-white">
                 실시간 수다방 HOT 게시글
               </h3>
+
               <p className="text-gray-400 font-medium text-sm mt-1">
                 곡곡 멤버들이 전하는 생생한 축제 이야기와 꿀팁.
               </p>
             </div>
+
             <Link
               to="/community"
               style={clearButtonStyle}
-              className="text-sm font-bold text-gray-400 hover:text-[#FF3478] flex items-center gap-1 transition-colors select-none outline-none focus:outline-none"
+              className="text-sm font-bold text-gray-400 hover:text-[#FF3478] flex items-center gap-1 transition-colors"
             >
               전체보기 <ArrowRight size={14} />
             </Link>
@@ -338,17 +393,21 @@ export default function Home() {
                     <span className="text-xs font-bold text-[#FF3478] bg-[#FF3478]/5 px-3 py-1 rounded-full shrink-0">
                       {post.category}
                     </span>
+
                     <h4 className="font-bold text-[15px] text-gray-800 dark:text-gray-200 truncate">
                       {post.title}
                     </h4>
+
                     <span className="text-xs text-gray-400 font-medium shrink-0 hidden sm:inline">
                       by {post.author}
                     </span>
                   </div>
+
                   <div className="flex items-center gap-4 text-gray-300 dark:text-gray-600 font-bold text-xs shrink-0 pl-3">
                     <div className="flex items-center gap-1 text-pink-500/80">
                       <Heart size={14} fill="currentColor" /> {post.likes}
                     </div>
+
                     <div className="flex items-center gap-1 text-gray-400">
                       <MessageSquare size={14} /> {post.comments}
                     </div>
@@ -364,7 +423,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* --- 로그인 유도 커스텀 모달 --- */}
+      {/* 로그인 유도 모달 */}
       <AnimatePresence>
         {isLoginNoticeOpen && (
           <motion.div
@@ -384,14 +443,17 @@ export default function Home() {
               <div className="w-12 h-12 bg-pink-50 dark:bg-pink-950/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Heart className="text-[#FF3478] w-6 h-6" fill="currentColor" />
               </div>
+
               <h3 className="text-[18px] font-black text-gray-900 dark:text-white mb-2">
                 로그인이 필요합니다
               </h3>
+
               <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed mb-6">
                 축제 관심목록 찜 기능은
                 <br />
                 로그인 후 이용하실 수 있습니다.
               </p>
+
               <div className="flex flex-col gap-2">
                 <button
                   onClick={() => {
@@ -402,6 +464,7 @@ export default function Home() {
                 >
                   로그인하러 가기
                 </button>
+
                 <button
                   onClick={() => setIsLoginNoticeOpen(false)}
                   className="w-full py-2 text-gray-400 dark:text-gray-500 font-medium rounded-full text-xs hover:text-gray-600 transition-colors"

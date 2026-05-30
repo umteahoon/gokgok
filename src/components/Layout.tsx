@@ -368,7 +368,7 @@ export function Layout({ children }: LayoutProps) {
               </span>
             </div>
             <p className="text-[12px] font-medium leading-relaxed text-gray-400 dark:text-zinc-500 max-w-2xl">
-              작성자: 엄태훈, 이주환, 최원재 (GokGok Project Team)
+              작성자: 엄태훈, 이주환, 최원재, 박현준, 이동교 (GokGok Project Team)
               <br />본 플랫폼은 국내 지역 활성화 및 로컬 축제 정보 제공을 목적에
               둔 프로젝트 팀 빌딩 공간입니다.
             </p>
