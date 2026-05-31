@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { mockFestivals, topFestivals } from "@/lib/index";
-
+//0530
 // 각 축제별 전용 상세 이미지 변수들
 import group8 from "@/assets/group8.png";
 import group9 from "@/assets/Group9.png";
