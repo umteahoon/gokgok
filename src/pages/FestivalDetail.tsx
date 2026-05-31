@@ -15,6 +15,7 @@ import {
   Megaphone,
   Loader2,
   AlertTriangle,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -25,6 +26,10 @@ import group8 from "@/assets/group8.png";
 import group9 from "@/assets/Group9.png";
 import group10 from "@/assets/Group10.png";
 import group11 from "@/assets/Group11.png";
+
+// 🛠️ src/assets/ 폴더 내부의 정적 이미지 파일들 임포트
+import carImg from "@/assets/Car.png";
+import dogImg from "@/assets/Dog.png";
 
 export default function FestivalDetail() {
   const { id } = useParams();
@@ -45,14 +50,14 @@ export default function FestivalDetail() {
 
   useEffect(() => {
     const savedWishlist = JSON.parse(
-      localStorage.getItem("gokgok_wishlist") || "[]"
+      localStorage.getItem("gokgok_wishlist") || "[]",
     );
     setIsWishlisted(savedWishlist.includes(id));
   }, [id]);
 
   const toggleWishlist = () => {
     const savedWishlist = JSON.parse(
-      localStorage.getItem("gokgok_wishlist") || "[]"
+      localStorage.getItem("gokgok_wishlist") || "[]",
     );
     let updatedWishlist;
 
@@ -104,7 +109,6 @@ export default function FestivalDetail() {
   // 축제별 전용 상세 이미지 매핑
   // ==========================================
   let detailImages: string[] = [];
-  let notices: any[] = [];
   const infoTags = { age: "전체 이용가", target: "누구나" };
 
   if (festival.title.includes("군항제")) {
@@ -129,16 +133,30 @@ export default function FestivalDetail() {
     detailImages = [festival.image];
   }
 
-  // 🛠️ 공지사항 및 주차장 혼잡 안내 데이터 복원/보강
-  notices = [
+  // 🛠️ 데이터 모델의 각 공지사항 항목에 일치하는 로컬 정적 이미지 변수를 정확히 주입
+  const notices = [
     {
       id: 1,
-      title: `⚠️ [필독] ${festival.title} 주차장 혼잡 및 교통 통제 안내`,
+      type: "parking",
+      title: "⚠️ [교통안내] 진해 군항제 임시 주차장 현황 및 무료 셔틀버스 노선",
       date: "2026.05.30",
       content:
-        "현재 축제장 주변 방문객 급증으로 인해 메인 주차장이 상시 만차 상태입니다. 임시 주차장 유도 및 대중교통 이용객을 위한 무료 셔틀버스를 운행 중이오니 아래 주차 안내 지도를 반드시 숙지 후 방문해 주시기 바랍니다.",
-      // 주차장 시각 이미지 맵 (상세 디자인 에셋이 있을 경우 매핑, 없을 시 메인 축제 이미지를 폴백으로 사용)
-      parkingMapImage: detailImages[0] || festival.image, 
+        "축제 구역 내 교통 체증 완화를 위해 임시 주차장 통제 및 무료 셔틀버스를 연계 운행합니다. 탑뷰 맵에 표시된 파란색 셔틀 노선 유도선을 따라 이동하시면 대기 시간 없이 행사장 로터리까지 다이렉트로 진입하실 수 있습니다.",
+      photoUrl: carImg, // 🏎️ 교통안내 공지에 Car 이미지 매칭
+      imageCaption:
+        "📍 [종합 주차 가이드] 외곽 임시 주차 구역 및 무료 순환 셔틀버스 정류장 상세 노선도",
+    },
+    {
+      id: 2,
+      type: "safety",
+      title:
+        "🚫 [안내] 안전한 관람을 위한 반려동물 제한 및 반입 금지 물품 공지",
+      date: "2026.05.29",
+      content:
+        "모든 관람객이 안전하고 쾌적하게 축제를 즐길 수 있도록 행사장 내 전 구역 공통 가이드라인을 공지합니다. 안전사고 우려가 있는 특정 이동 수단 및 안전거리 확보를 위한 규정 사항을 위 안내판 이미지를 통해 반드시 사전 숙지해 주시기 바랍니다.",
+      photoUrl: dogImg, // 🐕 안전가이드 공지에 Dog 이미지 매칭
+      imageCaption:
+        "🔒 [공통 규정] 관람 안전을 위한 물품 반입 제한 픽토그램 가이드 표준 안내판",
     },
   ];
 
@@ -237,12 +255,12 @@ export default function FestivalDetail() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                className="space-y-10"
+                className="space-y-16"
               >
                 {notices.map((notice) => (
                   <div
                     key={notice.id}
-                    className="border-b border-zinc-100 pb-10 last:border-0"
+                    className="border-b border-zinc-100 pb-12 last:border-0"
                   >
                     <div className="flex items-center gap-2 mb-3">
                       <Megaphone className="w-4 h-4 text-[#FF3478]" />
@@ -250,25 +268,47 @@ export default function FestivalDetail() {
                         {notice.date}
                       </span>
                     </div>
-                    <h3 className="font-black text-xl mb-4 text-orange-600 flex items-center gap-2">
-                      <AlertTriangle className="w-5 h-5 shrink-0" /> {notice.title}
+
+                    <h3
+                      className={`font-black text-xl mb-4 flex items-center gap-2 ${
+                        notice.type === "parking"
+                          ? "text-orange-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {notice.type === "parking" ? (
+                        <AlertTriangle className="w-5 h-5 shrink-0" />
+                      ) : (
+                        <ShieldAlert className="w-5 h-5 shrink-0" />
+                      )}
+                      {notice.title}
                     </h3>
+
                     <p className="text-base text-zinc-700 leading-relaxed mb-6">
                       {notice.content}
                     </p>
 
-                    {/* 🛠️ [복원] 주차장 혼잡/위치 안내 이미지 섹션 구성 */}
-                    {notice.parkingMapImage && (
-                      <div className="mt-6 border border-zinc-200 rounded-2xl overflow-hidden bg-zinc-50">
-                        <div className="p-4 bg-zinc-100 border-b border-zinc-200 flex items-center justify-between">
-                          <span className="text-sm font-bold text-zinc-700">📍 실시간 주차장 혼잡도 및 위치 정보 맵</span>
-                          <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-md font-extrabold text-[11px]">만차 혼잡</span>
+                    {/* 🛠️ 데이터 모델의 notice.photoUrl을 직접 바인딩하여 엑박 버그 완전 차단 */}
+                    {notice.photoUrl && (
+                      <div className="mt-4 border border-zinc-200 rounded-3xl overflow-hidden bg-zinc-50 shadow-md">
+                        <div className="relative w-full h-[320px] md:h-[480px] overflow-hidden bg-zinc-100">
+                          <img
+                            src={notice.photoUrl}
+                            alt="공지사항 매핑 이미지"
+                            className="w-full h-full object-cover block hover:scale-[1.01] transition-transform duration-500"
+                          />
+                          <div className="absolute top-5 right-5 px-3.5 py-1.5 bg-black/70 backdrop-blur-md rounded-xl text-white font-extrabold text-xs tracking-wide">
+                            {notice.type === "parking"
+                              ? "순환 실황"
+                              : "종합 규정"}
+                          </div>
                         </div>
-                        <img
-                          src={notice.parkingMapImage}
-                          alt="주차장 종합 안내도"
-                          className="w-full h-auto max-h-[380px] object-cover block"
-                        />
+                        <div className="p-5 bg-zinc-50 border-t border-zinc-200">
+                          <span className="text-xs font-black text-zinc-600 flex items-center gap-2">
+                            <Info className="w-4 h-4 text-zinc-400" />{" "}
+                            {notice.imageCaption}
+                          </span>
+                        </div>
                       </div>
                     )}
                   </div>
