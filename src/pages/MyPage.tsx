@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // 🛠️ useLocation 추가
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { mockFestivals, topFestivals } from "@/lib/index";
@@ -41,6 +41,7 @@ const STORAGE_URL =
 
 export default function MyPage() {
   const navigate = useNavigate();
+  const location = useLocation(); // 🛠️ 현재 진입 경로(/notmypage 등)를 동적으로 트래킹하기 위해 선언
   const profileFileInputRef = useRef<HTMLInputElement>(null);
   const postFileInputRef = useRef<HTMLInputElement>(null);
 
@@ -56,7 +57,6 @@ export default function MyPage() {
 
   const allFestivals = [...topFestivals, ...mockFestivals];
 
-  // 터치 하이라이트 잔상, 아웃라인, 테두리를 근본적으로 다 날려버리는 스타일
   const clearButtonStyle = {
     WebkitTapHighlightColor: "transparent",
     outline: "none",
@@ -315,7 +315,6 @@ export default function MyPage() {
 
         <Tabs defaultValue="saved" className="w-full">
           <TabsList className="flex w-full border-b border-gray-100 dark:border-zinc-800 bg-transparent h-auto p-0 mb-10 gap-8 md:gap-12">
-            {/* 🚩 [수정 병합 완료] 핑크색 바 제거, 사각 하이라이트 배경 완전 투명 오버라이딩 적용 */}
             <TabsTrigger
               value="saved"
               style={clearButtonStyle}
@@ -349,12 +348,21 @@ export default function MyPage() {
               >
                 {savedFestivals.map((f) => (
                   <motion.div key={f.id} variants={staggerItem}>
-                    <Link
-                      to={`/festival/${f.id}`}
-                      className="block h-full hover:scale-[1.02] transition-transform"
+                    {/* 🛠️ [추천 수정 사양 완벽 반영] 하드코딩 대신 location.pathname을 state로 넘겨 어떤 주소든 복귀 대응 완료 */}
+                    <div
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        navigate(`/festival/${f.id}`, {
+                          state: {
+                            from: location.pathname,
+                          },
+                        });
+                      }}
+                      className="block h-full hover:scale-[1.02] transition-transform cursor-pointer"
                     >
                       <FestivalCard festival={f} />
-                    </Link>
+                    </div>
                   </motion.div>
                 ))}
               </motion.div>
