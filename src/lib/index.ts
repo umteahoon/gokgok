@@ -13,7 +13,7 @@ import hampyeongImg from "@/assets/Hampyeong.png";
 import yeosuImg from "@/assets/Yeosu.png";
 import jejuImg from "@/assets/jeju.png";
 import jinjuImg from "@/assets/jinju.png";
-import boryeongImg from "@/assets/Boryeong.png";
+import boryeongImg from "@/assets/Boryeong1.png";
 import suncheonImg from "@/assets/Suncheon.png";
 /**
  * 🚀 곡곡(GokGok) 팀 프로젝트 공용 라우트 고유 키 및 로컬 헬퍼 스펙

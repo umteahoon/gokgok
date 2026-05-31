@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom"; // 🛠️ useLocation 모듈 import 추가 완료
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronLeft,
@@ -14,6 +14,7 @@ import {
   MapPin,
   Megaphone,
   Loader2,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
@@ -28,7 +29,7 @@ import group11 from "@/assets/Group11.png";
 export default function FestivalDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation(); // 🛠️ 이전 마이페이지에서 넘겨받은 state 보관함 선언
+  const location = useLocation();
   const { toast } = useToast();
 
   const [activeTab, setActiveTab] = useState("상품상세");
@@ -44,14 +45,14 @@ export default function FestivalDetail() {
 
   useEffect(() => {
     const savedWishlist = JSON.parse(
-      localStorage.getItem("gokgok_wishlist") || "[]",
+      localStorage.getItem("gokgok_wishlist") || "[]"
     );
     setIsWishlisted(savedWishlist.includes(id));
   }, [id]);
 
   const toggleWishlist = () => {
     const savedWishlist = JSON.parse(
-      localStorage.getItem("gokgok_wishlist") || "[]",
+      localStorage.getItem("gokgok_wishlist") || "[]"
     );
     let updatedWishlist;
 
@@ -128,13 +129,16 @@ export default function FestivalDetail() {
     detailImages = [festival.image];
   }
 
+  // 🛠️ 공지사항 및 주차장 혼잡 안내 데이터 복원/보강
   notices = [
     {
       id: 1,
-      title: `${festival.title} 운영 안내`,
+      title: `⚠️ [필독] ${festival.title} 주차장 혼잡 및 교통 통제 안내`,
       date: "2026.05.30",
       content:
-        "안전하고 쾌적한 축제 관람을 위해 도보 이동 및 대중교통 이용을 권장합니다. 행사 세부 일정은 현장 상황에 따라 변경될 수 있습니다.",
+        "현재 축제장 주변 방문객 급증으로 인해 메인 주차장이 상시 만차 상태입니다. 임시 주차장 유도 및 대중교통 이용객을 위한 무료 셔틀버스를 운행 중이오니 아래 주차 안내 지도를 반드시 숙지 후 방문해 주시기 바랍니다.",
+      // 주차장 시각 이미지 맵 (상세 디자인 에셋이 있을 경우 매핑, 없을 시 메인 축제 이미지를 폴백으로 사용)
+      parkingMapImage: detailImages[0] || festival.image, 
     },
   ];
 
@@ -157,7 +161,6 @@ export default function FestivalDetail() {
             className="h-[85%] w-auto object-contain rounded-xl shadow-2xl"
           />
         </div>
-        {/* 🛠️ [뒤로가기 버튼 로직 전체 교체] state.from 분기를 타게 하여 이전 유저 기록으로 빈 레이어 없이 리턴 */}
         <button
           onClick={(e) => {
             e.preventDefault();
@@ -247,10 +250,27 @@ export default function FestivalDetail() {
                         {notice.date}
                       </span>
                     </div>
-                    <h3 className="font-bold text-xl mb-4">{notice.title}</h3>
-                    <p className="text-base text-zinc-700 leading-relaxed">
+                    <h3 className="font-black text-xl mb-4 text-orange-600 flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 shrink-0" /> {notice.title}
+                    </h3>
+                    <p className="text-base text-zinc-700 leading-relaxed mb-6">
                       {notice.content}
                     </p>
+
+                    {/* 🛠️ [복원] 주차장 혼잡/위치 안내 이미지 섹션 구성 */}
+                    {notice.parkingMapImage && (
+                      <div className="mt-6 border border-zinc-200 rounded-2xl overflow-hidden bg-zinc-50">
+                        <div className="p-4 bg-zinc-100 border-b border-zinc-200 flex items-center justify-between">
+                          <span className="text-sm font-bold text-zinc-700">📍 실시간 주차장 혼잡도 및 위치 정보 맵</span>
+                          <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-md font-extrabold text-[11px]">만차 혼잡</span>
+                        </div>
+                        <img
+                          src={notice.parkingMapImage}
+                          alt="주차장 종합 안내도"
+                          className="w-full h-auto max-h-[380px] object-cover block"
+                        />
+                      </div>
+                    )}
                   </div>
                 ))}
               </motion.section>
