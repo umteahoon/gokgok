@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { mockFestivals, topFestivals } from "@/lib/index";
-//0530
+
 // 각 축제별 전용 상세 이미지 변수들
 import group8 from "@/assets/group8.png";
 import group9 from "@/assets/Group9.png";
@@ -299,8 +299,8 @@ export default function FestivalDetail() {
                           />
                           <div className="absolute top-5 right-5 px-3.5 py-1.5 bg-black/70 backdrop-blur-md rounded-xl text-white font-extrabold text-xs tracking-wide">
                             {notice.type === "parking"
-                              ? "순환 실황"
-                              : "종합 규정"}
+                              ? "🚌 순환 실황"
+                              : "🔒 종합 규정"}
                           </div>
                         </div>
                         <div className="p-5 bg-zinc-50 border-t border-zinc-200">

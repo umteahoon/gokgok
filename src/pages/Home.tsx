@@ -3,9 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { mockFestivals } from "@/lib/index";
 
-import home1 from "@/assets/home3.jpg";
-import home2 from "@/assets/home4.jpg";
-import home4 from "@/assets/home5.jpg";
+import home6 from "@/assets/home6.webp";
+import home7 from "@/assets/home7.webp";
+import home8 from "@/assets/home8.jpg";
 import homeBack from "@/assets/main.png";
 
 import {
@@ -39,7 +39,7 @@ export default function Home() {
   const [isLoginNoticeOpen, setIsLoginNoticeOpen] = useState(false);
 
   // 히어로 배경 이미지
-  const heroImages = [home1, home2, home4, homeBack];
+  const heroImages = [home6, home7, home8, homeBack];
   const [currentHero, setCurrentHero] = useState(0);
 
   // 실시간 HOT 게시글
@@ -53,11 +53,11 @@ export default function Home() {
     border: "none",
   };
 
-  // 6초마다 히어로 이미지 변경
+  // 💡 15초(15000ms)마다 히어로 이미지 변경으로 수정 완료!
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentHero((prev) => (prev + 1) % heroImages.length);
-    }, 6000);
+    }, 15000);
 
     return () => clearInterval(interval);
   }, [heroImages.length]);
