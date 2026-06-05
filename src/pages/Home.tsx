@@ -3,10 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { mockFestivals } from "@/lib/index";
 
-import home6 from "@/assets/home6.webp";
-import home7 from "@/assets/home7.webp";
-import home8 from "@/assets/home8.jpg";
-import homeBack from "@/assets/main.png";
+// import home6 from "@/assets/home6.webp";
+// import home7 from "@/assets/home7.webp";
+// import home8 from "@/assets/home8.jpg";
+// import homeBack from "@/assets/main.png";
 
 import {
   ChevronLeft,
