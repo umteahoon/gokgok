@@ -45,7 +45,7 @@ export const mockFestivals: Festival[] = [
     title: "보령 머드축제",
     location: "충청남도 보령시",
     date: "2026.07.15 - 2026.07.24",
-    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/boryeong1.png",
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Boryeong1.png",
     category: "체험",
     status: "upcoming",
   },
