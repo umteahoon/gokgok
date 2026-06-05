@@ -1,20 +1,21 @@
 // src/lib/index.ts 상단에 추가
-import andongImg from "@/assets/Andong.png";
-import busanImg from "@/assets/busan.png"; // 혹은 Busan.png 중 필요한 것 선택
-import hwacheonImg from "@/assets/Hwacheon.png";
-import janjuImg from "@/assets/janju.png"; // 전주
-import jinhaeImg from "@/assets/jinhae.png"; // 진해
-import mujuImg from "@/assets/Muju1.png"; //
-import geumsanImg from "@/assets/Geumsan.png";
-import seogwipoImg from "@/assets/Seogwipo.png";
-import pyeongchangImg from "@/assets/Pyeongchang.png";
-import gangneungImg from "@/assets/Gangneung1.png";
-import hampyeongImg from "@/assets/Hampyeong.png";
-import yeosuImg from "@/assets/Yeosu.png";
-import jejuImg from "@/assets/jeju.png";
-import jinjuImg from "@/assets/jinju.png";
-import boryeongImg from "@/assets/Boryeong.png";
-import suncheonImg from "@/assets/Suncheon.png";
+// 💡 이 아래 import 구문들을 싹 지우거나 주석 처리합니다.
+// import andongImg from "@/assets/Andong.png";
+// import busanImg from "@/assets/busan.png";
+// import hwacheonImg from "@/assets/Hwacheon.png";
+// import janjuImg from "@/assets/janju.png";
+// import jinhaeImg from "@/assets/jinhae.png";
+// import mujuImg from "@/assets/Muju1.png";
+// import geumsanImg from "@/assets/Geumsan.png";
+// import seogwipoImg from "@/assets/Seogwipo.png";
+// import pyeongchangImg from "@/assets/Pyeongchang.png";
+// import gangneungImg from "@/assets/Gangneung1.png";
+// import hampyeongImg from "@/assets/Hampyeong.png";
+// import yeosuImg from "@/assets/Yeosu.png";
+// import jejuImg from "@/assets/jeju.png";
+// import jinjuImg from "@/assets/jinju.png";
+// import boryeongImg from "@/assets/Boryeong.png";
+// import suncheonImg from "@/assets/Suncheon.png";
 /**
  * 🚀 곡곡(GokGok) 팀 프로젝트 공용 라우트 고유 키 및 로컬 헬퍼 스펙
  * 기여: 주환(글쓰기), 태훈(notmypage, 약관, 개인정보), 원재(문의하기)
