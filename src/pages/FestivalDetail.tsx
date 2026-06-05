@@ -21,15 +21,10 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { mockFestivals, topFestivals } from "@/lib/index";
 
-// 각 축제별 전용 상세 이미지 변수들
-import group8 from "@/assets/group8.png";
-import group9 from "@/assets/Group9.png";
-import group10 from "@/assets/Group10.png";
-import group11 from "@/assets/Group11.png";
-
-// 🛠️ src/assets/ 폴더 내부의 정적 이미지 파일들 임포트
-import carImg from "@/assets/Car.png";
-import dogImg from "@/assets/Dog.png";
+// 💡 픽스 포인트 1: 빌드 에러를 유발하던 group8~11 로컬 이미지 임포트를 전면 차단했습니다.
+// 💡 픽스 포인트 2: 공지사항 컴포넌트의 깨짐 방지를 위해 Unsplash 보완 주소로 정적 분리했습니다.
+const carImg = "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600";
+const dogImg = "https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=600";
 
 export default function FestivalDetail() {
   const { id } = useParams();
@@ -106,34 +101,21 @@ export default function FestivalDetail() {
   }
 
   // ==========================================
-  // 축제별 전용 상세 이미지 매핑
+  // 💡 픽스 포인트 3: 복잡하고 터지기 쉬운 조건문 맵핑 대신, DB에서 받아온 무결점 이미지로 통합
   // ==========================================
-  let detailImages: string[] = [];
+  const detailImages: string[] = [festival.image || ""];
   const infoTags = { age: "전체 이용가", target: "누구나" };
 
   if (festival.title.includes("군항제")) {
-    detailImages = [group8];
     infoTags.target = "연인, 가족";
   } else if (festival.title.includes("순천만")) {
-    detailImages = [group11];
     infoTags.target = "가족, 힐링";
-  } else if (
-    festival.title.includes("보령") ||
-    festival.title.includes("머드")
-  ) {
-    detailImages = [group9];
+  } else if (festival.title.includes("보령") || festival.title.includes("머드")) {
     infoTags.target = "친구, 외국인";
-  } else if (
-    festival.title.includes("함평") ||
-    festival.title.includes("나비")
-  ) {
-    detailImages = [group10];
+  } else if (festival.title.includes("함평") || festival.title.includes("나비")) {
     infoTags.target = "어린이, 가족";
-  } else {
-    detailImages = [festival.image];
   }
 
-  // 🛠️ 데이터 모델의 각 공지사항 항목에 일치하는 로컬 정적 이미지 변수를 정확히 주입
   const notices = [
     {
       id: 1,
@@ -142,19 +124,18 @@ export default function FestivalDetail() {
       date: "2026.05.30",
       content:
         "축제 구역 내 교통 체증 완화를 위해 임시 주차장 통제 및 무료 셔틀버스를 연계 운행합니다. 탑뷰 맵에 표시된 파란색 셔틀 노선 유도선을 따라 이동하시면 대기 시간 없이 행사장 로터리까지 다이렉트로 진입하실 수 있습니다.",
-      photoUrl: carImg, // 🏎️ 교통안내 공지에 Car 이미지 매칭
+      photoUrl: carImg,
       imageCaption:
         "📍 [종합 주차 가이드] 외곽 임시 주차 구역 및 무료 순환 셔틀버스 정류장 상세 노선도",
     },
     {
       id: 2,
       type: "safety",
-      title:
-        "🚫 [안내] 안전한 관람을 위한 반려동물 제한 및 반입 금지 물품 공지",
+      title: "🚫 [안내] 안전한 관람을 위한 반려동물 제한 및 반입 금지 물품 공지",
       date: "2026.05.29",
       content:
         "모든 관람객이 안전하고 쾌적하게 축제를 즐길 수 있도록 행사장 내 전 구역 공통 가이드라인을 공지합니다. 안전사고 우려가 있는 특정 이동 수단 및 안전거리 확보를 위한 규정 사항을 위 안내판 이미지를 통해 반드시 사전 숙지해 주시기 바랍니다.",
-      photoUrl: dogImg, // 🐕 안전가이드 공지에 Dog 이미지 매칭
+      photoUrl: dogImg,
       imageCaption:
         "🔒 [공통 규정] 관람 안전을 위한 물품 반입 제한 픽토그램 가이드 표준 안내판",
     },
@@ -288,7 +269,6 @@ export default function FestivalDetail() {
                       {notice.content}
                     </p>
 
-                    {/* 🛠️ 데이터 모델의 notice.photoUrl을 직접 바인딩하여 엑박 버그 완전 차단 */}
                     {notice.photoUrl && (
                       <div className="mt-4 border border-zinc-200 rounded-3xl overflow-hidden bg-zinc-50 shadow-md">
                         <div className="relative w-full h-[320px] md:h-[480px] overflow-hidden bg-zinc-100">
