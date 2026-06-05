@@ -3,14 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { mockFestivals } from "@/lib/index";
 
-// 💡 픽스 포인트 1: 빌드 장애를 유발하던 로컬 배너 이미지 임포트를 전면 차단하고
-// 💡 시연용 웹 브라우저 샌드박스에서 CORS 제한이 없는 고화질 오픈 리소스 주소로 완전 전환했습니다.
-const heroImages = [
-  "https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1200", // 불꽃축제 테마
-  "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=1200", // 페스티벌/콘서트 테마
-  "https://images.unsplash.com/photo-1472653423608-ee242fd35afb?q=80&w=1200", // 밤풍경/빛축제 테마
-  "https://images.unsplash.com/photo-1506157786151-b8491531f063?q=80&w=1200"  // 감성 캠핑/전통 테마
-];
+import home6 from "@/assets/home6.webp";
+import home7 from "@/assets/home7.webp";
+import home8 from "@/assets/home8.jpg";
+import homeBack from "@/assets/main.png";
 
 import {
   ChevronLeft,
@@ -42,7 +38,8 @@ export default function Home() {
   const [wishlistedIds, setWishlistedIds] = useState<string[]>([]);
   const [isLoginNoticeOpen, setIsLoginNoticeOpen] = useState(false);
 
-  // 💡 픽스 포인트 2: 주소 문자열 바인딩 체계로 일원화
+  // 히어로 배경 이미지
+  const heroImages = [home6, home7, home8, homeBack];
   const [currentHero, setCurrentHero] = useState(0);
 
   // 실시간 HOT 게시글
@@ -56,14 +53,14 @@ export default function Home() {
     border: "none",
   };
 
-  // 15초(15000ms)마다 히어로 이미지 변경
+  // 💡 15초(15000ms)마다 히어로 이미지 변경으로 수정 완료!
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentHero((prev) => (prev + 1) % heroImages.length);
     }, 15000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [heroImages.length]);
 
   // HOT 게시글 불러오기
   const loadHotPostsData = async () => {
@@ -120,7 +117,9 @@ export default function Home() {
     }
 
     const strId = String(id);
+
     const saved = JSON.parse(localStorage.getItem("gokgok_wishlist") || "[]");
+
     let updated;
 
     if (saved.includes(strId)) {
@@ -144,6 +143,7 @@ export default function Home() {
           festival.location.includes("인천")
         );
       }
+
       return festival.location.includes(activeRegion);
     });
   }, [activeRegion]);
@@ -158,6 +158,7 @@ export default function Home() {
     if (!scrollRef.current) return;
 
     const { scrollLeft, clientWidth } = scrollRef.current;
+
     const moveAmount = clientWidth * 0.8;
 
     scrollRef.current.scrollTo({
@@ -179,6 +180,7 @@ export default function Home() {
             alt="배경"
             className="w-full h-full object-cover brightness-[0.85] transition-all duration-1000"
           />
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
         </div>
 
@@ -316,6 +318,7 @@ export default function Home() {
               <h3 className="text-[24px] md:text-[28px] font-black tracking-tight text-gray-900 dark:text-white">
                 놓치면 후회할 마감 임박 축제
               </h3>
+
               <p className="text-gray-400 font-medium text-sm mt-1">
                 곧 막을 내리는 축제 정보들을 놓치지 마세요.
               </p>
@@ -363,6 +366,7 @@ export default function Home() {
               <h3 className="text-[24px] md:text-[28px] font-black tracking-tight text-gray-900 dark:text-white">
                 실시간 수다방 HOT 게시글
               </h3>
+
               <p className="text-gray-400 font-medium text-sm mt-1">
                 곡곡 멤버들이 전하는 생생한 축제 이야기와 꿀팁.
               </p>
