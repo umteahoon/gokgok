@@ -72,7 +72,7 @@ export const mockFestivals: Festival[] = [
     title: "부산 불꽃축제",
     location: "부산광역시 광안리",
     date: "2026.10.20",
-    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Busan.jpg",
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Busan.png",
     category: "불꽃축제",
     status: "upcoming",
   },
