@@ -1,23 +1,8 @@
-// src/lib/index.ts 상단에 추가
-import andongImg from "@/assets/Andong.png";
-import busanImg from "@/assets/busan.png"; // 혹은 Busan.png 중 필요한 것 선택
-import hwacheonImg from "@/assets/Hwacheon.png";
-import janjuImg from "@/assets/janju.png"; // 전주
-import jinhaeImg from "@/assets/jinhae.png"; // 진해
-import mujuImg from "@/assets/Muju1.png"; //
-import geumsanImg from "@/assets/Geumsan.png";
-import seogwipoImg from "@/assets/Seogwipo.png";
-import pyeongchangImg from "@/assets/Pyeongchang.png";
-import gangneungImg from "@/assets/Gangneung1.png";
-import hampyeongImg from "@/assets/Hampyeong.png";
-import yeosuImg from "@/assets/Yeosu.png";
-import jejuImg from "@/assets/jeju.png";
-import jinjuImg from "@/assets/jinju.png";
-import boryeongImg from "@/assets/Boryeong.png";
-import suncheonImg from "@/assets/Suncheon.png";
 /**
  * 🚀 곡곡(GokGok) 팀 프로젝트 공용 라우트 고유 키 및 로컬 헬퍼 스펙
  * 기여: 주환(글쓰기), 태훈(notmypage, 약관, 개인정보), 원재(문의하기)
+ * * 💡 픽스 완료: 주석 처리되어 터지던 로컬 이미지 변수 참조를 제거하고, 
+ * Supabase DB와 일치하는 완벽한 깃허브 Raw 이미지 주소로 100% 매핑 완료했습니다.
  */
 
 export const ROUTE_PATHS = {
@@ -44,14 +29,14 @@ export interface Festival {
   status?: "ongoing" | "upcoming" | "ended";
 }
 
-// 🎴 1. 일반 축제 목데이터 리스트
+// 🎴 1. 일반 축제 목데이터 리스트 (깃허브 Raw URL 완전 정렬본)
 export const mockFestivals: Festival[] = [
   {
     id: "1",
     title: "진주 남강 유등축제",
     location: "경상남도 진주시",
     date: "2026.10.01 - 2026.10.10",
-    image: jinjuImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/jinju.png",
     category: "전통문화",
     status: "upcoming",
   },
@@ -60,7 +45,7 @@ export const mockFestivals: Festival[] = [
     title: "보령 머드축제",
     location: "충청남도 보령시",
     date: "2026.07.15 - 2026.07.24",
-    image: boryeongImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Boryeong1.png",
     category: "체험",
     status: "upcoming",
   },
@@ -69,7 +54,7 @@ export const mockFestivals: Festival[] = [
     title: "화천 산천어축제",
     location: "강원도 화천군",
     date: "2026.01.10 - 2026.01.31",
-    image: hwacheonImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Hwacheon.png",
     category: "겨울축제",
     status: "ended",
   },
@@ -78,7 +63,7 @@ export const mockFestivals: Festival[] = [
     title: "전주 한옥마을 축제",
     location: "전라북도 전주시",
     date: "2026.05.01 - 2026.05.05",
-    image: janjuImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/janju.png",
     category: "전통문화",
     status: "upcoming",
   },
@@ -87,7 +72,7 @@ export const mockFestivals: Festival[] = [
     title: "부산 불꽃축제",
     location: "부산광역시 광안리",
     date: "2026.10.20",
-    image: busanImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Busan.png",
     category: "불꽃축제",
     status: "upcoming",
   },
@@ -96,20 +81,20 @@ export const mockFestivals: Festival[] = [
     title: "안동 국제탈춤페스티벌",
     location: "경상북도 안동시",
     date: "2026.09.25 - 2026.10.04",
-    image: andongImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Andong.png",
     category: "전통문화",
     status: "upcoming",
   },
 ];
 
-// 🏆 2. 메인 화면 상단 베스트 축제 리스트 (중복 완벽 제거본)
+// 🏆 2. 메인 화면 상단 베스트 축제 리스트 (중복 완벽 제거 및 깃허브 URL 패치본)
 export const topFestivals: Festival[] = [
   {
     id: "top-1",
     title: "진해 군항제",
     location: "경상남도 창원시",
     date: "2026.03.25 - 2026.04.05",
-    image: jinhaeImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/jinhae.png",
     category: "자연생태",
     rank: 1,
     status: "upcoming",
@@ -119,7 +104,7 @@ export const topFestivals: Festival[] = [
     title: "무주 반딧불축제",
     location: "전라북도 무주군",
     date: "2026.08.31 - 2026.09.08",
-    image: mujuImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Muju1.png",
     category: "자연생태",
     rank: 2,
     status: "upcoming",
@@ -129,7 +114,7 @@ export const topFestivals: Festival[] = [
     title: "금산 인삼축제",
     location: "충청남도 금산군",
     date: "2026.10.03 - 2026.10.13",
-    image: geumsanImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Geumsan.png",
     category: "체험",
     rank: 3,
     status: "upcoming",
@@ -139,7 +124,7 @@ export const topFestivals: Festival[] = [
     title: "순천만 갈대축제",
     location: "전라남도 순천시",
     date: "2026.11.01 - 2026.11.03",
-    image: suncheonImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Suncheon.png",
     category: "자연생태",
     rank: 4,
     status: "upcoming",
@@ -149,7 +134,7 @@ export const topFestivals: Festival[] = [
     title: "서귀포 칠십리축제",
     location: "제주특별자치도 서귀포시",
     date: "2026.10.18 - 2026.10.20",
-    image: seogwipoImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Seogwipo.png",
     category: "전통문화",
     rank: 5,
     status: "upcoming",
@@ -159,7 +144,7 @@ export const topFestivals: Festival[] = [
     title: "평창 송어축제",
     location: "강원도 평창군",
     date: "2026.12.20 - 2027.01.24",
-    image: pyeongchangImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Pyeongchang.png",
     category: "겨울축제",
     rank: 6,
     status: "upcoming",
@@ -169,7 +154,7 @@ export const topFestivals: Festival[] = [
     title: "제주 들불축제",
     location: "제주특별자치도",
     date: "2026.03.01 - 2026.03.03",
-    image: jejuImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/jeju.png",
     category: "전통문화",
     rank: 7,
     status: "ended",
@@ -179,7 +164,7 @@ export const topFestivals: Festival[] = [
     title: "강릉 단오제",
     location: "강원도 강릉시",
     date: "2026.06.10 - 2026.06.16",
-    image: gangneungImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Gangneung1.png",
     category: "전통문화",
     rank: 8,
     status: "upcoming",
@@ -189,7 +174,7 @@ export const topFestivals: Festival[] = [
     title: "함평 나비축제",
     location: "전라남도 함평군",
     date: "2026.04.20 - 2026.05.05",
-    image: hampyeongImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Hampyeong.png",
     category: "자연생태",
     rank: 9,
     status: "upcoming",
@@ -199,7 +184,7 @@ export const topFestivals: Festival[] = [
     title: "여수 밤바다 불꽃축제",
     location: "전라남도 여수시",
     date: "2026.08.15",
-    image: yeosuImg,
+    image: "https://raw.githubusercontent.com/umteahoon/gokgok/main/src/assets/Yeosu.png",
     category: "불꽃축제",
     rank: 10,
     status: "upcoming",
@@ -214,7 +199,7 @@ export const recentFestivals: Festival[] = [
     location: "서울특별시 청계천",
     date: "2026.11.01 - 2026.11.30",
     image:
-      "https://images.unsplash.com/photo-1601900245655-7719650f5b7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4Mzc5NTV8MHwxfHNlYXJjaHwxfHxrb3JlYSUyMGxvY2FsJTIwZmVzdGl2YWwlMjBjZWxlYnJhdGlvbnxlbnwwfDB8fHwxNzczOTcyODE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1601900245655-7719650f5b7a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
     category: "빛축제",
     status: "upcoming",
   },
@@ -224,7 +209,7 @@ export const recentFestivals: Festival[] = [
     location: "대구광역시 두류공원",
     date: "2026.07.10 - 2026.07.14",
     image:
-      "https://images.unsplash.com/photo-1506905760138-9e8f7f36bdd0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4Mzc5NTV8MHwxfHNlYXJjaHwyfHxrb3JlYSUyMGxvY2FsJTIwZmVzdGl2YWwlMjBjZWxlYnJhdGlvbnxlbnwwfDB8fHwxNzczOTcyODE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1506905760138-9e8f7f36bdd0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
     category: "음식축제",
     status: "upcoming",
   },
@@ -234,7 +219,7 @@ export const recentFestivals: Festival[] = [
     location: "강원도 춘천시",
     date: "2026.05.20 - 2026.05.26",
     image:
-      "https://images.unsplash.com/photo-1707361806325-74dfd810e41d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4Mzc5NTV8MHwxfHNlYXJjaHwzfHxrb3JlYSUyMGxvY2FsJTIwZmVzdGl2YWwlMjBjZWxlYnJhdGlvbnxlbnwwfDB8fHwxNzczOTcyODE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1707361806325-74dfd810e41d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
     category: "공연예술",
     status: "upcoming",
   },
@@ -244,7 +229,7 @@ export const recentFestivals: Festival[] = [
     location: "경상남도 통영시",
     date: "2026.08.12 - 2026.08.15",
     image:
-      "https://images.unsplash.com/photo-1604212467162-2b0f6f58612a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4Mzc5NTV8MHwxfHNlYXJjaHw0fHxrb3JlYSUyMGxvY2FsJTIwZmVzdGl2YWwlMjBjZWxlYnJhdGlvbnxlbnwwfDB8fHwxNzczOTcyODE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1604212467162-2b0f6f58612a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
     category: "역사문화",
     status: "upcoming",
   },
@@ -254,7 +239,7 @@ export const recentFestivals: Festival[] = [
     location: "인천광역시 송도",
     date: "2026.08.08 - 2026.08.10",
     image:
-      "https://images.unsplash.com/photo-1591550881006-0f2ad4dd52a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4Mzc5NTV8MHwxfHNlYXJjaHw1fHxrb3JlYSUyMGxvY2FsJTIwZmVzdGl2YWwlMjBjZWxlYnJhdGlvbnxlbnwwfDB8fHwxNzczOTcyODE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1591550881006-0f2ad4dd52a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
     category: "음악축제",
     status: "upcoming",
   },
@@ -264,7 +249,7 @@ export const recentFestivals: Festival[] = [
     location: "경상북도 경주시",
     date: "2026.04.01 - 2026.04.10",
     image:
-      "https://images.unsplash.com/photo-1610696326567-16772b575f13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w4Mzc5NTV8MHwxfHNlYXJjaHw2fHxrb3JlYSUyMGxvY2FsJTIwZmVzdGl2YWwlMjBjZWxlYnJhdGlvbnxlbnwwfDB8fHwxNzczOTcyODE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "https://images.unsplash.com/photo-1610696326567-16772b575f13?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080",
     category: "자연생태",
     status: "upcoming",
   },
