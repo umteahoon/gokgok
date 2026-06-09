@@ -634,7 +634,7 @@ export default function Search() {
                                     <Link
                                       to={`/festival/${item.id}`}
                                       key={item.id}
-                                      className="min-w-[160px] md:min-w-[220px] snap-start group/item relative"
+                                      className="w-[160px] md:w-[220px] flex-shrink-0 snap-start group/item relative"
                                     >
                                       <div className="aspect-[3/4] rounded-2xl overflow-hidden mb-2 shadow-sm">
                                         <img
